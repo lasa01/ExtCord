@@ -1,0 +1,34 @@
+{
+  "name": "extcord",
+  "version": "0.0.1",
+  "description": "Discord bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lasa01/ExtCord.git"
+  },
+  "author": "lasa01",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/lasa01/ExtCord/issues"
+  },
+  "homepage": "https://github.com/lasa01/ExtCord#readme",
+  "dependencies": {
+    "discord.js": "^11.4.2",
+    "erlpack": "github:hammerandchisel/erlpack",
+    "json5": "^2.0.1",
+    "libsodium-wrappers": "^0.7.3",
+    "node-opus": "^0.3.0",
+    "sequelize": "^4.38.1",
+    "uws": "^99.0.0",
+    "winston": "^3.1.0"
+  },
+  "devDependencies": {
+    "@types/json5": "0.0.30",
+    "@types/node": "^10.9.4",
+    "@types/sequelize": "^4.27.25"
+  }
+}
