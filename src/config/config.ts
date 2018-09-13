@@ -9,7 +9,7 @@ export default class Config {
         this.entries = new Map();
     }
 
-    register() {
-        
+    register(entry: ConfigEntry) {
+        this.entries.set(entry.name, entry);
     }
 }
