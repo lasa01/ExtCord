@@ -1,41 +1,49 @@
-export default class ConfigEntry implements EntryInfo {
-    name: string;
-    fullName: string;
-    description?: string;
-    optional?: boolean;
-    value?: any;
-    defaultValue?: any;
-    type: "string" | "number" | "boolean" | "symbol" | "undefined" | "object" | "function";
-    parent?: ConfigEntry;
+export default class ConfigEntry implements IEntryInfo {
+    public name: string;
+    public fullName: string;
+    public description?: string;
+    public loadStage: number;
+    public optional?: boolean;
+    private value?: any;
+    private defaultValue?: any;
+    private type: "string" | "number" | "boolean" | "symbol" | "undefined" | "object" | "function";
+    private parent?: ConfigEntry;
 
-    constructor(info: EntryInfo, defaultValue?: any, type = typeof defaultValue) {
+    constructor(info: IEntryInfo, defaultValue?: any, type = typeof defaultValue) {
         this.name = info.name;
         this.fullName = info.name;
         this.description = info.description;
+        this.loadStage = info.loadStage == null ? 1 : info.loadStage;
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.type = type;
     }
-    
-    setParent(parent: ConfigEntry) {
+
+    public setParent(parent: ConfigEntry) {
         this.parent = parent;
     }
 
-    updateFullName() {
-        if (this.parent) this.fullName = this.parent.fullName + '.' + this.name;
+    public setLoadStage(stage: number) {
+        this.loadStage = stage;
     }
 
-    validate(data:any): any {
-        return typeof data === this.type ? data : (this.optional ? undefined : this.defaultValue);
+    public updateFullName() {
+        if (this.parent) { this.fullName = this.parent.fullName + "." + this.name; }
     }
 
-    parse(data:any) {
+    public validate(data: any): [boolean, any] {
+        if (typeof data === this.type) { return  [false, data]; }
+        if (this.optional) { return [true, undefined]; } else { return [true, this.defaultValue]; }
+    }
+
+    public parse(data: any) {
         this.value = data;
     }
 }
 
-export interface EntryInfo {
-    name: string,
-    description?: string,
-    optional?: boolean
+export interface IEntryInfo {
+    name: string;
+    description?: string;
+    optional?: boolean;
+    loadStage: number;
 }
