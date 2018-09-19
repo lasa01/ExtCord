@@ -1,9 +1,12 @@
+import Bot from "../bot";
 import Module from "./module";
 
 export default class Modules {
-    modules: Map<string, Module>;
+    private bot: Bot;
+    private modules: Map<string, Module>;
 
-    constructor() {
+    constructor(bot: Bot) {
+        this.bot = bot;
         this.modules = new Map();
     }
 }

@@ -2,9 +2,9 @@
   "name": "extcord",
   "version": "0.0.1",
   "description": "Discord bot",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node dist/index.js"
   },
   "repository": {
     "type": "git",
@@ -24,11 +24,13 @@
     "node-opus": "^0.3.0",
     "sequelize": "^4.38.1",
     "uws": "^99.0.0",
-    "winston": "^3.1.0"
+    "winston": "^3.1.0",
+    "yargs": "^12.0.2"
   },
   "devDependencies": {
     "@types/json5": "0.0.30",
     "@types/node": "^10.9.4",
-    "@types/sequelize": "^4.27.25"
+    "@types/sequelize": "^4.27.25",
+    "@types/yargs": "^12.0.0"
   }
 }

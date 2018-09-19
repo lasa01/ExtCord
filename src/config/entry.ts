@@ -1,4 +1,6 @@
-export default class ConfigEntry implements IEntryInfo {
+import { EventEmitter } from "events";
+
+export default class ConfigEntry extends EventEmitter implements IEntryInfo {
     public name: string;
     public fullName: string;
     public description?: string;
@@ -10,6 +12,7 @@ export default class ConfigEntry implements IEntryInfo {
     private parent?: ConfigEntry;
 
     constructor(info: IEntryInfo, defaultValue?: any, type = typeof defaultValue) {
+        super();
         this.name = info.name;
         this.fullName = info.name;
         this.description = info.description;

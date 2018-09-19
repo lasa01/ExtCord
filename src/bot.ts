@@ -1,11 +1,18 @@
 import Discord from "discord.js";
 import Winston from "winston";
+import Yargs from "yargs";
 
-class Bot {
+import Config from "./config/config";
+import Modules from "./modules/modules";
+
+export default class Bot {
     public logger: Winston.Logger;
     public client: Discord.Client;
+    public config: Config;
+    public modules: Modules;
 
-    constructor() {
+    constructor(configFile: string) {
+        this.config = new Config(this, configFile);
         this.logger = Winston.createLogger({
             format: Winston.format.cli(),
             transports: [
@@ -13,9 +20,7 @@ class Bot {
                 new Winston.transports.File({ filename: "bot.log" }),
             ],
         });
-
+        this.modules = new Modules(this);
         this.client = new Discord.Client();
     }
 }
-
-const bot = new Bot();
