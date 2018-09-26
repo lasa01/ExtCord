@@ -22,6 +22,10 @@ export default class ConfigEntry extends EventEmitter implements IEntryInfo {
         this.type = type;
     }
 
+    public get() {
+        return this.value;
+    }
+
     public setParent(parent: ConfigEntry) {
         this.parent = parent;
     }
@@ -48,5 +52,5 @@ export interface IEntryInfo {
     name: string;
     description?: string;
     optional?: boolean;
-    loadStage: number;
+    loadStage?: number;
 }

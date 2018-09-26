@@ -1,29 +1,36 @@
-import FS from "fs";
+import Winston, { debug } from "winston";
 import Yargs from "yargs";
+
 import Bot from "./bot";
-
-interface IPackage {
-    readonly name: string;
-    readonly version: string;
-    readonly description: string;
-    readonly main: string;
-    readonly scripts: { readonly [name: string]: string };
-    readonly repository: { readonly type: string; readonly url: string };
-    readonly author: string;
-    readonly license: string;
-    readonly bugs: { readonly url: string };
-    readonly homepage: string;
-    readonly dependencies: { readonly [name: string]: string };
-    readonly devDependencies?: { readonly [name: string]: string };
-}
-
-const pkg: IPackage = JSON.parse(FS.readFileSync("package.json", "utf8"));
+import Configure from "./configure";
 
 const args = Yargs.usage("Usage: $0 <command> [options]")
     .command(["run [configFile]", "$0"], "run the bot",
         (yargs) => yargs.positional("configFile", { describe: "config file to use", default: "config.json5" }),
-        (argv) => { const bot = new Bot(argv.configFile); })
+        (argv) => { const bot = new Bot(argv.configFile, initLogger(argv.verbose)); })
+    .command(["configure [configFile]", "config"], "configure the bot",
+        (yargs) => yargs.positional("configFile", { describe: "config file to use", default: "config.json5" }),
+        (argv) => { const configure = new Configure(argv.configFile); })
     .demandCommand()
     .count("verbose")
     .alias("v", "verbose")
     .argv;
+
+const levels: { [key: number]: string } = {
+    0: "error",
+    1: "warn",
+    2: "info",
+    3: "verbose",
+    4: "debug",
+    5: "silly",
+};
+
+function initLogger(verbose: number): Winston.Logger {
+    return Winston.createLogger({
+        format: Winston.format.cli(),
+        level: levels[2 + verbose],
+        transports: [
+            new Winston.transports.Console(),
+        ],
+    });
+}

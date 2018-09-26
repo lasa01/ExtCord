@@ -1,9 +1,9 @@
 import ConfigEntry, {IEntryInfo} from "./entry";
 
 export default class EntryGroup extends ConfigEntry {
-    private entries: Map<string, ConfigEntry>;
+    public entries: Map<string, ConfigEntry>;
 
-    constructor(info: IEntryInfo, entries: [ConfigEntry]) {
+    constructor(info: IEntryInfo, entries: ConfigEntry[]) {
         super(info);
         this.entries = new Map();
         for (const entry of entries) {
