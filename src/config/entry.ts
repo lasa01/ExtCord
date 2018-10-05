@@ -23,6 +23,7 @@ export default class ConfigEntry extends EventEmitter implements IEntryInfo {
     }
 
     public get() {
+        if (typeof this.value !== this.type) { throw new Error(); }
         return this.value;
     }
 

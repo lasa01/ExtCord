@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class Module {
-    constructor(author, name) {
-        this.author = author;
-        this.name = name;
+    constructor() {
+        this.author = "";
+        this.name = "";
     }
 }
 exports.default = Module;

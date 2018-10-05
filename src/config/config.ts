@@ -1,20 +1,18 @@
 import {EventEmitter} from "events";
 import {promises as FS} from "fs";
 import JSON5 from "json5";
+import Winston from "winston";
 
-import Bot from "../bot";
 import ConfigEntry from "./entry";
 
 export default class Config extends EventEmitter {
-    private bot: Bot;
+    private logger: Winston.Logger;
     private entries: Map<string, ConfigEntry>;
-    private fileName: string;
     private stages: number[];
 
-    constructor(bot: Bot, fileName: string) {
+    constructor(logger: Winston.Logger) {
         super();
-        this.bot = bot;
-        this.fileName = fileName;
+        this.logger = logger;
         this.entries = new Map();
         this.stages = [];
     }
@@ -22,17 +20,18 @@ export default class Config extends EventEmitter {
     public register(entry: ConfigEntry) {
         this.entries.set(entry.name, entry);
         if (!this.stages.includes(entry.loadStage)) { this.stages.push(entry.loadStage); }
+        entry.updateFullName();
     }
 
-    public async load(stage: number) {
+    public async load(stage: number, fileName: string) {
         if (!this.stages.includes(stage)) {
-            this.bot.logger.warn("Trying to load a config stage that doesn't exist, skipping...");
+            this.logger.warn("Trying to load a config stage that doesn't exist, skipping...");
             return;
         }
         let content: string;
         let parsed: any;
         try {
-            content = await FS.readFile(this.fileName, "utf8");
+            content = await FS.readFile(fileName, "utf8");
             parsed = JSON5.parse(content);
         } catch {
             content = "";
@@ -47,7 +46,7 @@ export default class Config extends EventEmitter {
         }
         if (updated) {
             content = JSON5.stringify(parsed, undefined, 4);
-            await FS.writeFile(this.fileName, content);
+            await FS.writeFile(fileName, content);
         }
         for (const [name, entry] of this.entries) {
             if (entry.loadStage !== stage) { continue; }

@@ -12,6 +12,12 @@ class ConfigEntry extends events_1.EventEmitter {
         this.value = defaultValue;
         this.type = type;
     }
+    get() {
+        if (typeof this.value !== this.type) {
+            throw new Error();
+        }
+        return this.value;
+    }
     setParent(parent) {
         this.parent = parent;
     }
