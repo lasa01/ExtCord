@@ -4,6 +4,7 @@ import Winston from "winston";
 import Config from "./config/config";
 import ConfigEntry from "./config/entry";
 import ConfigEntryGroup from "./config/entrygroup";
+import Database from "./database/database";
 import Modules from "./modules/modules";
 
 export default class Bot {
@@ -11,6 +12,7 @@ export default class Bot {
     public client?: Discord.Client;
     public config: Config;
     public configFile: string;
+    public database: Database;
     public modules: Modules;
     private configEntries:
         {loggerConfig?: ConfigEntryGroup, clientConfig?: ConfigEntryGroup, generalConfig?: ConfigEntryGroup};
@@ -19,6 +21,7 @@ export default class Bot {
         this.logger = logger;
         this.config = new Config(logger);
         this.modules = new Modules(logger);
+        this.database = new Database(logger);
         this.configEntries = {};
         this.configFile = configFile;
         this.registerConfigs();

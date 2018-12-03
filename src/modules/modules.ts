@@ -30,7 +30,7 @@ export default class Modules {
         for (const fileName of modules) {
             const loaded = require(Path.join(moduleDir, fileName));
             if (!Module.isPrototypeOf(loaded)) {
-                this.logger.warn(`Found a non-module file "${fileName}", skipping`);
+                this.logger.warn(`Skipping a non-module file "${fileName}"`);
                 continue;
             }
             this.loadModule(loaded);
