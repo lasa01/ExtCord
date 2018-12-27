@@ -1,6 +1,6 @@
 import Module from "./module";
 
-import {promises as FS} from "fs";
+import FS from "fs";
 import Path from "path";
 import Winston from "winston";
 
@@ -26,7 +26,9 @@ export default class Modules {
     }
 
     public async loadAll(moduleDir: string) {
-        const modules = await FS.readdir(moduleDir);
+        const readdir = (path: string) => new Promise<string[]>((resolve, reject) =>
+            FS.readdir(path, (err, files) => { if (err) { reject(err); } else { resolve(files); } }));
+        const modules = await readdir(moduleDir);
         for (const fileName of modules) {
             const loaded = require(Path.join(moduleDir, fileName));
             if (!Module.isPrototypeOf(loaded)) {

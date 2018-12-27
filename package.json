@@ -19,18 +19,19 @@
   "dependencies": {
     "discord.js": "^11.4.2",
     "erlpack": "github:hammerandchisel/erlpack",
-    "json5": "^2.0.1",
+    "hjson": "^3.1.2",
     "libsodium-wrappers": "^0.7.3",
     "node-opus": "^0.3.0",
-    "sequelize": "^4.38.1",
+    "reflect-metadata": "^0.1.12",
+    "sqlite3": "^4.0.4",
+    "typeorm": "^0.2.9",
     "uws": "^99.0.0",
     "winston": "^3.1.0",
     "yargs": "^12.0.2"
   },
   "devDependencies": {
-    "@types/json5": "0.0.30",
+    "@types/hjson": "^2.4.0",
     "@types/node": "^10.9.4",
-    "@types/sequelize": "^4.27.25",
     "@types/yargs": "^12.0.0",
     "tslint": "^5.11.0",
     "typescript": "^3.1.3"

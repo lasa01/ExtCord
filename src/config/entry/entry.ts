@@ -3,28 +3,16 @@ import { EventEmitter } from "events";
 export default class ConfigEntry extends EventEmitter implements IEntryInfo {
     public name: string;
     public fullName: string;
-    public description?: string;
+    public description: string;
     public loadStage: number;
-    public optional?: boolean;
-    private value?: any;
-    private defaultValue?: any;
-    private type: "string" | "number" | "boolean" | "symbol" | "undefined" | "object" | "function";
     private parent?: ConfigEntry;
 
-    constructor(info: IEntryInfo, defaultValue?: any, type = typeof defaultValue) {
+    constructor(info: IEntryInfo) {
         super();
         this.name = info.name;
         this.fullName = info.name;
         this.description = info.description;
         this.loadStage = info.loadStage == null ? 1 : info.loadStage;
-        this.defaultValue = defaultValue;
-        this.value = defaultValue;
-        this.type = type;
-    }
-
-    public get() {
-        if (typeof this.value !== this.type) { throw new Error(); }
-        return this.value;
     }
 
     public setParent(parent: ConfigEntry) {
@@ -39,19 +27,22 @@ export default class ConfigEntry extends EventEmitter implements IEntryInfo {
         if (this.parent) { this.fullName = this.parent.fullName + "." + this.name; }
     }
 
-    public validate(data: any): [boolean, any] {
-        if (typeof data === this.type) { return  [false, data]; }
-        if (this.optional) { return [true, undefined]; } else { return [true, this.defaultValue]; }
+    public print(): string {
+        return `${this.name}: ${this.get()}`;
     }
 
-    public parse(data: any) {
-        this.value = data;
+    public get(): any {
+        return;
+    }
+
+    public parse(data: any, indent: number): [any, string] {
+        return [data, ""];
     }
 }
 
 export interface IEntryInfo {
     name: string;
-    description?: string;
+    description: string;
     optional?: boolean;
     loadStage?: number;
 }

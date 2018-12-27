@@ -1,161 +1,71 @@
-import Sequelize from "sequelize";
-import Winston from "winston";
-import DatabaseRowWrapper from "./rowwrapper";
+import "reflect-metadata";
 
-export default class Database {
-    private logger: Winston.Logger;
-    private database: Map<string|object, {
-        string: Map<string, string>,
-        number: Map<string, number>,
-        boolean: Map<string, boolean>,
-    }>;
-    private sequelize?: Sequelize.Sequelize;
-    private template: {
-        boolean: Array<IDatabaseTemplateEntry<boolean>>;
-        number: Array<IDatabaseTemplateEntry<number>>;
-        string: Array<IDatabaseTemplateEntry<string>>;
+import { EventEmitter } from "events";
+
+// import Discord from "discord.js";
+import { Connection, ConnectionOptions, createConnection } from "typeorm";
+import Winston from "winston";
+
+import GuildDatabaseEntity from "./entity/guildentity";
+import MemberDatabaseEntity from "./entity/memberentity";
+import UserDatabaseEntity from "./entity/userentity";
+import LoggerBridge from "./loggerbridge";
+import GuildDatabaseRepository from "./repo/guildrepo";
+import MemberDatabaseRepository from "./repo/memberrepo";
+import UserDatabaseRepository from "./repo/userrepo";
+
+export default class Database extends EventEmitter {
+    public repos: {
+        guild?: GuildDatabaseRepository,
+        member?: MemberDatabaseRepository,
+        user?: UserDatabaseRepository,
     };
+    private logger: Winston.Logger;
+    private connection?: Connection;
+    private entities: Array<new () => any>;
 
     constructor(logger: Winston.Logger) {
+        super();
         this.logger = logger;
-        this.database = new Map();
-        this.template = {
-            boolean: [],
-            number: [],
-            string: [],
-        };
-    }
-
-    public async connect(info: IDatabaseInfo) {
-        this.sequelize = new Sequelize(info.database, info.username, info.password, {
-            dialect: info.dialect,
-            host: info.host,
-            logging: (log: string) => this.logger.debug(log),
-            operatorsAliases: false,
-            port: info.port,
-            storage: info.sqlite_storage,
-        });
-        for (const entry of this.template.string) {
-            let databaseEntry = this.database.get(entry.target);
-            if (!databaseEntry) {
-                databaseEntry = {
-                    boolean: new Map(),
-                    number: new Map(),
-                    string: new Map(),
-                };
-                this.database.set(entry.target, databaseEntry);
-            }
-        }
-        /*7
-        let x = this.sequelize.define("test", {
-            name: {
-                type: Sequelize.STRING,
-            },
-            value: {
-                type: Sequelize.BOOLEAN,
-            },
-        });
-
-        let xs = await x.findAll();
-
-        let a = Database;
-        /*/
-    }
-
-    public registerRow(target: {new(...args: any[]): any}) {
-        Object.assign(target, DatabaseRowWrapper);
-    }
-
-    /*/
-    public getString(from: string|object, name: string): string {
-        const target = this.database.get(from);
-        if (target) {
-            const value = target.string.get(name);
-            if (value) {
-                return value;
-            } else {
-                throw new Error(`Target ${target} has no database entry named ${name}`);
-            }
-        } else {
-            throw new Error(`Target ${target} does not exist`);
-        }
-    }
-
-    public getNumber(from: string|object, name: string): number {
-        const target = this.database.get(from);
-        if (target) {
-            const value = target.number.get(name);
-            if (value) {
-                return value;
-            } else {
-                throw new Error(`Target ${target} has no database entry named ${name}`);
-            }
-        } else {
-            throw new Error(`Target ${target} does not exist`);
-        }
-    }
-
-    public getBoolean(from: string|object, name: string): boolean {
-        const target = this.database.get(from);
-        if (target) {
-            const value = target.boolean.get(name);
-            if (value) {
-                return value;
-            } else {
-                throw new Error(`Target ${target} has no database entry named ${name}`);
-            }
-        } else {
-            throw new Error(`Target ${target} does not exist`);
-        }
-    }
-
-    public registerString(to: string|object, name: string, defaultValue?: string) {
-        this.template.string.push({
-            defaultValue,
-            name,
-            target: to,
+        this.entities = [GuildDatabaseEntity, MemberDatabaseEntity, UserDatabaseEntity];
+        this.repos = {};
+        this.once("connected", () => {
+            this.repos.guild = this.connection!.getCustomRepository(GuildDatabaseRepository);
+            this.repos.member = this.connection!.getCustomRepository(MemberDatabaseRepository);
+            this.repos.user = this.connection!.getCustomRepository(UserDatabaseRepository);
         });
     }
 
-    public registerNumber(to: string|object, name: string, defaultValue?: number) {
-        this.template.number.push({
-            defaultValue,
-            name,
-            target: to,
-        });
+    public async connect(options: ConnectionOptions) {
+        this.connection = await createConnection(Object.assign(options, {
+            entities: this.entities,
+            logger: new LoggerBridge(this.logger),
+            logging: true,
+            synchronize: true,
+        }));
+        this.emit("connected");
     }
 
-    public registerBoolean(to: string|object, name: string, defaultValue?: boolean) {
-        this.template.boolean.push({
-            defaultValue,
-            name,
-            target: to,
-        });
+    public registerEntity(model: new () => any) {
+        this.entities.push(model);
     }
-    /*/
 
-}
-
-export function databased(object: object): object is DatabaseRowWrapper {
-    if ((object as DatabaseRowWrapper).database) {
-        return true;
-    } else {
-        return false;
+    public extendEntity(entity: new () => any, extend: object) {
+        Object.assign(entity, extend);
     }
 }
 
-interface IDatabaseTemplateEntry<T> {
-    target: string|object;
-    name: string;
-    defaultValue?: T;
-}
-
-interface IDatabaseInfo {
+interface ICOSQL {
+    type: "sqlite";
     database: string;
-    username: string;
-    password: string;
-    dialect: string;
-    host: string;
-    port: number;
-    sqlite_storage?: string;
+}
+
+interface ICOMS {
+    type: "mysql" | "mariadb";
+    url?: string;
+    host?: string;
+    port?: number;
+    username?: string;
+    password?: string;
+    database?: string;
 }

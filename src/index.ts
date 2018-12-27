@@ -1,4 +1,4 @@
-import Winston, { debug } from "winston";
+import Winston from "winston";
 import Yargs from "yargs";
 
 import Bot from "./bot";
@@ -6,10 +6,10 @@ import Configure from "./configure";
 
 const args = Yargs.usage("Usage: $0 <command> [options]")
     .command(["run [configFile]", "$0"], "run the bot",
-        (yargs) => yargs.positional("configFile", { describe: "config file to use", default: "config.json5" }),
+        (yargs) => yargs.positional("configFile", { describe: "config file to use", default: "config.hjson" }),
         (argv) => { const bot = new Bot(argv.configFile, initLogger(argv.verbose)); })
     .command(["configure [configFile]", "config"], "configure the bot",
-        (yargs) => yargs.positional("configFile", { describe: "config file to use", default: "config.json5" }),
+        (yargs) => yargs.positional("configFile", { describe: "config file to use", default: "config.hjson" }),
         (argv) => { const configure = new Configure(argv.configFile); })
     .demandCommand()
     .count("verbose")

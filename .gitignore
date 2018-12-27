@@ -59,3 +59,10 @@ typings/
 
 # next.js build output
 .next
+
+# build output
+dist
+
+# test files
+bot
+configtest.hjson

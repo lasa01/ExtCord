@@ -2,8 +2,10 @@ import Discord from "discord.js";
 import Winston from "winston";
 
 import Config from "./config/config";
-import ConfigEntry from "./config/entry";
-import ConfigEntryGroup from "./config/entrygroup";
+import ConfigEntry from "./config/entry/entry";
+import ConfigEntryGroup from "./config/entry/entrygroup";
+import NumberConfigEntry from "./config/entry/numberentry";
+import StringConfigEntry from "./config/entry/stringentry";
 import Database from "./database/database";
 import Modules from "./modules/modules";
 
@@ -15,7 +17,7 @@ export default class Bot {
     public database: Database;
     public modules: Modules;
     private configEntries:
-        {loggerConfig?: ConfigEntryGroup, clientConfig?: ConfigEntryGroup, generalConfig?: ConfigEntryGroup};
+        { loggerConfig?: ConfigEntryGroup, clientConfig?: ConfigEntryGroup, generalConfig?: ConfigEntryGroup };
 
     constructor(configFile: string, logger: Winston.Logger) {
         this.logger = logger;
@@ -25,20 +27,19 @@ export default class Bot {
         this.configEntries = {};
         this.configFile = configFile;
         this.registerConfigs();
-        this.config.load(0, configFile);
     }
 
     private registerConfigs() {
         const loggerConfigs = {
-            file: new ConfigEntry({
+            file: new StringConfigEntry({
                 description: "Logfile filename",
                 name: "file",
             }, "bot.log"),
-            format: new ConfigEntry({
+            format: new StringConfigEntry({
                 description: "Logger format",
                 name: "format",
             }, "cli"),
-            loglevel: new ConfigEntry({
+            loglevel: new StringConfigEntry({
                 description: "Logfile loglevel",
                 name: "loglevel",
             }, "info"),
@@ -61,7 +62,7 @@ export default class Bot {
         });
 
         const generalConfigs = {
-            moduleDirectory: new ConfigEntry({
+            moduleDirectory: new StringConfigEntry({
                 description: "The directory to load modules from",
                 name: "moduleDirectory",
             }, "./modules"),
@@ -73,19 +74,19 @@ export default class Bot {
         this.config.register(this.configEntries.generalConfig);
 
         const clientConfigs = {
-            messageCacheLifetime: new ConfigEntry({
+            messageCacheLifetime: new NumberConfigEntry({
                 description: "How long a message should stay in the cache (in seconds, 0 for forever)",
                 name: "messageCacheLifetime",
             }, 0),
-            messageCacheMaxSize: new ConfigEntry({
+            messageCacheMaxSize: new NumberConfigEntry({
                 description: "Maximum number of messages to cache per channel (-1 or Infinity for unlimited)",
                 name: "messageCacheMaxSize",
             }, 200),
-            messageCacheSweepInterval: new ConfigEntry({
+            messageCacheSweepInterval: new NumberConfigEntry({
                 description: "How frequently to remove messages from the cache (in seconds, 0 for never)",
                 name: "messageCacheSweepInterval",
             }, 0),
-            token: new ConfigEntry({
+            token: new StringConfigEntry({
                 description: "Discord login token",
                 name: "token",
             }, ""),
@@ -108,4 +109,5 @@ export default class Bot {
             this.client.login(clientConfigs.token.get());
         });
     }
+
 }

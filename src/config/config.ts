@@ -1,58 +1,95 @@
-import {EventEmitter} from "events";
-import {promises as FS} from "fs";
-import JSON5 from "json5";
+import { EventEmitter } from "events";
+import FS from "fs";
+import Hjson from "hjson";
 import Winston from "winston";
 
-import ConfigEntry from "./entry";
+import ConfigEntry from "./entry/entry";
 
 export default class Config extends EventEmitter {
     private logger: Winston.Logger;
     private entries: Map<string, ConfigEntry>;
-    private stages: number[];
+    private stages: Map<number, ConfigEntry[]>;
+    private orderedStages?: number[];
 
     constructor(logger: Winston.Logger) {
         super();
         this.logger = logger;
         this.entries = new Map();
-        this.stages = [];
+        this.stages = new Map();
     }
 
     public register(entry: ConfigEntry) {
         this.entries.set(entry.name, entry);
-        if (!this.stages.includes(entry.loadStage)) { this.stages.push(entry.loadStage); }
+        const stage = this.stages.get(entry.loadStage) || [];
+        stage.push(entry);
+        if (!this.stages.has(entry.loadStage)) { this.stages.set(entry.loadStage, stage); }
         entry.updateFullName();
     }
 
+    public hasNext() {
+        if (!this.orderedStages) {
+            return this.stages.size !== 0;
+        } else {
+            return this.orderedStages.length !== 0;
+        }
+    }
+
+    public async loadNext(fileName: string): Promise<number> {
+        if (!this.orderedStages) {
+            this.orderedStages = Array.from(this.stages.keys());
+            this.orderedStages.sort((a, b) => a - b);
+        }
+        const stage = this.orderedStages.shift();
+        if (stage == null) {
+            throw new Error("No config stages to load");
+        }
+        await this.load(stage, fileName);
+        return stage;
+    }
+
     public async load(stage: number, fileName: string) {
-        if (!this.stages.includes(stage)) {
+        const entries = this.stages.get(stage);
+        if (!entries) {
             this.logger.warn("Trying to load a config stage that doesn't exist, skipping...");
             return;
         }
         let content: string;
         let parsed: any;
         try {
-            content = await FS.readFile(fileName, "utf8");
-            parsed = JSON5.parse(content);
+            const readFile = (file: string) => new Promise<string>((resolve, reject) =>
+                FS.readFile(file, "utf8", (err, data) => { if (err) { reject(err); } else { resolve(data); } }));
+            content = await readFile(fileName);
+            parsed = Hjson.parse(content, { keepWsc: true });
         } catch {
             content = "";
             parsed = {};
         }
-        let updated = false;
-        for (const [name, entry] of this.entries) {
-            if (entry.loadStage !== stage) { continue; }
-            let b: boolean;
-            [b, parsed[name]] = entry.validate(parsed[name]);
-            if (b) { updated = true; }
+        // If it works, don't touch it (it works)
+        if (!parsed.__COMMENTS__) {
+            parsed.__COMMENTS__ = {};
         }
-        if (updated) {
-            content = JSON5.stringify(parsed, undefined, 4);
-            await FS.writeFile(fileName, content);
+        if (!parsed.__COMMENTS__.c) {
+            parsed.__COMMENTS__.c = {};
         }
-        for (const [name, entry] of this.entries) {
-            if (entry.loadStage !== stage) { continue; }
-            entry.parse(parsed[name]);
+        if (!parsed.__COMMENTS__.o) {
+            parsed.__COMMENTS__.o = [];
+        }
+        for (const entry of entries) {
+            const [data, comment] = entry.parse(parsed[entry.name], 1);
+            parsed[entry.name] = data;
+            if (!parsed.__COMMENTS__.o.includes(entry.name)) { parsed.__COMMENTS__.o.push(entry.name); }
+            if (!parsed.__COMMENTS__.c[entry.name]) {
+                parsed.__COMMENTS__.c[entry.name] = ["", ""];
+            }
+            if (!parsed.__COMMENTS__.c[entry.name][0]) {
+                parsed.__COMMENTS__.c[entry.name][0] = comment;
+            }
             entry.emit("loaded");
         }
+        content = Hjson.stringify(parsed, { keepWsc: true });
+        const writeFile = (file: string, data: string) => new Promise<void>((resolve, reject) =>
+            FS.writeFile(file, data, (err) => { if (err) { reject(err); } else { resolve(); } }));
+        await writeFile(fileName, content);
         this.emit("loaded", stage);
     }
 }
