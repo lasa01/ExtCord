@@ -2,12 +2,14 @@ import "reflect-metadata";
 
 import { EventEmitter } from "events";
 
-// import Discord from "discord.js";
 import { Connection, ConnectionOptions, createConnection } from "typeorm";
 import Winston from "winston";
 
+import BooleanGuildConfigDatabaseEntity from "./entity/booleanguildconfigentity";
 import GuildDatabaseEntity from "./entity/guildentity";
 import MemberDatabaseEntity from "./entity/memberentity";
+import NumberGuildConfigDatabaseEntity from "./entity/numberguildconfigentity";
+import StringGuildConfigDatabaseEntity from "./entity/stringguildconfigentity";
 import UserDatabaseEntity from "./entity/userentity";
 import LoggerBridge from "./loggerbridge";
 import GuildDatabaseRepository from "./repo/guildrepo";
@@ -20,14 +22,15 @@ export default class Database extends EventEmitter {
         member?: MemberDatabaseRepository,
         user?: UserDatabaseRepository,
     };
+    public connection?: Connection;
     private logger: Winston.Logger;
-    private connection?: Connection;
     private entities: Array<new () => any>;
 
     constructor(logger: Winston.Logger) {
         super();
         this.logger = logger;
-        this.entities = [GuildDatabaseEntity, MemberDatabaseEntity, UserDatabaseEntity];
+        this.entities = [GuildDatabaseEntity, MemberDatabaseEntity, UserDatabaseEntity,
+            BooleanGuildConfigDatabaseEntity, NumberGuildConfigDatabaseEntity, StringGuildConfigDatabaseEntity];
         this.repos = {};
         this.once("connected", () => {
             this.repos.guild = this.connection!.getCustomRepository(GuildDatabaseRepository);
@@ -46,6 +49,10 @@ export default class Database extends EventEmitter {
         this.emit("connected");
     }
 
+    public async register(thing: IDatabaseRegistrable) {
+        await thing.databaseRegister(this);
+    }
+
     public registerEntity(model: new () => any) {
         this.entities.push(model);
     }
@@ -55,17 +62,6 @@ export default class Database extends EventEmitter {
     }
 }
 
-interface ICOSQL {
-    type: "sqlite";
-    database: string;
-}
-
-interface ICOMS {
-    type: "mysql" | "mariadb";
-    url?: string;
-    host?: string;
-    port?: number;
-    username?: string;
-    password?: string;
-    database?: string;
+export interface IDatabaseRegistrable {
+    databaseRegister(database: Database): Promise<void>;
 }

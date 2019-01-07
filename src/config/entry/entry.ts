@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 
-export default class ConfigEntry extends EventEmitter implements IEntryInfo {
+export default abstract class ConfigEntry extends EventEmitter implements IEntryInfo {
     public name: string;
     public fullName: string;
     public description: string;

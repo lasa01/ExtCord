@@ -20,7 +20,7 @@ export default class Modules {
             return;
         }
         if (this.modules.has(constructed.name)) {
-            this.logger.warn(`Trying to load already loaded module ${constructed.name}`);
+            this.logger.warn(`Trying to load an already loaded module ${constructed.name}`);
         }
         this.modules.set(constructed.name, constructed);
     }
