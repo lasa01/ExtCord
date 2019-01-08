@@ -1,10 +1,10 @@
 import Discord from "discord.js";
 import { EntityRepository, Repository } from "typeorm";
 
-import UserDatabaseEntity from "../entity/userentity";
+import UserEntity from "../entity/userentity";
 
-@EntityRepository(UserDatabaseEntity)
-export default class UserDatabaseRepository extends Repository<UserDatabaseEntity> {
+@EntityRepository(UserEntity)
+export default class UserRepository extends Repository<UserEntity> {
     public async getEntity(user: Discord.User) {
         const structure = {
             discriminator: user.discriminator,

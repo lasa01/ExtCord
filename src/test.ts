@@ -3,12 +3,12 @@ import Readline from "readline";
 import Winston from "winston";
 
 import Config from "./config/config";
-import ConfigEntry from "./config/entry/entry";
 import ConfigEntryGroup from "./config/entry/entrygroup";
 import NumberConfigEntry from "./config/entry/numberentry";
 import StringConfigEntry from "./config/entry/stringentry";
 
 import Database from "./database/database";
+import MemberPermissionEntity from "./permissions/database/memberpermissionentity";
 
 const log = Winston.createLogger({
     format: Winston.format.cli(),
@@ -36,7 +36,6 @@ async function testConfig() {
         new ConfigEntryGroup({ name: "group", description: "An entry group with something in it" }, [
             new StringConfigEntry({ name: "name", description: "The name of the entrygroup" }, "group"),
             new StringConfigEntry({ name: "value", description: "Some value" }, "yes"),
-            new ConfigEntry({ name: "nothing", description: "This is empty" }),
         ]),
         new NumberConfigEntry({ name: "number", description: "A number" }, 10),
         new StringConfigEntry({ name: "later", description: "This is a slower one", loadStage: 2 }, "snail"),
@@ -99,6 +98,21 @@ async function testDatabase() {
     log.info("Saving member");
     await mRepo.save(member);
 
+    const pRepo = database.connection!.getRepository(MemberPermissionEntity);
+    log.info("Testing permissions");
+    const perm = pRepo.create({
+        member,
+        name: "test",
+        permission: true,
+    });
+    const perm2 = pRepo.create({
+        member,
+        name: "test2",
+        permission: false,
+    });
+
+    log.info("Saving permissions");
+    await pRepo.save([perm, perm2]);
 }
 
 const readline = Readline.createInterface({

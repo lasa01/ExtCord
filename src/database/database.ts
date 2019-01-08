@@ -5,22 +5,23 @@ import { EventEmitter } from "events";
 import { Connection, ConnectionOptions, createConnection } from "typeorm";
 import Winston from "winston";
 
-import BooleanGuildConfigDatabaseEntity from "./entity/booleanguildconfigentity";
-import GuildDatabaseEntity from "./entity/guildentity";
-import MemberDatabaseEntity from "./entity/memberentity";
-import NumberGuildConfigDatabaseEntity from "./entity/numberguildconfigentity";
-import StringGuildConfigDatabaseEntity from "./entity/stringguildconfigentity";
-import UserDatabaseEntity from "./entity/userentity";
+import BooleanConfigEntity from "../config/entry/guild/database/booleanconfigentity";
+import NumberConfigEntity from "../config/entry/guild/database/numberconfigentity";
+import StringConfigEntity from "../config/entry/guild/database/stringconfigentity";
+import MemberPermissionEntity from "../permissions/database/memberpermissionentity";
+import GuildEntity from "./entity/guildentity";
+import MemberEntity from "./entity/memberentity";
+import UserEntity from "./entity/userentity";
 import LoggerBridge from "./loggerbridge";
-import GuildDatabaseRepository from "./repo/guildrepo";
-import MemberDatabaseRepository from "./repo/memberrepo";
-import UserDatabaseRepository from "./repo/userrepo";
+import GuildRepository from "./repo/guildrepo";
+import MemberRepository from "./repo/memberrepo";
+import UserRepository from "./repo/userrepo";
 
 export default class Database extends EventEmitter {
     public repos: {
-        guild?: GuildDatabaseRepository,
-        member?: MemberDatabaseRepository,
-        user?: UserDatabaseRepository,
+        guild?: GuildRepository,
+        member?: MemberRepository,
+        user?: UserRepository,
     };
     public connection?: Connection;
     private logger: Winston.Logger;
@@ -29,13 +30,14 @@ export default class Database extends EventEmitter {
     constructor(logger: Winston.Logger) {
         super();
         this.logger = logger;
-        this.entities = [GuildDatabaseEntity, MemberDatabaseEntity, UserDatabaseEntity,
-            BooleanGuildConfigDatabaseEntity, NumberGuildConfigDatabaseEntity, StringGuildConfigDatabaseEntity];
+        this.entities = [GuildEntity, MemberEntity, UserEntity,
+            BooleanConfigEntity, NumberConfigEntity, StringConfigEntity,
+            MemberPermissionEntity];
         this.repos = {};
         this.once("connected", () => {
-            this.repos.guild = this.connection!.getCustomRepository(GuildDatabaseRepository);
-            this.repos.member = this.connection!.getCustomRepository(MemberDatabaseRepository);
-            this.repos.user = this.connection!.getCustomRepository(UserDatabaseRepository);
+            this.repos.guild = this.connection!.getCustomRepository(GuildRepository);
+            this.repos.member = this.connection!.getCustomRepository(MemberRepository);
+            this.repos.user = this.connection!.getCustomRepository(UserRepository);
         });
     }
 

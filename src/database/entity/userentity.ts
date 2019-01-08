@@ -1,9 +1,9 @@
 import { Column, Entity, OneToMany, PrimaryColumn } from "typeorm";
 
-import MemberDatabaseEntity from "./memberentity";
+import MemberEntity from "./memberentity";
 
 @Entity("users")
-export default class UserDatabaseEntity {
+export default class UserEntity {
     @PrimaryColumn()
     public id!: string;
 
@@ -13,6 +13,6 @@ export default class UserDatabaseEntity {
     @Column()
     public discriminator!: string;
 
-    @OneToMany((type) => MemberDatabaseEntity, (member) => member.user)
-    public members!: MemberDatabaseEntity[];
+    @OneToMany((type) => MemberEntity, (member) => member.user)
+    public members!: MemberEntity[];
 }

@@ -1,9 +1,9 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
-import GuildDatabaseEntity from "./guildentity";
+import GuildEntity from "../../../../database/entity/guildentity";
 
 @Entity("stringGuildConfigs")
-export default class StringGuildConfigDatabaseEntity {
+export default class StringConfigEntity {
     @PrimaryGeneratedColumn()
     public id!: number;
 
@@ -13,6 +13,6 @@ export default class StringGuildConfigDatabaseEntity {
     @Column()
     public value!: string;
 
-    @ManyToOne((type) => GuildDatabaseEntity, (guild) => guild.members)
-    public guild!: GuildDatabaseEntity;
+    @ManyToOne((type) => GuildEntity)
+    public guild!: GuildEntity;
 }

@@ -2,13 +2,13 @@ import Discord from "discord.js";
 import { Repository } from "typeorm";
 
 import Database from "../../../database/database";
-import StringGuildConfigDatabaseEntity from "../../../database/entity/stringguildconfigentity";
 import { IEntryInfo } from "../entry";
 import StringConfigEntry from "../stringentry";
+import StringConfigEntity from "./database/stringconfigentity";
 
 export default class StringGuildConfigEntry extends StringConfigEntry {
     private database: Database;
-    private repo?: Repository<StringGuildConfigDatabaseEntity>;
+    private repo?: Repository<StringConfigEntity>;
 
     constructor(info: IEntryInfo, database: Database) {
         info.loadStage = 1;
@@ -29,7 +29,7 @@ export default class StringGuildConfigEntry extends StringConfigEntry {
 
     private async ensureRepo() {
         if (this.repo) { return; }
-        this.repo = await this.database.connection!.getRepository(StringGuildConfigDatabaseEntity);
+        this.repo = await this.database.connection!.getRepository(StringConfigEntity);
     }
 
     private async guildGetEntity(guild: Discord.Guild) {

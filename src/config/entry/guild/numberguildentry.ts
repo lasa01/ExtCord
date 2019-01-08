@@ -2,13 +2,13 @@ import Discord from "discord.js";
 import { Repository } from "typeorm";
 
 import Database from "../../../database/database";
-import NumberGuildConfigDatabaseEntity from "../../../database/entity/numberguildconfigentity";
 import { IEntryInfo } from "../entry";
 import NumberConfigEntry from "../numberentry";
+import NumberConfigEntity from "./database/numberconfigentity";
 
 export default class NumberGuildConfigEntry extends NumberConfigEntry {
     private database: Database;
-    private repo?: Repository<NumberGuildConfigDatabaseEntity>;
+    private repo?: Repository<NumberConfigEntity>;
 
     constructor(info: IEntryInfo, database: Database) {
         info.loadStage = 1;
@@ -29,7 +29,7 @@ export default class NumberGuildConfigEntry extends NumberConfigEntry {
 
     private async ensureRepo() {
         if (this.repo) { return; }
-        this.repo = await this.database.connection!.getRepository(NumberGuildConfigDatabaseEntity);
+        this.repo = await this.database.connection!.getRepository(NumberConfigEntity);
     }
 
     private async guildGetEntity(guild: Discord.Guild) {

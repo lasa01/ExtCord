@@ -2,13 +2,13 @@ import Discord from "discord.js";
 import { Repository } from "typeorm";
 
 import Database from "../../../database/database";
-import BooleanGuildConfigDatabaseEntity from "../../../database/entity/booleanguildconfigentity";
 import BooleanConfigEntry from "../booleanentry";
 import { IEntryInfo } from "../entry";
+import BooleanConfigEntity from "./database/booleanconfigentity";
 
 export default class BooleanGuildConfigEntry extends BooleanConfigEntry {
     private database: Database;
-    private repo?: Repository<BooleanGuildConfigDatabaseEntity>;
+    private repo?: Repository<BooleanConfigEntity>;
 
     constructor(info: IEntryInfo, database: Database) {
         info.loadStage = 1;
@@ -29,7 +29,7 @@ export default class BooleanGuildConfigEntry extends BooleanConfigEntry {
 
     private async ensureRepo() {
         if (this.repo) { return; }
-        this.repo = await this.database.connection!.getRepository(BooleanGuildConfigDatabaseEntity);
+        this.repo = await this.database.connection!.getRepository(BooleanConfigEntity);
     }
 
     private async guildGetEntity(guild: Discord.Guild) {

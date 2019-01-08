@@ -1,9 +1,9 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
-import GuildDatabaseEntity from "./guildentity";
+import GuildEntity from "../../../../database/entity/guildentity";
 
 @Entity("booleanGuildConfigs")
-export default class BooleanGuildConfigDatabaseEntity {
+export default class BooleanConfigEntity {
     @PrimaryGeneratedColumn()
     public id!: number;
 
@@ -13,6 +13,6 @@ export default class BooleanGuildConfigDatabaseEntity {
     @Column()
     public value!: boolean;
 
-    @ManyToOne((type) => GuildDatabaseEntity, (guild) => guild.members)
-    public guild!: GuildDatabaseEntity;
+    @ManyToOne((type) => GuildEntity)
+    public guild!: GuildEntity;
 }
