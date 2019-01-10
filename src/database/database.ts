@@ -9,12 +9,15 @@ import BooleanConfigEntity from "../config/entry/guild/database/booleanconfigent
 import NumberConfigEntity from "../config/entry/guild/database/numberconfigentity";
 import StringConfigEntity from "../config/entry/guild/database/stringconfigentity";
 import MemberPermissionEntity from "../permissions/database/memberpermissionentity";
+import RolePermissionEntity from "../permissions/database/rolepermissionentity";
 import GuildEntity from "./entity/guildentity";
 import MemberEntity from "./entity/memberentity";
+import RoleEntity from "./entity/roleentity";
 import UserEntity from "./entity/userentity";
 import LoggerBridge from "./loggerbridge";
 import GuildRepository from "./repo/guildrepo";
 import MemberRepository from "./repo/memberrepo";
+import RoleRepository from "./repo/rolerepo";
 import UserRepository from "./repo/userrepo";
 
 export default class Database extends EventEmitter {
@@ -22,6 +25,7 @@ export default class Database extends EventEmitter {
         guild?: GuildRepository,
         member?: MemberRepository,
         user?: UserRepository,
+        role?: RoleRepository,
     };
     public connection?: Connection;
     private logger: Winston.Logger;
@@ -30,14 +34,16 @@ export default class Database extends EventEmitter {
     constructor(logger: Winston.Logger) {
         super();
         this.logger = logger;
-        this.entities = [GuildEntity, MemberEntity, UserEntity,
+        // TODO move where defined and call registerEntity
+        this.entities = [GuildEntity, MemberEntity, UserEntity, RoleEntity,
             BooleanConfigEntity, NumberConfigEntity, StringConfigEntity,
-            MemberPermissionEntity];
+            MemberPermissionEntity, RolePermissionEntity];
         this.repos = {};
         this.once("connected", () => {
             this.repos.guild = this.connection!.getCustomRepository(GuildRepository);
             this.repos.member = this.connection!.getCustomRepository(MemberRepository);
             this.repos.user = this.connection!.getCustomRepository(UserRepository);
+            this.repos.role = this.connection!.getCustomRepository(RoleRepository);
         });
     }
 
