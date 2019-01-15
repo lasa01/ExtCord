@@ -34,31 +34,23 @@ export default class Database extends EventEmitter {
     constructor(logger: Winston.Logger) {
         super();
         this.logger = logger;
-        // TODO move where defined and call registerEntity
-        this.entities = [GuildEntity, MemberEntity, UserEntity, RoleEntity,
-            BooleanConfigEntity, NumberConfigEntity, StringConfigEntity,
-            MemberPermissionEntity, RolePermissionEntity];
+        this.entities = [GuildEntity, MemberEntity, UserEntity, RoleEntity];
         this.repos = {};
-        this.once("connected", () => {
-            this.repos.guild = this.connection!.getCustomRepository(GuildRepository);
-            this.repos.member = this.connection!.getCustomRepository(MemberRepository);
-            this.repos.user = this.connection!.getCustomRepository(UserRepository);
-            this.repos.role = this.connection!.getCustomRepository(RoleRepository);
-        });
     }
 
     public async connect(options: ConnectionOptions) {
+        this.logger.info("Connecting to database");
         this.connection = await createConnection(Object.assign(options, {
             entities: this.entities,
             logger: new LoggerBridge(this.logger),
             logging: true,
             synchronize: true,
         }));
+        this.repos.guild = this.connection.getCustomRepository(GuildRepository);
+        this.repos.member = this.connection.getCustomRepository(MemberRepository);
+        this.repos.user = this.connection.getCustomRepository(UserRepository);
+        this.repos.role = this.connection.getCustomRepository(RoleRepository);
         this.emit("connected");
-    }
-
-    public async register(thing: IDatabaseRegistrable) {
-        await thing.databaseRegister(this);
     }
 
     public registerEntity(model: new () => any) {
@@ -68,8 +60,4 @@ export default class Database extends EventEmitter {
     public extendEntity(entity: new () => any, extend: object) {
         Object.assign(entity, extend);
     }
-}
-
-export interface IDatabaseRegistrable {
-    databaseRegister(database: Database): Promise<void>;
 }

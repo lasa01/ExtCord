@@ -1,13 +1,15 @@
 import Discord from "discord.js";
+import { ConnectionOptions } from "typeorm";
 import Winston from "winston";
 
 import Config from "./config/config";
-import ConfigEntry from "./config/entry/entry";
 import ConfigEntryGroup from "./config/entry/entrygroup";
 import NumberConfigEntry from "./config/entry/numberentry";
+import ObjectConfigEntry from "./config/entry/objectentry";
 import StringConfigEntry from "./config/entry/stringentry";
 import Database from "./database/database";
 import Modules from "./modules/modules";
+import Permissions from "./permissions/permissions";
 
 export default class Bot {
     public logger: Winston.Logger;
@@ -15,99 +17,120 @@ export default class Bot {
     public config: Config;
     public configFile: string;
     public database: Database;
+    public permissions: Permissions;
     public modules: Modules;
-    private configEntries:
-        { loggerConfig?: ConfigEntryGroup, clientConfig?: ConfigEntryGroup, generalConfig?: ConfigEntryGroup };
+    private configEntries: {
+        loggerGroup?: ConfigEntryGroup, clientGroup?: ConfigEntryGroup, generalGroup?: ConfigEntryGroup,
+        database: ObjectConfigEntry,
+        logger: {
+            file: StringConfigEntry,
+            loglevel: StringConfigEntry,
+        },
+        client: {
+            messageCacheLifetime: NumberConfigEntry,
+            messageCacheMaxSize: NumberConfigEntry,
+            messageCacheSweepInterval: NumberConfigEntry,
+            token: StringConfigEntry,
+        },
+        general: {
+            moduleDirectory: StringConfigEntry,
+        };
+    };
 
     constructor(configFile: string, logger: Winston.Logger) {
         this.logger = logger;
         this.config = new Config(logger);
-        this.modules = new Modules(logger);
-        this.database = new Database(logger);
-        this.configEntries = {};
-        this.configFile = configFile;
-        this.registerConfigs();
-    }
-
-    private registerConfigs() {
-        const loggerConfigs = {
-            file: new StringConfigEntry({
-                description: "Logfile filename",
-                name: "file",
-            }, "bot.log"),
-            format: new StringConfigEntry({
-                description: "Logger format",
-                name: "format",
-            }, "cli"),
-            loglevel: new StringConfigEntry({
-                description: "Logfile loglevel",
-                name: "loglevel",
-            }, "info"),
+        this.configEntries = {
+            client: {
+                messageCacheLifetime: new NumberConfigEntry({
+                    description: "How long a message should stay in the cache (in seconds, 0 for forever)",
+                    name: "messageCacheLifetime",
+                }, 0),
+                messageCacheMaxSize: new NumberConfigEntry({
+                    description: "Maximum number of messages to cache per channel (-1 for unlimited)",
+                    name: "messageCacheMaxSize",
+                }, 200),
+                messageCacheSweepInterval: new NumberConfigEntry({
+                    description: "How frequently to remove messages from the cache (in seconds, 0 for never)",
+                    name: "messageCacheSweepInterval",
+                }, 0),
+                token: new StringConfigEntry({
+                    description: "Discord login token",
+                    name: "token",
+                }, ""),
+            },
+            database: new ObjectConfigEntry({
+                description: "Database configuration for TypeORM",
+                name: "database",
+            }, {
+                database: "bot.sql",
+                type: "sqlite",
+            }),
+            general: {
+                moduleDirectory: new StringConfigEntry({
+                    description: "Where to load modules from",
+                    name: "moduleDirectory",
+                }, "./modules"),
+            },
+            logger: {
+                file: new StringConfigEntry({
+                    description: "Logfile filename",
+                    name: "file",
+                }, "bot.log"),
+                loglevel: new StringConfigEntry({
+                    description: "Logfile loglevel",
+                    name: "loglevel",
+                }, "info"),
+            },
         };
-        this.configEntries.loggerConfig = new ConfigEntryGroup({
+        this.configEntries.loggerGroup = new ConfigEntryGroup({
             description: "Winston logger configuration",
             loadStage: 0,
             name: "logger",
-        }, Object.values(loggerConfigs));
-        this.config.register(this.configEntries.loggerConfig);
-        this.configEntries.loggerConfig.once("loaded", () => {
-            this.logger.configure({
-                // format: ?
-                level: loggerConfigs.loglevel.get(),
-                transports: [
-                    new Winston.transports.Console(),
-                    new Winston.transports.File( { filename: loggerConfigs.file.get() } ),
-                ],
-            });
-        });
-
-        const generalConfigs = {
-            moduleDirectory: new StringConfigEntry({
-                description: "The directory to load modules from",
-                name: "moduleDirectory",
-            }, "./modules"),
-        };
-        this.configEntries.generalConfig = new ConfigEntryGroup({
+        }, Object.values(this.configEntries.logger));
+        this.configEntries.generalGroup = new ConfigEntryGroup({
             description: "General configuration",
-            name: "general",
-        }, Object.values(generalConfigs));
-        this.config.register(this.configEntries.generalConfig);
-
-        const clientConfigs = {
-            messageCacheLifetime: new NumberConfigEntry({
-                description: "How long a message should stay in the cache (in seconds, 0 for forever)",
-                name: "messageCacheLifetime",
-            }, 0),
-            messageCacheMaxSize: new NumberConfigEntry({
-                description: "Maximum number of messages to cache per channel (-1 or Infinity for unlimited)",
-                name: "messageCacheMaxSize",
-            }, 200),
-            messageCacheSweepInterval: new NumberConfigEntry({
-                description: "How frequently to remove messages from the cache (in seconds, 0 for never)",
-                name: "messageCacheSweepInterval",
-            }, 0),
-            token: new StringConfigEntry({
-                description: "Discord login token",
-                name: "token",
-            }, ""),
-        };
-        this.configEntries.clientConfig = new ConfigEntryGroup({
-            description: "Discord client configuration",
             loadStage: 0,
+            name: "general",
+        }, Object.values(this.configEntries.general));
+        this.configEntries.clientGroup = new ConfigEntryGroup({
+            description: "Discord client configuration",
             name: "client",
-        }, Object.values(clientConfigs));
-        this.config.register(this.configEntries.clientConfig);
-
-        this.config.on("loaded", async (stage) => {
-            if (stage !== 0) { return; }
-            this.client = new Discord.Client({
-                messageCacheLifetime: clientConfigs.messageCacheLifetime.get(),
-                messageCacheMaxSize: clientConfigs.messageCacheMaxSize.get(),
-                messageSweepInterval: clientConfigs.messageCacheSweepInterval.get(),
-            });
-            await this.modules.loadAll(generalConfigs.moduleDirectory.get());
-            this.client.login(clientConfigs.token.get());
-        });
+        }, Object.values(this.configEntries.client));
+        this.config.register(this.configEntries.loggerGroup);
+        this.config.register(this.configEntries.generalGroup);
+        this.config.register(this.configEntries.clientGroup);
+        this.config.register(this.configEntries.database);
+        this.configFile = configFile;
+        this.database = new Database(logger);
+        Config.registerDatabase(this.database);
+        Permissions.registerDatabase(this.database);
+        this.permissions = new Permissions(logger, this.database, this.config);
+        this.modules = new Modules(logger, this);
     }
 
+    public async run() {
+        this.logger.info("Loading config");
+        while (this.config.hasNext()) {
+            if ((await this.config.loadNext(this.configFile)) === 0) {
+                this.logger.info("Reconfiguring logger");
+                this.logger.configure({
+                    level: this.configEntries.logger.loglevel.get(),
+                    transports: [
+                        new Winston.transports.Console(),
+                        new Winston.transports.File( { filename: this.configEntries.logger.file.get() } ),
+                    ],
+                });
+                await this.modules.loadAll(this.configEntries.general.moduleDirectory.get());
+            }
+        }
+        await this.database.connect(this.configEntries.database.get() as ConnectionOptions);
+        this.client = new Discord.Client({
+            messageCacheLifetime: this.configEntries.client.messageCacheLifetime.get(),
+            messageCacheMaxSize: this.configEntries.client.messageCacheMaxSize.get(),
+            messageSweepInterval: this.configEntries.client.messageCacheSweepInterval.get(),
+        });
+        this.logger.info("Connecting to Discord");
+        await this.client.login(this.configEntries.client.token.get());
+    }
 }

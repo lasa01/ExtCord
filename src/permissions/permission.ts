@@ -45,7 +45,7 @@ export default class Permission {
 
     private async checkRoles(member: Discord.GuildMember): Promise<boolean|undefined> {
         const memberEntity = await this.permissions.database.repos.member!.getEntity(member);
-        // Roles sorted by position
+        // Roles sorted by position, TODO optimize speed
         for (const role of Array.from(member.roles.values()).sort(Discord.Role.comparePositions)) {
             const roleEntity = await this.roleRepo!.findOne({where: {
                 guildId: role.guild.id,

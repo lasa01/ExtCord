@@ -3,9 +3,16 @@ import Winston from "winston";
 import Config from "../config/config";
 import BooleanConfigEntry from "../config/entry/booleanentry";
 import Database from "../database/database";
+import MemberPermissionEntity from "./database/memberpermissionentity";
+import RolePermissionEntity from "./database/rolepermissionentity";
 import Permission from "./permission";
 
 export default class Permissions {
+    public static registerDatabase(database: Database) {
+        database.registerEntity(MemberPermissionEntity);
+        database.registerEntity(RolePermissionEntity);
+    }
+
     public database: Database;
     private config: Config;
     private logger: Winston.Logger;

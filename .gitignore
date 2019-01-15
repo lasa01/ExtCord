@@ -63,6 +63,10 @@ typings/
 # build output
 dist
 
+# configuration files
+config.hjson
+bot.sqlite
+
 # test files
 bot
 configtest.hjson

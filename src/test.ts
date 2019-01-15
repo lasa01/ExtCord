@@ -9,6 +9,7 @@ import StringConfigEntry from "./config/entry/stringentry";
 
 import Database from "./database/database";
 import MemberPermissionEntity from "./permissions/database/memberpermissionentity";
+import Permissions from "./permissions/permissions";
 
 const log = Winston.createLogger({
     format: Winston.format.cli(),
@@ -57,6 +58,8 @@ async function testConfig() {
 async function testDatabase() {
     // Test database
     const database = new Database(log);
+    Config.registerDatabase(database);
+    Permissions.registerDatabase(database);
 
     await database.connect({
         database: "bot",

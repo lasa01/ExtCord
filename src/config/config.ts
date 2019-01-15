@@ -3,9 +3,19 @@ import FS from "fs";
 import Hjson from "hjson";
 import Winston from "winston";
 
+import Database from "../database/database";
 import ConfigEntry from "./entry/entry";
+import BooleanConfigEntity from "./entry/guild/database/booleanconfigentity";
+import NumberConfigEntity from "./entry/guild/database/numberconfigentity";
+import StringConfigEntity from "./entry/guild/database/stringconfigentity";
 
 export default class Config extends EventEmitter {
+    public static registerDatabase(database: Database) {
+        database.registerEntity(BooleanConfigEntity);
+        database.registerEntity(NumberConfigEntity);
+        database.registerEntity(StringConfigEntity);
+    }
+
     private logger: Winston.Logger;
     private entries: Map<string, ConfigEntry>;
     private stages: Map<number, ConfigEntry[]>;
@@ -48,16 +58,21 @@ export default class Config extends EventEmitter {
     }
 
     public async load(stage: number, fileName: string) {
+        const readFile = (file: string) => new Promise<string>((resolve, reject) =>
+            FS.readFile(file, "utf8", (err, data) => { if (err) { reject(err); } else { resolve(data); } }));
+        const writeFile = (file: string, data: string) => new Promise<void>((resolve, reject) =>
+            FS.writeFile(file, data, (err) => { if (err) { reject(err); } else { resolve(); } }));
+
+        this.logger.info(`Loading config stage ${stage}`);
         const entries = this.stages.get(stage);
         if (!entries) {
             this.logger.warn("Trying to load a config stage that doesn't exist, skipping...");
             return;
         }
+        this.logger.debug(`Stage has ${entries.length} entries`);
         let content: string;
         let parsed: any;
         try {
-            const readFile = (file: string) => new Promise<string>((resolve, reject) =>
-                FS.readFile(file, "utf8", (err, data) => { if (err) { reject(err); } else { resolve(data); } }));
             content = await readFile(fileName);
             parsed = Hjson.parse(content, { keepWsc: true });
         } catch {
@@ -87,8 +102,9 @@ export default class Config extends EventEmitter {
             entry.emit("loaded");
         }
         content = Hjson.stringify(parsed, { keepWsc: true });
-        const writeFile = (file: string, data: string) => new Promise<void>((resolve, reject) =>
-            FS.writeFile(file, data, (err) => { if (err) { reject(err); } else { resolve(); } }));
+        // Some kind of weird bug, this fixes it, TODO figure out something better
+        parsed = Hjson.parse(content, { keepWsc: true });
+        content = Hjson.stringify(parsed, { keepWsc: true });
         await writeFile(fileName, content);
         this.emit("loaded", stage);
     }
