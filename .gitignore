@@ -64,9 +64,7 @@ typings/
 dist
 
 # configuration files
-config.hjson
-bot.sqlite
+*.hjson
 
-# test files
-bot
-configtest.hjson
+# databases
+*.sqlite

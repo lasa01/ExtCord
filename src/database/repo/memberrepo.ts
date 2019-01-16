@@ -14,9 +14,10 @@ export default class MemberRepository extends Repository<MemberEntity> {
             const user = await this.manager.getCustomRepository(UserRepository).getEntity(member.user);
             entity = await this.create({
                 guild,
-                nickname: member.nickname,
+                nickname: member.displayName,
                 user,
             });
+            await this.save(entity);
         }
         return entity;
     }

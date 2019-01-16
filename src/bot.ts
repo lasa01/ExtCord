@@ -63,7 +63,7 @@ export default class Bot {
                 description: "Database configuration for TypeORM",
                 name: "database",
             }, {
-                database: "bot.sql",
+                database: "bot.sqlite",
                 type: "sqlite",
             }),
             general: {
@@ -74,11 +74,11 @@ export default class Bot {
             },
             logger: {
                 file: new StringConfigEntry({
-                    description: "Logfile filename",
+                    description: "Log filename",
                     name: "file",
                 }, "bot.log"),
                 loglevel: new StringConfigEntry({
-                    description: "Logfile loglevel",
+                    description: "Log level",
                     name: "loglevel",
                 }, "info"),
             },
@@ -105,14 +105,15 @@ export default class Bot {
         this.database = new Database(logger);
         Config.registerDatabase(this.database);
         Permissions.registerDatabase(this.database);
-        this.permissions = new Permissions(logger, this.database, this.config);
+        this.permissions = new Permissions(logger, this.database);
         this.modules = new Modules(logger, this);
     }
 
     public async run() {
         this.logger.info("Loading config");
         while (this.config.hasNext()) {
-            if ((await this.config.loadNext(this.configFile)) === 0) {
+            const stage = await this.config.loadNext(this.configFile);
+            if (stage === 0) {
                 this.logger.info("Reconfiguring logger");
                 this.logger.configure({
                     level: this.configEntries.logger.loglevel.get(),
@@ -122,15 +123,20 @@ export default class Bot {
                     ],
                 });
                 await this.modules.loadAll(this.configEntries.general.moduleDirectory.get());
+                this.permissions.registerConfig(this.config);
+            } else if (stage === 1) {
+                await this.database.connect(this.configEntries.database.get() as ConnectionOptions);
+                this.client = new Discord.Client({
+                    messageCacheLifetime: this.configEntries.client.messageCacheLifetime.get(),
+                    messageCacheMaxSize: this.configEntries.client.messageCacheMaxSize.get(),
+                    messageSweepInterval: this.configEntries.client.messageCacheSweepInterval.get(),
+                });
+                this.logger.info("Connecting to Discord");
+                await this.client.login(this.configEntries.client.token.get());
+                this.client.on("message", async (message) => {
+                    if (message.member) { await this.database.repos.member!.getEntity(message.member); }
+                });
             }
         }
-        await this.database.connect(this.configEntries.database.get() as ConnectionOptions);
-        this.client = new Discord.Client({
-            messageCacheLifetime: this.configEntries.client.messageCacheLifetime.get(),
-            messageCacheMaxSize: this.configEntries.client.messageCacheMaxSize.get(),
-            messageSweepInterval: this.configEntries.client.messageCacheSweepInterval.get(),
-        });
-        this.logger.info("Connecting to Discord");
-        await this.client.login(this.configEntries.client.token.get());
     }
 }

@@ -34,7 +34,9 @@ function initLogger(verbose: number): Winston.Logger {
         5: "silly",
     };
     return Winston.createLogger({
-        format: Winston.format.cli(),
+        format: Winston.format.combine(Winston.format.timestamp({
+            format: "YYYY-MM-DD HH:mm:ss",
+        }), Winston.format.printf((info) => `[${info.timestamp}] [${info.level}]: ${info.message}`)),
         level: levels[2 + verbose] || "silly",
         transports: [
             new Winston.transports.Console(),

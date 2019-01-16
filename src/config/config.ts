@@ -29,6 +29,7 @@ export default class Config extends EventEmitter {
     }
 
     public register(entry: ConfigEntry) {
+        this.logger.debug(`Registering config entry ${entry.name}`);
         this.entries.set(entry.name, entry);
         const stage = this.stages.get(entry.loadStage) || [];
         stage.push(entry);

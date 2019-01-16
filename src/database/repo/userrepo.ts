@@ -14,6 +14,7 @@ export default class UserRepository extends Repository<UserEntity> {
         let entity = await this.preload(structure);
         if (!entity) {
             entity = await this.create(structure);
+            await this.save(entity);
         }
         return entity;
     }

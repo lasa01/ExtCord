@@ -54,6 +54,7 @@ export default class Database extends EventEmitter {
     }
 
     public registerEntity(model: new () => any) {
+        this.logger.debug(`Registering database entity ${model.name}`);
         this.entities.push(model);
     }
 

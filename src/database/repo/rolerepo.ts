@@ -15,6 +15,7 @@ export default class RoleRepository extends Repository<RoleEntity> {
                 name: role.name,
                 roleId: role.id,
             });
+            await this.save(entity);
         }
         return entity;
     }

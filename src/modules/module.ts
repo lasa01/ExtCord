@@ -5,9 +5,9 @@ export default abstract class Module {
     public name: string;
     protected bot: Bot;
 
-    public constructor(bot: Bot) {
-        this.author = "";
-        this.name = "";
+    public constructor(bot: Bot, author: string, name: string) {
+        this.author = author;
+        this.name = name;
         this.bot = bot;
     }
 }

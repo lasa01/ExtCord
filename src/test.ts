@@ -62,7 +62,7 @@ async function testDatabase() {
     Permissions.registerDatabase(database);
 
     await database.connect({
-        database: "bot",
+        database: "bottest.sqlite",
         type: "sqlite",
     });
 
