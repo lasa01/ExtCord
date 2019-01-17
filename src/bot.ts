@@ -2,6 +2,7 @@ import Discord from "discord.js";
 import { ConnectionOptions } from "typeorm";
 import Winston from "winston";
 
+import Commands from "./commands/commands";
 import Config from "./config/config";
 import ConfigEntryGroup from "./config/entry/entrygroup";
 import NumberConfigEntry from "./config/entry/numberentry";
@@ -18,6 +19,7 @@ export default class Bot {
     public configFile: string;
     public database: Database;
     public permissions: Permissions;
+    public commands: Commands;
     public modules: Modules;
     private configEntries: {
         loggerGroup?: ConfigEntryGroup, clientGroup?: ConfigEntryGroup, generalGroup?: ConfigEntryGroup,
@@ -106,6 +108,7 @@ export default class Bot {
         Config.registerDatabase(this.database);
         Permissions.registerDatabase(this.database);
         this.permissions = new Permissions(logger, this.database);
+        this.commands = new Commands(logger);
         this.modules = new Modules(logger, this);
     }
 

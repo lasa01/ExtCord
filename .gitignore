@@ -62,6 +62,7 @@ typings/
 
 # build output
 dist
+modules
 
 # configuration files
 *.hjson

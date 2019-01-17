@@ -1,6 +1,6 @@
-import Bot from "../../bot";
-import Permission from "../../permissions/permission";
-import Module from "../module";
+import Bot from "../dist/bot";
+import Module from "../dist/modules/module";
+import Permission from "../dist/permissions/permission";
 
 export default class Test extends Module {
     private testPermission: Permission;
