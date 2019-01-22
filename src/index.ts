@@ -15,6 +15,9 @@ const args = Yargs.usage("Usage: $0 <command> [options]")
             }).catch((err) => {
                 logger.error(err);
             });
+            if (argv.interactive) {
+                bot.setInteractive(process.stdin);
+            }
         })
     .command(["configure [configFile]", "config"], "configure the bot",
         (yargs) => yargs.positional("configFile", { describe: "config file to use", default: "config.hjson" }),
@@ -22,6 +25,10 @@ const args = Yargs.usage("Usage: $0 <command> [options]")
     .demandCommand()
     .count("verbose")
     .alias("v", "verbose")
+    .option("interactive", {
+        alias: "i",
+        default: false,
+    })
     .argv;
 
 function initLogger(verbose: number): Winston.Logger {

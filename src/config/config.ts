@@ -1,4 +1,4 @@
-import { EventEmitter } from "events";
+import EventEmitter from "events";
 import FS from "fs";
 import Hjson from "hjson";
 import Winston from "winston";
