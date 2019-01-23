@@ -37,12 +37,16 @@ export default class Modules {
         for (const fileName of modules) {
             // Skip non-module files
             if (!fileName.endsWith(".js")) { continue; }
-            const loaded = require(Path.join(process.cwd(), moduleDir, fileName)).default;
-            if (!Module.isPrototypeOf(loaded)) {
-                this.logger.warn(`Skipping a non-module file "${fileName}"`);
-                continue;
+            try {
+                const loaded = require(Path.resolve(process.cwd(), moduleDir, fileName)).default;
+                if (!Module.isPrototypeOf(loaded)) {
+                    this.logger.warn(`Skipping a non-module file "${fileName}"`);
+                    continue;
+                }
+                this.loadModule(loaded);
+            } catch (error) {
+                this.logger.error(`Error while loading module ${fileName}: ${error}`);
             }
-            this.loadModule(loaded);
         }
     }
 }

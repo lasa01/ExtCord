@@ -1,3 +1,6 @@
+import EventEmitter from "events";
+import Readline from "readline";
+
 import Discord from "discord.js";
 import { ConnectionOptions } from "typeorm";
 import Winston from "winston";
@@ -12,8 +15,9 @@ import Database from "./database/database";
 import Modules from "./modules/modules";
 import Permissions from "./permissions/permissions";
 
-export default class Bot {
+export default class Bot extends EventEmitter {
     public logger: Winston.Logger;
+    public readline?: Readline.ReadLine;
     public client?: Discord.Client;
     public config: Config;
     public configFile: string;
@@ -40,6 +44,7 @@ export default class Bot {
     };
 
     constructor(configFile: string, logger: Winston.Logger) {
+        super();
         this.logger = logger;
         this.config = new Config(logger);
         this.configEntries = {
@@ -140,6 +145,37 @@ export default class Bot {
                     if (message.member) { await this.database.repos.member!.getEntity(message.member); }
                 });
             }
+        }
+    }
+
+    public setInteractive(input: NodeJS.ReadableStream) {
+        this.readline = Readline.createInterface({
+            input,
+        });
+        this.readline.on("line", (line: string) => {
+            this.input(line.trim());
+        });
+        this.readline.on("SIGINT", () => {
+            this.stop();
+        });
+    }
+
+    public input(input: string) {
+        if (input === "stop") {
+            this.stop();
+        }
+    }
+
+    public async stop() {
+        this.logger.info("Bot stopping");
+        this.emit("stop");
+        await this.database.stop();
+        if (this.client) {
+            await this.client.destroy();
+            this.logger.info("Client disconnected");
+        }
+        if (this.readline) {
+            this.readline.close();
         }
     }
 }

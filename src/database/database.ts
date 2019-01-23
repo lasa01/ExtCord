@@ -48,6 +48,13 @@ export default class Database extends EventEmitter {
         this.emit("connected");
     }
 
+    public async stop() {
+        if (this.connection) {
+            await this.connection.close();
+            this.logger.info("Database disconnected");
+        }
+    }
+
     public registerEntity(model: new () => any) {
         this.logger.debug(`Registering database entity ${model.name}`);
         this.entities.push(model);
