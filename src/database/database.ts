@@ -5,11 +5,6 @@ import { EventEmitter } from "events";
 import { Connection, ConnectionOptions, createConnection } from "typeorm";
 import Winston from "winston";
 
-import BooleanConfigEntity from "../config/entry/guild/database/booleanconfigentity";
-import NumberConfigEntity from "../config/entry/guild/database/numberconfigentity";
-import StringConfigEntity from "../config/entry/guild/database/stringconfigentity";
-import MemberPermissionEntity from "../permissions/database/memberpermissionentity";
-import RolePermissionEntity from "../permissions/database/rolepermissionentity";
 import GuildEntity from "./entity/guildentity";
 import MemberEntity from "./entity/memberentity";
 import RoleEntity from "./entity/roleentity";
