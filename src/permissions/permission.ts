@@ -3,59 +3,83 @@ import { Repository } from "typeorm";
 import Winston from "winston";
 
 import BooleanConfigEntry from "../config/entry/booleanentry";
+import ConfigEntry from "../config/entry/entry";
 import MemberPermissionEntity from "./database/memberpermissionentity";
 import RolePermissionEntity from "./database/rolepermissionentity";
 import Permissions from "./permissions";
 
 export default class Permission {
     public name: string;
-    private logger: Winston.Logger;
-    private permissions: Permissions;
+    public fullName: string;
+    public description: string;
+    private logger?: Winston.Logger;
+    private permissions?: Permissions;
     private memberRepo?: Repository<MemberPermissionEntity>;
     private roleRepo?: Repository<RolePermissionEntity>;
-    private defaultEntry: BooleanConfigEntry;
+    private defaultEntry: ConfigEntry;
+    private parent?: Permission;
 
-    constructor(info: IPermissionInfo, permissions: Permissions) {
-        this.permissions = permissions;
+    constructor(info: IPermissionInfo, defaultPermission: boolean, defaultEntry?: ConfigEntry) {
         this.name = info.name;
-        this.defaultEntry = permissions.registerDefaultEntry(this.name, info.defaultPermission);
+        this.description = info.description;
+        this.fullName = info.name;
+        this.defaultEntry = defaultEntry || new BooleanConfigEntry({
+            description: `Determines if everyone is allowed permission ${name} by default`,
+            name,
+        }, defaultPermission);
+    }
+
+    public setPermissions(permissions: Permissions) {
+        this.permissions = permissions;
         this.logger = permissions.logger;
     }
 
+    public setParent(parent: Permission) {
+        this.parent = parent;
+    }
+
+    public updateFullName() {
+        if (this.parent) { this.fullName = this.parent.fullName + "." + this.name; }
+    }
+
+    public getConfigEntry(): ConfigEntry {
+        return this.defaultEntry;
+    }
+
     public async check(member: Discord.GuildMember) {
-        this.logger.debug(`Checking for permission ${this.name} for member ${member.id}`);
+        this.logger!.debug(`Checking for permission ${this.fullName} for member ${member.id}`);
         this.ensureRepo();
         let result = await this.checkMember(member);
         if (result !== undefined) {
-            this.logger.debug(`Found member-specific entry for permission ${this.name} for member ${member.id}`);
+            this.logger!.debug(`Found member-specific entry for permission ${this.fullName} for member ${member.id}`);
             return result;
         }
         result = await this.checkRoles(member);
         if (result !== undefined) {
-            this.logger.debug(`Found role-specific entry for permission ${this.name} for member ${member.id}`);
+            this.logger!.debug(`Found role-specific entry for permission ${this.fullName} for member ${member.id}`);
             return result;
         }
-        this.logger.debug(`Returning default for permission ${this.name} for role ${member.id}`);
+        this.logger!.debug(`Returning default for permission ${this.fullName} for role ${member.id}`);
         return this.getDefault();
     }
 
     public async checkRole(role: Discord.Role) {
-        this.logger.debug(`Checking for permission ${this.name} for role ${role.id}`);
+        this.logger!.debug(`Checking for permission ${this.fullName} for role ${role.id}`);
         this.ensureRepo();
         const result = await this.checkRolePart(role);
         if (result !== undefined) {
-            this.logger.debug(`Found role-specific entry for permission ${this.name} for role ${role.id}`);
+            this.logger!.debug(`Found role-specific entry for permission ${this.fullName} for role ${role.id}`);
             return result;
         }
-        this.logger.debug(`Returning default for permission ${this.name} for role ${role.id}`);
+        this.logger!.debug(`Returning default for permission ${this.fullName} for role ${role.id}`);
         return this.getDefault();
     }
 
     private async checkMember(member: Discord.GuildMember): Promise<boolean|undefined> {
-        const memberEntity = await this.permissions.database.repos.member!.getEntity(member);
+        const memberEntity = await this.permissions!.database.repos.member!.getEntity(member);
         const permission = await this.memberRepo!.findOne({
             member: memberEntity,
-            name: this.name,
+            name: this.fullName,
         });
         if (permission) {
             return permission.permission;
@@ -63,10 +87,10 @@ export default class Permission {
     }
 
     private async checkRoles(member: Discord.GuildMember): Promise<boolean|undefined> {
-        // Roles sorted by position, TODO optimize speed
+        // Roles sorted by position, TODO optimize speed (get all from database and check positions after?)
         for (const role of Array.from(member.roles.values()).sort(Discord.Role.comparePositions)) {
             const permission = await this.checkRolePart(role);
-            if (permission !== null) { return permission; }
+            if (permission !== undefined) { return permission; }
         }
     }
 
@@ -86,12 +110,12 @@ export default class Permission {
 
     private ensureRepo() {
         if (this.memberRepo && this.roleRepo) { return; }
-        this.memberRepo = this.permissions.database.connection!.getRepository(MemberPermissionEntity);
-        this.roleRepo = this.permissions.database.connection!.getRepository(RolePermissionEntity);
+        this.memberRepo = this.permissions!.database.connection!.getRepository(MemberPermissionEntity);
+        this.roleRepo = this.permissions!.database.connection!.getRepository(RolePermissionEntity);
     }
 }
 
 export interface IPermissionInfo {
     name: string;
-    defaultPermission: boolean;
+    description: string;
 }

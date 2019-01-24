@@ -12,7 +12,7 @@ export default abstract class ConfigEntry extends EventEmitter implements IEntry
         this.name = info.name;
         this.fullName = info.name;
         this.description = info.description;
-        this.loadStage = info.loadStage == null ? 1 : info.loadStage;
+        this.loadStage = info.loadStage === undefined ? 1 : info.loadStage;
     }
 
     public setParent(parent: ConfigEntry) {
@@ -43,6 +43,7 @@ export default abstract class ConfigEntry extends EventEmitter implements IEntry
 export interface IEntryInfo {
     name: string;
     description: string;
+    // TODO Implement
     optional?: boolean;
     loadStage?: number;
 }

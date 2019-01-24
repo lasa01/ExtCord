@@ -1,7 +1,7 @@
 import Winston from "winston";
 
 import Config from "../config/config";
-import BooleanConfigEntry from "../config/entry/booleanentry";
+import ConfigEntry from "../config/entry/entry";
 import ConfigEntryGroup from "../config/entry/entrygroup";
 import Database from "../database/database";
 import MemberPermissionEntity from "./database/memberpermissionentity";
@@ -17,7 +17,7 @@ export default class Permissions {
     public database: Database;
     public logger: Winston.Logger;
     private permissions: Map<string, Permission>;
-    private configTemplate: Map<string, BooleanConfigEntry>;
+    private configTemplate: Map<string, ConfigEntry>;
     private configEntry?: ConfigEntryGroup;
 
     constructor(logger: Winston.Logger, database: Database) {
@@ -27,21 +27,17 @@ export default class Permissions {
         this.configTemplate = new Map();
     }
 
+    public register(permission: Permission) {
+        this.permissions.set(permission.name, permission);
+        this.configTemplate.set(permission.name, permission.getConfigEntry());
+    }
+
     public registerConfig(config: Config) {
         this.configEntry = new ConfigEntryGroup({
             description: "Default permissions for everyone",
             name: "permissions",
         }, Array.from(this.configTemplate.values()));
         config.register(this.configEntry);
-    }
-
-    public registerDefaultEntry(name: string, value: boolean) {
-        const entry = new BooleanConfigEntry({
-            description: `Determines if everyone is allowed permission ${name} by default`,
-            name,
-        }, value);
-        this.configTemplate.set(name, entry);
-        return entry;
     }
 
     public getDefaultEntry(name: string) {

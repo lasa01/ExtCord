@@ -51,7 +51,7 @@ export default class Config extends EventEmitter {
             this.orderedStages.sort((a, b) => a - b);
         }
         const stage = this.orderedStages.shift();
-        if (stage == null) {
+        if (stage === undefined) {
             throw new Error("No config stages to load");
         }
         await this.load(stage, fileName);
