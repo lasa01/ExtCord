@@ -124,14 +124,17 @@ export default class Bot extends EventEmitter {
             if (stage === 0) {
                 this.logger.info("Reconfiguring logger");
                 this.logger.configure({
-                    level: this.configEntries.logger.loglevel.get(),
+                    level: this.logger.level === "info" ? this.configEntries.logger.loglevel.get() : this.logger.level,
                     transports: [
                         new Winston.transports.Console(),
                         new Winston.transports.File( { filename: this.configEntries.logger.file.get() } ),
                     ],
                 });
                 await this.modules.loadAll(this.configEntries.general.moduleDirectory.get());
+                this.commands.registerPermissions(this.permissions);
                 this.permissions.registerConfig(this.config);
+                this.logger.debug(this.permissions.getStatus());
+                this.logger.debug(this.commands.getStatus());
             } else if (stage === 1) {
                 await this.database.connect(this.configEntries.database.get() as ConnectionOptions);
                 this.client = new Discord.Client({
@@ -141,6 +144,7 @@ export default class Bot extends EventEmitter {
                 });
                 this.logger.info("Connecting to Discord");
                 await this.client.login(this.configEntries.client.token.get());
+                this.emit("ready");
                 this.client.on("message", async (message) => {
                     if (message.member) { await this.database.repos.member!.getEntity(message.member); }
                 });

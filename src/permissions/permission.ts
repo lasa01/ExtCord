@@ -24,8 +24,8 @@ export default class Permission {
         this.description = info.description;
         this.fullName = info.name;
         this.defaultEntry = defaultEntry || new BooleanConfigEntry({
-            description: `Determines if everyone is allowed permission ${name} by default`,
-            name,
+            description: info.description,
+            name: info.name,
         }, defaultPermission);
     }
 
@@ -42,11 +42,11 @@ export default class Permission {
         if (this.parent) { this.fullName = this.parent.fullName + "." + this.name; }
     }
 
-    public getConfigEntry(): ConfigEntry {
+    public getConfigEntry() {
         return this.defaultEntry;
     }
 
-    public async check(member: Discord.GuildMember) {
+    public async checkFull(member: Discord.GuildMember): Promise<boolean> {
         this.logger!.debug(`Checking for permission ${this.fullName} for member ${member.id}`);
         this.ensureRepo();
         let result = await this.checkMember(member);
@@ -59,17 +59,31 @@ export default class Permission {
             this.logger!.debug(`Found role-specific entry for permission ${this.fullName} for member ${member.id}`);
             return result;
         }
-        this.logger!.debug(`Returning default for permission ${this.fullName} for role ${member.id}`);
+        if (this.parent) {
+            this.logger!.debug(`Checking parent permission for permission ${this.fullName} for member ${member.id}`);
+            result = await this.parent.checkFull(member);
+            if (result !== undefined) {
+                return result;
+            }
+        }
+        this.logger!.debug(`Returning default for permission ${this.fullName} for member ${member.id}`);
         return this.getDefault();
     }
 
-    public async checkRole(role: Discord.Role) {
+    public async checkRole(role: Discord.Role): Promise<boolean> {
         this.logger!.debug(`Checking for permission ${this.fullName} for role ${role.id}`);
         this.ensureRepo();
-        const result = await this.checkRolePart(role);
+        let result = await this.checkRolePart(role);
         if (result !== undefined) {
             this.logger!.debug(`Found role-specific entry for permission ${this.fullName} for role ${role.id}`);
             return result;
+        }
+        if (this.parent) {
+            this.logger!.debug(`Checking parent permission for permission ${this.fullName} for role ${role.id}`);
+            result = await this.parent.checkRole(role);
+            if (result !== undefined) {
+                return result;
+            }
         }
         this.logger!.debug(`Returning default for permission ${this.fullName} for role ${role.id}`);
         return this.getDefault();

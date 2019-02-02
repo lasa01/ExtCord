@@ -3,35 +3,35 @@ import Permission, { IPermissionInfo } from "./permission";
 import Permissions from "./permissions";
 
 export default class PermissionGroup extends Permission {
-    public entries: Map<string, Permission>;
+    public children: Map<string, Permission>;
 
-    constructor(info: IPermissionInfo, entries: Permission[]) {
+    constructor(info: IPermissionInfo, children: Permission[]) {
         const configs = [];
-        for (const entry of entries) {
-            configs.push(entry.getConfigEntry());
+        for (const child of children) {
+            configs.push(child.getConfigEntry());
         }
         super(info, false, new ConfigEntryGroup({
-            description: `Determines if everyone is allowed permission ${name} by default`,
-            name,
+            description: info.description,
+            name: info.name,
         }, configs));
-        this.entries = new Map();
-        for (const entry of entries) {
-            entry.setParent(this);
-            this.entries.set(entry.name, entry);
+        this.children = new Map();
+        for (const child of children) {
+            child.setParent(this);
+            this.children.set(child.name, child);
         }
     }
 
     public updateFullName() {
         super.updateFullName();
-        for (const [, entry] of this.entries) {
-            entry.updateFullName();
+        for (const [, child] of this.children) {
+            child.updateFullName();
         }
     }
 
     public setPermissions(permissions: Permissions) {
         super.setPermissions(permissions);
-        for (const [, entry] of this.entries) {
-            entry.setPermissions(permissions);
+        for (const [, child] of this.children) {
+            child.setPermissions(permissions);
         }
     }
 }

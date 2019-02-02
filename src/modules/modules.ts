@@ -33,12 +33,20 @@ export default class Modules {
         this.logger.info("Loading all modules");
         const readdir = (path: string) => new Promise<string[]>((resolve, reject) =>
             FS.readdir(path, (err, files) => { if (err) { reject(err); } else { resolve(files); } }));
+        const stat = (path: string) => new Promise<FS.Stats>((resolve, reject) =>
+            FS.stat(path, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }));
         const modules = await readdir(moduleDir);
         for (const fileName of modules) {
-            // Skip non-module files
-            if (!fileName.endsWith(".js")) { continue; }
+            let path = Path.resolve(process.cwd(), moduleDir, fileName);
+            const stats = await stat(path);
+            if (stats.isDirectory()) {
+                // Module is a directory, use index.js, TODO check if doesn't exist
+                path = Path.join(path, "index.js");
+            }
+            // Skip files that aren't javascript
+            if (!path.endsWith(".js")) { return; }
             try {
-                const loaded = require(Path.resolve(process.cwd(), moduleDir, fileName)).default;
+                const loaded = require(path).default;
                 if (!Module.isPrototypeOf(loaded)) {
                     this.logger.warn(`Skipping a non-module file "${fileName}"`);
                     continue;

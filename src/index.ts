@@ -14,6 +14,7 @@ const args = Yargs.usage("Usage: $0 <command> [options]")
                 logger.info("Bot running");
             }).catch((err) => {
                 logger.error(err);
+                bot.stop();
             });
             if (argv.interactive) {
                 bot.setInteractive(process.stdin);

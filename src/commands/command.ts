@@ -1,14 +1,15 @@
 import Discord from "discord.js";
 
 import Module from "../modules/module";
+import Permission from "../permissions/permission";
 
 export default class Command {
     public name: string;
     public from?: Module;
     public author: string;
-    private onExecute: (arg0: IExecutionContext) => void;
+    private defaultPermission: Permission;
 
-    constructor(name: string, author: Module | string, onExecute: (arg0: IExecutionContext) => void) {
+    constructor(name: string, author: Module | string, defaultPermission?: Permission) {
         this.name = name;
         if (Module.isPrototypeOf(author)) {
             this.from = author as Module;
@@ -16,7 +17,10 @@ export default class Command {
         } else {
             this.author = author as string;
         }
-        this.onExecute = onExecute;
+        this.defaultPermission = defaultPermission || new Permission({
+            description: `Gives the permission for the command ${name}`,
+            name,
+        }, false);
     }
 
     public rename() {
@@ -24,9 +28,17 @@ export default class Command {
         return this.name;
     }
 
-    public execute(message: Discord.Message) {
-        this.onExecute({ message });
+    public getPermission() {
+        return this.defaultPermission;
     }
+
+    public async execute(message: Discord.Message) {
+        await this.onExecute({
+            message,
+        });
+    }
+
+    protected async onExecute(context: IExecutionContext) { return; }
 }
 
 export interface IExecutionContext {

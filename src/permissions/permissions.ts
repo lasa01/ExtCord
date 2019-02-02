@@ -43,4 +43,8 @@ export default class Permissions {
     public getDefaultEntry(name: string) {
         return this.configTemplate.get(name);
     }
+
+    public getStatus() {
+        return `${this.permissions.size} permissions loaded: ${Array.from(this.permissions.keys()).join(", ")}`;
+    }
 }
