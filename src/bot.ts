@@ -114,6 +114,7 @@ export default class Bot extends EventEmitter {
         Permissions.registerDatabase(this.database);
         this.permissions = new Permissions(logger, this.database);
         this.commands = new Commands(logger);
+        this.commands.registerConfig(this.config, this.database);
         this.modules = new Modules(logger, this);
     }
 
@@ -146,7 +147,7 @@ export default class Bot extends EventEmitter {
                 await this.client.login(this.configEntries.client.token.get());
                 this.emit("ready");
                 this.client.on("message", async (message) => {
-                    if (message.member) { await this.database.repos.member!.getEntity(message.member); }
+                    await this.commands.message(message);
                 });
             }
         }

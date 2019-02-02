@@ -10,9 +10,9 @@ export default class BooleanGuildConfigEntry extends BooleanConfigEntry {
     private database: Database;
     private repo?: Repository<BooleanConfigEntity>;
 
-    constructor(info: IEntryInfo, database: Database) {
+    constructor(info: IEntryInfo, database: Database, defaultValue?: boolean) {
         info.loadStage = 1;
-        super(info);
+        super(info, defaultValue);
         this.database = database;
     }
 

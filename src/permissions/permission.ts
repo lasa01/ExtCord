@@ -47,6 +47,15 @@ export default class Permission {
     }
 
     public async checkFull(member: Discord.GuildMember): Promise<boolean> {
+        const result = await this.checkFullNoDefault(member);
+        if (result !== undefined) {
+            return result;
+        }
+        this.logger!.debug(`Returning default for permission ${this.fullName} for member ${member.id}`);
+        return this.getDefault();
+    }
+
+    public async checkFullNoDefault(member: Discord.GuildMember): Promise<boolean|undefined> {
         this.logger!.debug(`Checking for permission ${this.fullName} for member ${member.id}`);
         this.ensureRepo();
         let result = await this.checkMember(member);
@@ -61,16 +70,23 @@ export default class Permission {
         }
         if (this.parent) {
             this.logger!.debug(`Checking parent permission for permission ${this.fullName} for member ${member.id}`);
-            result = await this.parent.checkFull(member);
+            result = await this.parent.checkFullNoDefault(member);
             if (result !== undefined) {
                 return result;
             }
         }
-        this.logger!.debug(`Returning default for permission ${this.fullName} for member ${member.id}`);
-        return this.getDefault();
     }
 
     public async checkRole(role: Discord.Role): Promise<boolean> {
+        const result = await this.checkRoleNoDefault(role);
+        if (result !== undefined) {
+            return result;
+        }
+        this.logger!.debug(`Returning default for permission ${this.fullName} for role ${role.id}`);
+        return this.getDefault();
+    }
+
+    public async checkRoleNoDefault(role: Discord.Role): Promise<boolean|undefined> {
         this.logger!.debug(`Checking for permission ${this.fullName} for role ${role.id}`);
         this.ensureRepo();
         let result = await this.checkRolePart(role);
@@ -80,13 +96,11 @@ export default class Permission {
         }
         if (this.parent) {
             this.logger!.debug(`Checking parent permission for permission ${this.fullName} for role ${role.id}`);
-            result = await this.parent.checkRole(role);
+            result = await this.parent.checkRoleNoDefault(role);
             if (result !== undefined) {
                 return result;
             }
         }
-        this.logger!.debug(`Returning default for permission ${this.fullName} for role ${role.id}`);
-        return this.getDefault();
     }
 
     private async checkMember(member: Discord.GuildMember): Promise<boolean|undefined> {
@@ -119,7 +133,11 @@ export default class Permission {
     }
 
     private getDefault() {
-        return this.defaultEntry.get();
+        if (this.defaultEntry instanceof BooleanConfigEntry) {
+            return this.defaultEntry.get();
+        } else {
+            return false;
+        }
     }
 
     private ensureRepo() {

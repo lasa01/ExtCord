@@ -9,7 +9,7 @@ export default class Command {
     public author: string;
     private defaultPermission: Permission;
 
-    constructor(name: string, author: Module | string, defaultPermission?: Permission) {
+    constructor(name: string, author: Module | string, allowEveryone = false, defaultPermission?: Permission) {
         this.name = name;
         if (Module.isPrototypeOf(author)) {
             this.from = author as Module;
@@ -20,7 +20,7 @@ export default class Command {
         this.defaultPermission = defaultPermission || new Permission({
             description: `Gives the permission for the command ${name}`,
             name,
-        }, false);
+        }, allowEveryone);
     }
 
     public rename() {
@@ -32,15 +32,18 @@ export default class Command {
         return this.defaultPermission;
     }
 
-    public async execute(message: Discord.Message) {
-        await this.onExecute({
-            message,
-        });
+    public async command(context: IExecutionContext) {
+        if (await this.defaultPermission.checkFull(context.message.member)) {
+            await this.execute(context);
+        }
     }
 
-    protected async onExecute(context: IExecutionContext) { return; }
+    protected async execute(context: IExecutionContext) { return; }
 }
 
 export interface IExecutionContext {
     message: Discord.Message;
+    prefix: string;
+    command: string;
+    arguments: string;
 }

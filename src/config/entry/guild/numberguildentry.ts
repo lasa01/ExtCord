@@ -10,9 +10,9 @@ export default class NumberGuildConfigEntry extends NumberConfigEntry {
     private database: Database;
     private repo?: Repository<NumberConfigEntity>;
 
-    constructor(info: IEntryInfo, database: Database) {
+    constructor(info: IEntryInfo, database: Database, defaultValue?: number) {
         info.loadStage = 1;
-        super(info);
+        super(info, defaultValue);
         this.database = database;
     }
 

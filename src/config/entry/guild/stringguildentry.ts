@@ -10,9 +10,9 @@ export default class StringGuildConfigEntry extends StringConfigEntry {
     private database: Database;
     private repo?: Repository<StringConfigEntity>;
 
-    constructor(info: IEntryInfo, database: Database) {
+    constructor(info: IEntryInfo, database: Database, defaultValue?: string) {
         info.loadStage = 1;
-        super(info);
+        super(info, defaultValue);
         this.database = database;
     }
 

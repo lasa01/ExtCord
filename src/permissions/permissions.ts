@@ -7,6 +7,7 @@ import Database from "../database/database";
 import MemberPermissionEntity from "./database/memberpermissionentity";
 import RolePermissionEntity from "./database/rolepermissionentity";
 import Permission from "./permission";
+import PermissionGroup from "./permissiongroup";
 
 export default class Permissions {
     public static registerDatabase(database: Database) {
@@ -28,6 +29,7 @@ export default class Permissions {
     }
 
     public register(permission: Permission) {
+        permission.setPermissions(this);
         this.permissions.set(permission.name, permission);
         this.configTemplate.set(permission.name, permission.getConfigEntry());
     }
@@ -38,6 +40,16 @@ export default class Permissions {
             name: "permissions",
         }, Array.from(this.configTemplate.values()));
         config.register(this.configEntry);
+    }
+
+    public get(name: string) {
+        const array = name.split(".");
+        let permission = this.permissions.get(array.shift()!);
+        for (const sub of array) {
+            if (!(permission instanceof PermissionGroup)) { return; }
+            permission = permission.children.get(sub);
+        }
+        return permission;
     }
 
     public getDefaultEntry(name: string) {
