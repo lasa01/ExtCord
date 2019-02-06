@@ -1,10 +1,10 @@
-import Module from "../modules/module";
-import Command, { IExecutionContext } from "./command";
+import Argument from "./arguments/argument";
+import Command, { ICommandInfo, IExecutionContext } from "./command";
 
 export default class SimpleCommand extends Command {
-    constructor(name: string, author: Module | string, execute: (context: IExecutionContext) => Promise<void>,
+    constructor(info: ICommandInfo, args: Argument[], execute: (context: IExecutionContext) => Promise<void>,
                 allowEveryone = false) {
-        super(name, author, allowEveryone);
+        super(info, args, allowEveryone);
         this.execute = execute;
     }
 }

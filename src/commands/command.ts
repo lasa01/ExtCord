@@ -2,24 +2,27 @@ import Discord from "discord.js";
 
 import Module from "../modules/module";
 import Permission from "../permissions/permission";
+import Argument from "./arguments/argument";
 
 export default class Command {
     public name: string;
     public from?: Module;
     public author: string;
+    public arguments: Argument[];
     private defaultPermission: Permission;
 
-    constructor(name: string, author: Module | string, allowEveryone = false, defaultPermission?: Permission) {
+    constructor(info: ICommandInfo, args: Argument[], allowEveryone = false, defaultPermission?: Permission) {
         this.name = name;
-        if (Module.isPrototypeOf(author)) {
-            this.from = author as Module;
+        if (Module.isPrototypeOf(info.author)) {
+            this.from = info.author as Module;
             this.author = this.from.author;
         } else {
-            this.author = author as string;
+            this.author = info.author as string;
         }
+        this.arguments = args;
         this.defaultPermission = defaultPermission || new Permission({
             description: `Gives the permission for the command ${name}`,
-            name,
+            name: info.name,
         }, allowEveryone);
     }
 
@@ -45,5 +48,11 @@ export interface IExecutionContext {
     message: Discord.Message;
     prefix: string;
     command: string;
-    arguments: string;
+    rawArguments: string[];
+    arguments: any[];
+}
+
+export interface ICommandInfo {
+    name: string;
+    author: string | Module;
 }

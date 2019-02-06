@@ -8,6 +8,7 @@ import Database from "../database/database";
 import Permission from "../permissions/permission";
 import PermissionGroup from "../permissions/permissiongroup";
 import Permissions from "../permissions/permissions";
+import Argument from "./arguments/argument";
 import Command from "./command";
 
 export default class Commands {
@@ -31,12 +32,24 @@ export default class Commands {
         const text = message.content.replace(prefix, "").trim();
         const command = text.split(" ", 1)[0];
         if (!command || !this.commands.has(command)) { return; } // For now
+        const commandInstance = this.commands.get(command)!;
         const passed = text.replace(command, "").trim();
+        const rawArguments = passed.split(" ");
+        const parsed: any[] = [];
+        if (rawArguments.length < commandInstance.arguments.length) { return; } // For now
+        for (const argument of commandInstance.arguments) {
+            const rawArgument = rawArguments.shift()!;
+            if (!argument.check(rawArgument)) {
+                continue; // For now
+            }
+            parsed.push(argument.parse(rawArgument));
+        }
         const context = {
-            arguments: passed,
+            arguments: parsed,
             command,
             message,
             prefix,
+            rawArguments,
         };
         this.logger.debug(`Executing command ${command}`);
         try {

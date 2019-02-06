@@ -1,4 +1,5 @@
 import Bot from "../../dist/bot";
+import StringArgument from "../../dist/commands/arguments/stringargument";
 import Command from "../../dist/commands/command";
 import SimpleCommand from "../../dist/commands/simplecommand";
 import Module from "../../dist/modules/module";
@@ -17,12 +18,13 @@ export default class TestModule extends Module {
             name: "test",
         }, true);
         bot.permissions.register(this.testPermission);
-        this.testCommand = new SimpleCommand("test", this, async (context) => {
+        this.testCommand = new SimpleCommand({name: "test", author: this}, [], async (context) => {
             await context.message.reply("test test");
         }, true);
         bot.commands.register(this.testCommand);
-        this.permCommand = new SimpleCommand("permission", this, async (context) => {
-            const perm = await this.bot.permissions.get(context.arguments);
+        this.permCommand = new SimpleCommand({name: "permission", author: this},
+            [new StringArgument({ description: "permission to look up", name: "permission" })], async (context) => {
+            const perm = await this.bot.permissions.get(context.arguments[0]);
             if (!perm) {
                 await context.message.reply("Permission not found");
             } else {
@@ -31,8 +33,9 @@ export default class TestModule extends Module {
             }
         }, true);
         bot.commands.register(this.permCommand);
-        this.prefixCommand = new SimpleCommand("prefix", this, async (context) => {
-            await this.bot.commands.prefixConfigEntry!.guildSet(context.message.guild, context.arguments);
+        this.prefixCommand = new SimpleCommand({name: "prefix", author: this},
+        [new StringArgument({ description: "new prefix", name: "prefix" })], async (context) => {
+            await this.bot.commands.prefixConfigEntry!.guildSet(context.message.guild, context.arguments[0]);
             await context.message.reply("Prefix updated");
         });
         bot.commands.register(this.prefixCommand);
