@@ -12,7 +12,7 @@ export default class Command {
     private defaultPermission: Permission;
 
     constructor(info: ICommandInfo, args: Argument[], allowEveryone = false, defaultPermission?: Permission) {
-        this.name = name;
+        this.name = info.name;
         if (Module.isPrototypeOf(info.author)) {
             this.from = info.author as Module;
             this.author = this.from.author;
@@ -21,7 +21,7 @@ export default class Command {
         }
         this.arguments = args;
         this.defaultPermission = defaultPermission || new Permission({
-            description: `Gives the permission for the command ${name}`,
+            description: `Gives the permission for the command ${info.name}`,
             name: info.name,
         }, allowEveryone);
     }

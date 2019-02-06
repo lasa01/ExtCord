@@ -43,9 +43,9 @@ export default class Permissions {
     }
 
     public get(name: string) {
-        const array = name.split(".");
-        let permission = this.permissions.get(array.shift()!);
-        for (const sub of array) {
+        const tree = name.split(".");
+        let permission = this.permissions.get(tree.shift()!);
+        for (const sub of tree) {
             if (!(permission instanceof PermissionGroup)) { return; }
             permission = permission.children.get(sub);
         }
