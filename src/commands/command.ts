@@ -3,6 +3,7 @@ import Discord from "discord.js";
 import Module from "../modules/module";
 import Permission from "../permissions/permission";
 import Argument from "./arguments/argument";
+import { ICommandContext } from "./commands";
 
 export default class Command {
     public name: string;
@@ -35,9 +36,27 @@ export default class Command {
         return this.defaultPermission;
     }
 
-    public async command(context: IExecutionContext) {
+    public async command(context: ICommandContext) {
+        const rawArguments = context.passed.split(" ");
+        // Negative if not enough arguments, 0 if correct amount, positive if too many
+        const deltaArgs = rawArguments.length - this.arguments.length;
+        if (deltaArgs < 0) { return; } // For now
+        // Combine extra arguments if the last argument allows it
+        if (deltaArgs > 0 && this.arguments[this.arguments.length - 1].allowCombining) {
+            for (let i = deltaArgs; i > 0; i--) {
+                rawArguments.push(rawArguments.pop() + " " + rawArguments.pop());
+            }
+        }
+        const parsed: any[] = [];
+        for (const argument of this.arguments) {
+            const rawArgument = rawArguments.shift()!;
+            if (!argument.check(rawArgument)) {
+                continue; // For now
+            }
+            parsed.push(argument.parse(rawArgument));
+        }
         if (await this.defaultPermission.checkFull(context.message.member)) {
-            await this.execute(context);
+            await this.execute({...context, arguments: parsed, rawArguments});
         }
     }
 

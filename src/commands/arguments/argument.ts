@@ -2,10 +2,12 @@ export default class Argument {
     public name: string;
     public description: string;
     public optional: boolean;
+    public allowCombining: boolean;
 
-    constructor(info: IArgumentInfo, optional = false) {
+    constructor(info: IArgumentInfo, optional = false, allowCombining = false) {
         this.name = info.name;
         this.description = info.description;
+        this.allowCombining = allowCombining;
         this.optional = optional;
     }
 

@@ -34,26 +34,15 @@ export default class Commands {
         if (!command || !this.commands.has(command)) { return; } // For now
         const commandInstance = this.commands.get(command)!;
         const passed = text.replace(command, "").trim();
-        const rawArguments = passed.split(" ");
-        const parsed: any[] = [];
-        if (rawArguments.length < commandInstance.arguments.length) { return; } // For now
-        for (const argument of commandInstance.arguments) {
-            const rawArgument = rawArguments.shift()!;
-            if (!argument.check(rawArgument)) {
-                continue; // For now
-            }
-            parsed.push(argument.parse(rawArgument));
-        }
         const context = {
-            arguments: parsed,
             command,
             message,
+            passed,
             prefix,
-            rawArguments,
         };
         this.logger.debug(`Executing command ${command}`);
         try {
-            await this.commands.get(command)!.command(context);
+            await commandInstance.command(context);
         } catch (err) {
             this.logger.error(`Error while executing command ${command}: ${err}`);
         }
@@ -94,4 +83,11 @@ export default class Commands {
     public getStatus() {
         return `${this.commands.size} commands loaded: ${Array.from(this.commands.keys()).join(", ")}`;
     }
+}
+
+export interface ICommandContext {
+    prefix: string;
+    message: Discord.Message;
+    command: string;
+    passed: string;
 }

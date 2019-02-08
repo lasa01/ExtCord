@@ -18,8 +18,9 @@ export default class TestModule extends Module {
             name: "test",
         }, true);
         bot.permissions.register(this.testPermission);
-        this.testCommand = new SimpleCommand({name: "test", author: this}, [], async (context) => {
-            await context.message.reply("test test");
+        this.testCommand = new SimpleCommand({name: "test", author: this},
+            [new StringArgument({ description: "text", name: "text" }, true, true)], async (context) => {
+            await context.message.reply(`test ${context.arguments[0]}`);
         }, true);
         bot.commands.register(this.testCommand);
         this.permCommand = new SimpleCommand({name: "permission", author: this},
