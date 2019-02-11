@@ -1,9 +1,9 @@
 import EventEmitter from "events";
-import FS from "fs";
 import Hjson from "hjson";
 import Winston from "winston";
 
 import Database from "../database/database";
+import AsyncFS from "../util/asyncfs";
 import ConfigEntry from "./entry/entry";
 import BooleanConfigEntity from "./entry/guild/database/booleanconfigentity";
 import NumberConfigEntity from "./entry/guild/database/numberconfigentity";
@@ -59,11 +59,6 @@ export default class Config extends EventEmitter {
     }
 
     public async load(stage: number, fileName: string) {
-        const readFile = (file: string) => new Promise<string>((resolve, reject) =>
-            FS.readFile(file, "utf8", (err, data) => { if (err) { reject(err); } else { resolve(data); } }));
-        const writeFile = (file: string, data: string) => new Promise<void>((resolve, reject) =>
-            FS.writeFile(file, data, (err) => { if (err) { reject(err); } else { resolve(); } }));
-
         this.logger.info(`Loading config stage ${stage}`);
         const entries = this.stages.get(stage);
         if (!entries) {
@@ -74,7 +69,7 @@ export default class Config extends EventEmitter {
         let content: string;
         let parsed: any;
         try {
-            content = await readFile(fileName);
+            content = await AsyncFS.readFile(fileName, "utf8");
             parsed = Hjson.parse(content, { keepWsc: true });
         } catch {
             content = "";
@@ -106,7 +101,7 @@ export default class Config extends EventEmitter {
         // Some kind of weird bug, this fixes it, TODO figure out something better
         parsed = Hjson.parse(content, { keepWsc: true });
         content = Hjson.stringify(parsed, { keepWsc: true });
-        await writeFile(fileName, content);
+        await AsyncFS.writeFile(fileName, content);
         this.emit("loaded", stage);
     }
 }

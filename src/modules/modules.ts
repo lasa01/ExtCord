@@ -1,9 +1,10 @@
 import Module from "./module";
 
-import FS from "fs";
 import Path from "path";
 import Winston from "winston";
+
 import Bot from "../bot";
+import AsyncFS from "../util/asyncfs";
 
 export default class Modules {
     private logger: Winston.Logger;
@@ -31,14 +32,10 @@ export default class Modules {
 
     public async loadAll(moduleDir: string) {
         this.logger.info("Loading all modules");
-        const readdir = (path: string) => new Promise<string[]>((resolve, reject) =>
-            FS.readdir(path, (err, files) => { if (err) { reject(err); } else { resolve(files); } }));
-        const stat = (path: string) => new Promise<FS.Stats>((resolve, reject) =>
-            FS.stat(path, (err, stats) => { if (err) { reject(err); } else { resolve(stats); } }));
-        const modules = await readdir(moduleDir);
+        const modules = await AsyncFS.readdir(moduleDir);
         for (const fileName of modules) {
             let path = Path.resolve(process.cwd(), moduleDir, fileName);
-            const stats = await stat(path);
+            const stats = await AsyncFS.stat(path);
             if (stats.isDirectory()) {
                 // Module is a directory, use index.js, TODO check if doesn't exist
                 path = Path.join(path, "index.js");

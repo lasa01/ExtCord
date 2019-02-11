@@ -12,6 +12,7 @@ import NumberConfigEntry from "./config/entry/numberentry";
 import ObjectConfigEntry from "./config/entry/objectentry";
 import StringConfigEntry from "./config/entry/stringentry";
 import Database from "./database/database";
+import Languages from "./language/languages";
 import Modules from "./modules/modules";
 import Permissions from "./permissions/permissions";
 
@@ -24,6 +25,7 @@ export default class Bot extends EventEmitter {
     public database: Database;
     public permissions: Permissions;
     public commands: Commands;
+    public languges: Languages;
     public modules: Modules;
     private configEntries: {
         loggerGroup?: ConfigEntryGroup, clientGroup?: ConfigEntryGroup, generalGroup?: ConfigEntryGroup,
@@ -115,6 +117,7 @@ export default class Bot extends EventEmitter {
         this.permissions = new Permissions(logger, this.database);
         this.commands = new Commands(logger);
         this.commands.registerConfig(this.config, this.database);
+        this.languges = new Languages(logger);
         this.modules = new Modules(logger, this);
     }
 

@@ -61,6 +61,7 @@ export default class Command {
     }
 
     protected async execute(context: IExecutionContext) { return; }
+
 }
 
 export interface IExecutionContext {
