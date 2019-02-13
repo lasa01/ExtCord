@@ -69,3 +69,6 @@ modules
 
 # databases
 *.sqlite
+
+# docs for now
+docs

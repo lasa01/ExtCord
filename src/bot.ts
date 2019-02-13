@@ -41,6 +41,7 @@ export default class Bot extends EventEmitter {
             token: StringConfigEntry,
         },
         general: {
+            languageDirectory: StringConfigEntry,
             moduleDirectory: StringConfigEntry,
         };
     };
@@ -76,10 +77,14 @@ export default class Bot extends EventEmitter {
                 type: "sqlite",
             }),
             general: {
+                languageDirectory: new StringConfigEntry({
+                    description: "Where to load languages from",
+                    name: "languageDirectory",
+                }, "languages"),
                 moduleDirectory: new StringConfigEntry({
                     description: "Where to load modules from",
                     name: "moduleDirectory",
-                }, "./modules"),
+                }, "modules"),
             },
             logger: {
                 file: new StringConfigEntry({

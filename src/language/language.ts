@@ -1,5 +1,3 @@
-import AsyncFS from "../util/asyncfs";
-
 export default class Language {
     public id: string; // ISO 639-1
     public name: string;
@@ -9,5 +7,5 @@ export default class Language {
         this.name = name;
     }
 
-    public async load() { return; }
+    public async load(data: object) { return; }
 }
