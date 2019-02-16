@@ -8,7 +8,7 @@ const args = Yargs.usage("Usage: $0 <command> [options]")
     .command(["run [configFile]", "$0"], "run the bot",
         (yargs) => yargs.positional("configFile", { describe: "config file to use", default: "config.hjson" }),
         (argv) => {
-            const logger = initLogger(argv.verbose);
+            const logger = initLogger(argv.verbose as number);
             const bot = new Bot(argv.configFile, logger);
             bot.run().then(() => {
                 logger.info("Bot running");
