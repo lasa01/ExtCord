@@ -13,12 +13,12 @@ export default class StringConfigEntry extends ConfigEntry {
         return this.value || this.defaultValue || "";
     }
 
-    public parse(data: any, indent: number): [string, string] {
+    public parse(data: any): [string, string] {
         if (typeof data === "string") {
             this.value = data;
-            return [data, "  ".repeat(indent) + "# " + this.description];
+            return [data, "# " + this.description];
         } else  {
-            return [this.defaultValue || "", "  ".repeat(indent) + "# " + this.description];
+            return [this.defaultValue || "", "# " + this.description];
         }
     }
 }

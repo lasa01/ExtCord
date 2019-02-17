@@ -13,12 +13,12 @@ export default class BooleanConfigEntry extends ConfigEntry {
         return this.value || this.defaultValue || false;
     }
 
-    public parse(data: any, indent: number): [boolean, string] {
+    public parse(data: any): [boolean, string] {
         if (typeof data === "boolean") {
             this.value = data;
-            return [data, "  ".repeat(indent) + "# " + this.description];
+            return [data, "# " + this.description];
         } else  {
-            return [this.defaultValue || false, "  ".repeat(indent) + "# " + this.description];
+            return [this.defaultValue || false, "# " + this.description];
         }
     }
 }

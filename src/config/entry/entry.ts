@@ -35,7 +35,7 @@ export default abstract class ConfigEntry extends EventEmitter implements IEntry
         return;
     }
 
-    public parse(data: any, indent: number): [any, string] {
+    public parse(data: any): [any, string] {
         return [data, ""];
     }
 }

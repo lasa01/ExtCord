@@ -1,9 +1,9 @@
 import EventEmitter from "events";
-import Hjson from "hjson";
 import Winston from "winston";
 
 import Database from "../database/database";
 import AsyncFS from "../util/asyncfs";
+import HJSONC from "../util/hjsonc";
 import ConfigEntry from "./entry/entry";
 import BooleanConfigEntity from "./entry/guild/database/booleanconfigentity";
 import NumberConfigEntity from "./entry/guild/database/numberconfigentity";
@@ -70,37 +70,18 @@ export default class Config extends EventEmitter {
         let parsed: any;
         try {
             content = await AsyncFS.readFile(fileName, "utf8");
-            parsed = Hjson.parse(content, { keepWsc: true });
+            parsed = HJSONC.parse(content);
         } catch {
             content = "";
             parsed = {};
         }
-        // If it works, don't touch it (it works)
-        if (!parsed.__COMMENTS__) {
-            parsed.__COMMENTS__ = {};
-        }
-        if (!parsed.__COMMENTS__.c) {
-            parsed.__COMMENTS__.c = {};
-        }
-        if (!parsed.__COMMENTS__.o) {
-            parsed.__COMMENTS__.o = [];
-        }
         for (const entry of entries) {
-            const [data, comment] = entry.parse(parsed[entry.name], 1);
+            const [data, comment] = entry.parse(parsed[entry.name]);
             parsed[entry.name] = data;
-            if (!parsed.__COMMENTS__.o.includes(entry.name)) { parsed.__COMMENTS__.o.push(entry.name); }
-            if (!parsed.__COMMENTS__.c[entry.name]) {
-                parsed.__COMMENTS__.c[entry.name] = ["", ""];
-            }
-            if (!parsed.__COMMENTS__.c[entry.name][0]) {
-                parsed.__COMMENTS__.c[entry.name][0] = comment;
-            }
+            parsed[entry.name + "__commentBefore__"] = comment;
             entry.emit("loaded");
         }
-        content = Hjson.stringify(parsed, { keepWsc: true });
-        // Some kind of weird bug, this fixes it, TODO figure out something better
-        parsed = Hjson.parse(content, { keepWsc: true });
-        content = Hjson.stringify(parsed, { keepWsc: true });
+        content = HJSONC.stringify(parsed);
         await AsyncFS.writeFile(fileName, content);
         this.emit("loaded", stage);
     }

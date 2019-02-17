@@ -38,31 +38,15 @@ export default class ConfigEntryGroup extends ConfigEntry {
         return out;
     }
 
-    public parse(data: any, indent: number): [object, string] {
+    public parse(data: any): [object, string] {
         if (typeof data !== "object") {
             data = {};
         }
-        // If it works, don't touch it (it works)
-        if (!data.__COMMENTS__) {
-            data.__COMMENTS__ = {};
-        }
-        if (!data.__COMMENTS__.c) {
-            data.__COMMENTS__.c = {};
-        }
-        if (!data.__COMMENTS__.o) {
-            data.__COMMENTS__.o = [];
-        }
         for (const [name, entry] of this.entries) {
-            const [parsed, comment] = entry.parse(data[name], indent + 1);
+            const [parsed, comment] = entry.parse(data[name]);
             data[name] = parsed;
-            if (!data.__COMMENTS__.o.includes(entry.name)) { data.__COMMENTS__.o.push(entry.name); }
-            if (!data.__COMMENTS__.c[entry.name]) {
-                data.__COMMENTS__.c[entry.name] = ["", ""];
-            }
-            if (!data.__COMMENTS__.c[entry.name][0]) {
-                data.__COMMENTS__.c[entry.name][0] = comment;
-            }
+            data[name + "__commentBefore__"] = comment;
         }
-        return [data, "  ".repeat(indent) + "# " + this.description];
+        return [data, "# " + this.description];
     }
 }

@@ -2,16 +2,55 @@ import Hjson from "hjson";
 
 export default {
     parse(text: string) {
+        const setComments = (object: any) => {
+            if (object.__COMMENTS__) {
+                for (const o of object.__COMMENTS__.o) {
+                    Object.defineProperty(object, o + "__commentBefore__", { enumerable: false, writable: true });
+                    Object.defineProperty(object, o + "__commentAfter__", { enumerable: false, writable: true });
+                    object[o + "__commentBefore__"] = object.__COMMENTS__.c[o][0].trim();
+                    object[o + "__commentAfter__"] = object.__COMMENTS__.c[o][1].trim();
+                }
+                object.__COMMENTS__ = undefined;
+            }
+            for (const value of Object.values(object)) {
+                if (typeof value === "object") {
+                    setComments(value);
+                }
+            }
+        };
         const data =  Hjson.parse(text, { keepWsc: true });
-        const comments: { [key: string]: {
-            __before__: string;
-            __after__: string;
-        }} = {};
-        for (const [key, list] of Object.entries(data.__COMMENTS__.c)) {
-            comments[key] = {
-                __after__: (list as string[])[1],
-                __before__: (list as string[])[0],
-            };
-        }
+        setComments(data);
+        return data;
+    },
+    stringify(data: any) {
+        const getComments = (object: any, level = 1) => {
+            if (!object.__COMMENTS__) {
+                Object.defineProperty(object, "__COMMENTS__", { enumerable: false, writable: true });
+                object.__COMMENTS__ = {};
+            }
+            if (!object.__COMMENTS__.c) {
+                object.__COMMENTS__.c = {};
+            }
+            if (!object.__COMMENTS__.o) {
+                object.__COMMENTS__.o = [];
+            }
+            for (const [name, value] of Object.entries(object)) {
+                if (!object.__COMMENTS__.o.includes(name)) { object.__COMMENTS__.o.push(name); }
+                if (!object.__COMMENTS__.c[name]) { object.__COMMENTS__.c[name] = ["", ""]; }
+                if (object[name + "__commentBefore__"]) {
+                    object.__COMMENTS__.c[name][0] = "  ".repeat(level) + object[name + "__commentBefore__"].trim();
+                    object[name + "__commentBefore__"] = undefined;
+                }
+                if (object[name + "__commentAfter__"]) {
+                    object.__COMMENTS__.c[name][1] = "  ".repeat(level) + object[name + "__commentAfter__"].trim();
+                    object[name + "__commentAfter__"] = undefined;
+                }
+                if (typeof value === "object") {
+                    getComments(value, level + 1);
+                }
+            }
+        };
+        getComments(data);
+        return Hjson.stringify(data, { keepWsc: true });
     },
 };
