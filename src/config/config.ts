@@ -3,7 +3,7 @@ import Winston from "winston";
 
 import Database from "../database/database";
 import AsyncFS from "../util/asyncfs";
-import HJSONC from "../util/hjsonc";
+import Serializer from "../util/serializer";
 import ConfigEntry from "./entry/entry";
 import BooleanConfigEntity from "./entry/guild/database/booleanconfigentity";
 import NumberConfigEntity from "./entry/guild/database/numberconfigentity";
@@ -70,7 +70,7 @@ export default class Config extends EventEmitter {
         let parsed: any;
         try {
             content = await AsyncFS.readFile(fileName, "utf8");
-            parsed = HJSONC.parse(content);
+            parsed = Serializer.parse(content);
         } catch {
             content = "";
             parsed = {};
@@ -78,11 +78,15 @@ export default class Config extends EventEmitter {
         for (const entry of entries) {
             const [data, comment] = entry.parse(parsed[entry.name]);
             parsed[entry.name] = data;
-            parsed[entry.name + "__commentBefore__"] = comment;
+            if (!parsed[entry.name + "__commentBefore__"]) {
+                parsed[entry.name + "__commentBefore__"] = comment;
+            }
             entry.emit("loaded");
         }
-        content = HJSONC.stringify(parsed);
-        await AsyncFS.writeFile(fileName, content);
+        const newContent = Serializer.stringify(parsed);
+        if (newContent !== content) {
+            await AsyncFS.writeFile(fileName, content);
+        }
         this.emit("loaded", stage);
     }
 }

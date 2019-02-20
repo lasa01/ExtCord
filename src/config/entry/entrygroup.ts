@@ -45,8 +45,10 @@ export default class ConfigEntryGroup extends ConfigEntry {
         for (const [name, entry] of this.entries) {
             const [parsed, comment] = entry.parse(data[name]);
             data[name] = parsed;
-            data[name + "__commentBefore__"] = comment;
+            if (!data[name + "__commentBefore__"]) {
+                data[name + "__commentBefore__"] = comment;
+            }
         }
-        return [data, "# " + this.description];
+        return [data, this.description];
     }
 }

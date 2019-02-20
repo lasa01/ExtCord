@@ -10,11 +10,6 @@ import Permission from "./permission";
 import PermissionGroup from "./permissiongroup";
 
 export default class Permissions {
-    public static registerDatabase(database: Database) {
-        database.registerEntity(MemberPermissionEntity);
-        database.registerEntity(RolePermissionEntity);
-    }
-
     public database: Database;
     public logger: Winston.Logger;
     private permissions: Map<string, Permission>;
@@ -26,6 +21,8 @@ export default class Permissions {
         this.database = database;
         this.permissions = new Map();
         this.configTemplate = new Map();
+        database.registerEntity(MemberPermissionEntity);
+        database.registerEntity(RolePermissionEntity);
     }
 
     public register(permission: Permission) {

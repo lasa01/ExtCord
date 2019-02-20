@@ -16,9 +16,9 @@ export default class StringConfigEntry extends ConfigEntry {
     public parse(data: any): [string, string] {
         if (typeof data === "string") {
             this.value = data;
-            return [data, "# " + this.description];
+            return [data, this.description];
         } else  {
-            return [this.defaultValue || "", "# " + this.description];
+            return [this.defaultValue || "", this.description];
         }
     }
 }

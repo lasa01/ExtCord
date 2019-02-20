@@ -16,9 +16,9 @@ export default class BooleanConfigEntry extends ConfigEntry {
     public parse(data: any): [boolean, string] {
         if (typeof data === "boolean") {
             this.value = data;
-            return [data, "# " + this.description];
+            return [data, this.description];
         } else  {
-            return [this.defaultValue || false, "# " + this.description];
+            return [this.defaultValue || false,  this.description];
         }
     }
 }

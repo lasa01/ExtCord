@@ -3,10 +3,14 @@ import Yargs from "yargs";
 
 import Bot from "./bot";
 import Configure from "./configure";
+import Serializer from "./util/serializer";
 
 const args = Yargs.usage("Usage: $0 <command> [options]")
     .command(["run [configFile]", "$0"], "run the bot",
-        (yargs) => yargs.positional("configFile", { describe: "config file to use", default: "config.hjson" }),
+        (yargs) => yargs.positional("configFile", {
+            default: "config" + Serializer.extension,
+            describe: "config file to use",
+        }),
         (argv) => {
             const logger = initLogger(argv.verbose as number);
             const bot = new Bot(argv.configFile, logger);
@@ -21,7 +25,10 @@ const args = Yargs.usage("Usage: $0 <command> [options]")
             }
         })
     .command(["configure [configFile]", "config"], "configure the bot",
-        (yargs) => yargs.positional("configFile", { describe: "config file to use", default: "config.hjson" }),
+        (yargs) => yargs.positional("configFile", {
+            default: "config" + Serializer.extension,
+            describe: "config file to use",
+        }),
         (argv) => { const configure = new Configure(argv.configFile); })
     .demandCommand()
     .count("verbose")

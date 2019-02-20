@@ -20,6 +20,15 @@ export default class Phrase {
     public format(language: string, stuff: Array<string|number>) {
         return Util.format(this.templates[language], ...stuff);
     }
+
+    public parse(language: string, data: any) {
+        if (typeof data === "string") {
+            this.templates[language] = data;
+            return [data, this.description];
+        } else  {
+            return [this.defaults[language] || "", this.description];
+        }
+    }
 }
 
 export interface IPhraseInfo {
