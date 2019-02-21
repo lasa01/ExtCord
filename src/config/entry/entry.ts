@@ -1,4 +1,4 @@
-import { EventEmitter } from "events";
+import EventEmitter from "events";
 
 export default abstract class ConfigEntry extends EventEmitter implements IEntryInfo {
     public name: string;
@@ -31,9 +31,7 @@ export default abstract class ConfigEntry extends EventEmitter implements IEntry
         return `${this.name}: ${this.get()}`;
     }
 
-    public get(): any {
-        return;
-    }
+    public abstract get(): any;
 
     public parse(data: any): [any, string] {
         return [data, ""];

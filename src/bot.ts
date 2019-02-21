@@ -9,7 +9,6 @@ import Commands from "./commands/commands";
 import Config from "./config/config";
 import ConfigEntryGroup from "./config/entry/entrygroup";
 import NumberConfigEntry from "./config/entry/numberentry";
-import ObjectConfigEntry from "./config/entry/objectentry";
 import StringConfigEntry from "./config/entry/stringentry";
 import Database from "./database/database";
 import Languages from "./language/languages";
@@ -28,8 +27,7 @@ export default class Bot extends EventEmitter {
     public languges: Languages;
     public modules: Modules;
     private configEntries: {
-        loggerGroup?: ConfigEntryGroup, clientGroup?: ConfigEntryGroup, generalGroup?: ConfigEntryGroup,
-        database: ObjectConfigEntry,
+        loggerGroup?: ConfigEntryGroup, clientGroup?: ConfigEntryGroup,
         logger: {
             file: StringConfigEntry,
             loglevel: StringConfigEntry,
@@ -40,10 +38,6 @@ export default class Bot extends EventEmitter {
             messageCacheSweepInterval: NumberConfigEntry,
             token: StringConfigEntry,
         },
-        general: {
-            languageDirectory: StringConfigEntry,
-            moduleDirectory: StringConfigEntry,
-        };
     };
 
     constructor(configFile: string, logger: Winston.Logger) {
@@ -69,23 +63,6 @@ export default class Bot extends EventEmitter {
                     name: "token",
                 }, ""),
             },
-            database: new ObjectConfigEntry({
-                description: "Database configuration for TypeORM",
-                name: "database",
-            }, {
-                database: "bot.sqlite",
-                type: "sqlite",
-            }),
-            general: {
-                languageDirectory: new StringConfigEntry({
-                    description: "Where to load languages from",
-                    name: "languageDirectory",
-                }, "languages"),
-                moduleDirectory: new StringConfigEntry({
-                    description: "Where to load modules from",
-                    name: "moduleDirectory",
-                }, "modules"),
-            },
             logger: {
                 file: new StringConfigEntry({
                     description: "Log filename",
@@ -102,21 +79,15 @@ export default class Bot extends EventEmitter {
             loadStage: 0,
             name: "logger",
         }, Object.values(this.configEntries.logger));
-        this.configEntries.generalGroup = new ConfigEntryGroup({
-            description: "General configuration",
-            loadStage: 0,
-            name: "general",
-        }, Object.values(this.configEntries.general));
         this.configEntries.clientGroup = new ConfigEntryGroup({
             description: "Discord client configuration",
             name: "client",
         }, Object.values(this.configEntries.client));
         this.config.register(this.configEntries.loggerGroup);
-        this.config.register(this.configEntries.generalGroup);
         this.config.register(this.configEntries.clientGroup);
-        this.config.register(this.configEntries.database);
         this.configFile = configFile;
         this.database = new Database(logger);
+        this.database.registerConfig(this.config);
         Config.registerDatabase(this.database);
         this.permissions = new Permissions(logger, this.database);
         this.commands = new Commands(logger);
@@ -124,6 +95,7 @@ export default class Bot extends EventEmitter {
         this.languges = new Languages(logger);
         this.languges.registerConfig(this.config, this.database);
         this.modules = new Modules(logger, this);
+        this.modules.registerConfig(this.config);
     }
 
     public async run() {
@@ -139,13 +111,13 @@ export default class Bot extends EventEmitter {
                         new Winston.transports.File( { filename: this.configEntries.logger.file.get() } ),
                     ],
                 });
-                await this.modules.loadAll(this.configEntries.general.moduleDirectory.get());
+                await this.modules.loadAll();
                 this.commands.registerPermissions(this.permissions);
                 this.permissions.registerConfig(this.config);
                 this.logger.debug(this.permissions.getStatus());
                 this.logger.debug(this.commands.getStatus());
             } else if (stage === 1) {
-                await this.database.connect(this.configEntries.database.get() as ConnectionOptions);
+                await this.database.connect();
                 this.client = new Discord.Client({
                     messageCacheLifetime: this.configEntries.client.messageCacheLifetime.get(),
                     messageCacheMaxSize: this.configEntries.client.messageCacheMaxSize.get(),

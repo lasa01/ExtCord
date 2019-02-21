@@ -59,7 +59,7 @@ async function testDatabase() {
     // Test database
     const database = new Database(log);
     Config.registerDatabase(database);
-    Permissions.registerDatabase(database);
+    const permissions = new Permissions(log, database);
 
     await database.connect({
         database: "bottest.sqlite",

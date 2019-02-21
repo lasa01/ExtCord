@@ -1,16 +1,14 @@
 import Util from "util";
+import BasePhrase, { IPhraseInfo } from "./basephrase";
 
-export default class Phrase {
-    public name: string;
-    public description: string;
+export default class Phrase extends BasePhrase {
     private defaults: { [key: string]: string };
     private templates: { [key: string]: string };
 
-    constructor(info: IPhraseInfo) {
-        this.name = info.name;
-        this.description = info.description;
-        this.defaults = info.defaults;
-        this.templates = info.defaults;
+    constructor(info: IPhraseInfo, defaults: { [key: string]: string }) {
+        super(info);
+        this.defaults = defaults;
+        this.templates = defaults;
     }
 
     public setTemplate(language: string, template: string) {
@@ -21,7 +19,7 @@ export default class Phrase {
         return Util.format(this.templates[language], ...stuff);
     }
 
-    public parse(language: string, data: any) {
+    public parse(language: string, data: any): [string, string] {
         if (typeof data === "string") {
             this.templates[language] = data;
             return [data, this.description];
@@ -29,10 +27,4 @@ export default class Phrase {
             return [this.defaults[language] || "", this.description];
         }
     }
-}
-
-export interface IPhraseInfo {
-    name: string;
-    description: string;
-    defaults: { [key: string]: string };
 }

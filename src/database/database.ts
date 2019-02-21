@@ -1,10 +1,12 @@
 import "reflect-metadata";
 
-import { EventEmitter } from "events";
+import EventEmitter from "events";
 
 import { Connection, ConnectionOptions, createConnection } from "typeorm";
 import Winston from "winston";
 
+import Config from "../config/config";
+import ObjectConfigEntry from "../config/entry/objectentry";
 import GuildEntity from "./entity/guildentity";
 import MemberEntity from "./entity/memberentity";
 import RoleEntity from "./entity/roleentity";
@@ -16,6 +18,7 @@ import RoleRepository from "./repo/rolerepo";
 import UserRepository from "./repo/userrepo";
 
 export default class Database extends EventEmitter {
+    public configEntry?: ObjectConfigEntry;
     public repos: {
         guild?: GuildRepository,
         member?: MemberRepository,
@@ -33,7 +36,8 @@ export default class Database extends EventEmitter {
         this.repos = {};
     }
 
-    public async connect(options: ConnectionOptions) {
+    public async connect(options?: ConnectionOptions) {
+        options = options || this.configEntry!.get() as ConnectionOptions;
         this.logger.info("Connecting to database");
         this.connection = await createConnection(Object.assign(options, {
             entities: this.entities,
@@ -60,7 +64,14 @@ export default class Database extends EventEmitter {
         this.entities.push(model);
     }
 
-    public extendEntity(entity: new () => any, extend: object) {
-        Object.assign(entity, extend);
+    public registerConfig(config: Config) {
+        this.configEntry = new ObjectConfigEntry({
+            description: "Database configuration for TypeORM",
+            name: "database",
+        }, {
+            database: "bot.sqlite",
+            type: "sqlite",
+        });
+        config.register(this.configEntry);
     }
 }

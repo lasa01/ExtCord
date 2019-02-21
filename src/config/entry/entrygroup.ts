@@ -2,6 +2,7 @@ import ConfigEntry, { IEntryInfo } from "./entry";
 
 export default class ConfigEntryGroup extends ConfigEntry {
     public entries: Map<string, ConfigEntry>;
+    private value?: object;
 
     constructor(info: IEntryInfo, entries: ConfigEntry[]) {
         super(info);
@@ -11,6 +12,10 @@ export default class ConfigEntryGroup extends ConfigEntry {
             entry.setLoadStage(this.loadStage);
             this.entries.set(entry.name, entry);
         }
+    }
+
+    public get() {
+        return this.value;
     }
 
     public setLoadStage(stage: number) {
@@ -49,6 +54,7 @@ export default class ConfigEntryGroup extends ConfigEntry {
                 data[name + "__commentBefore__"] = comment;
             }
         }
+        this.value = data;
         return [data, this.description];
     }
 }

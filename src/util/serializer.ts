@@ -39,10 +39,11 @@ export default {
                 if (!object.__COMMENTS__.o.includes(name)) { object.__COMMENTS__.o.push(name); }
                 if (!object.__COMMENTS__.c[name]) { object.__COMMENTS__.c[name] = ["", ""]; }
                 if (object[name + "__commentBefore__"]) {
-                    const lines = object[name + "__commentBefore__"].split("\n").trim();
+                    const lines = object[name + "__commentBefore__"].split("\n");
                     let comment = "";
                     // Check that every line of comment begins with a correct character
                     for (let line of lines) {
+                        line = line.trim();
                         if (!regex.test(line)) {
                             line = "# " + line;
                         }
@@ -52,10 +53,11 @@ export default {
                     object[name + "__commentBefore__"] = undefined;
                 }
                 if (object[name + "__commentAfter__"]) {
-                    const lines = object[name + "__commentAfter__"].split("\n").trim();
+                    const lines = object[name + "__commentAfter__"].split("\n");
                     let comment = "";
                     // Check that every line of comment begins with a correct character
                     for (let line of lines) {
+                        line = line.trim();
                         if (!regex.test(line)) {
                             line = "# " + line;
                         }

@@ -45,7 +45,7 @@ export default class Config extends EventEmitter {
         }
     }
 
-    public async loadNext(fileName: string): Promise<number> {
+    public async loadNext(filename: string): Promise<number> {
         if (!this.orderedStages) {
             this.orderedStages = Array.from(this.stages.keys());
             this.orderedStages.sort((a, b) => a - b);
@@ -54,11 +54,11 @@ export default class Config extends EventEmitter {
         if (stage === undefined) {
             throw new Error("No config stages to load");
         }
-        await this.load(stage, fileName);
+        await this.load(stage, filename);
         return stage;
     }
 
-    public async load(stage: number, fileName: string) {
+    public async load(stage: number, filename: string) {
         this.logger.info(`Loading config stage ${stage}`);
         const entries = this.stages.get(stage);
         if (!entries) {
@@ -69,7 +69,7 @@ export default class Config extends EventEmitter {
         let content: string;
         let parsed: any;
         try {
-            content = await AsyncFS.readFile(fileName, "utf8");
+            content = await AsyncFS.readFile(filename, "utf8");
             parsed = Serializer.parse(content);
         } catch {
             content = "";
@@ -85,7 +85,7 @@ export default class Config extends EventEmitter {
         }
         const newContent = Serializer.stringify(parsed);
         if (newContent !== content) {
-            await AsyncFS.writeFile(fileName, content);
+            await AsyncFS.writeFile(filename, content);
         }
         this.emit("loaded", stage);
     }

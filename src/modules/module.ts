@@ -10,4 +10,10 @@ export default abstract class Module {
         this.name = name;
         this.bot = bot;
     }
+
+    public rename() {
+        this.name = this.author + "-" + this.name;
+    }
+
+    public async unload() { return; }
 }
