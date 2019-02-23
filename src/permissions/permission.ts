@@ -11,7 +11,7 @@ import { Permissions } from "./permissions";
 export class Permission {
     public name: string;
     public fullName: string;
-    public description: string;
+    public description?: string;
     private logger?: Logger;
     private permissions?: Permissions;
     private memberRepo?: Repository<MemberPermissionEntity>;
@@ -149,5 +149,5 @@ export class Permission {
 
 export interface IPermissionInfo {
     name: string;
-    description: string;
+    description?: string;
 }

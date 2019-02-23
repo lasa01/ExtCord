@@ -43,7 +43,7 @@ export class ConfigEntryGroup extends ConfigEntry {
         return out;
     }
 
-    public parse(data: any): [any, string] {
+    public parse(data: any): [any, string?] {
         if (typeof data !== "object") {
             data = {};
         }

@@ -13,7 +13,7 @@ export class NumberConfigEntry extends ConfigEntry {
         return this.value || this.defaultValue || 0;
     }
 
-    public parse(data: any): [number, string] {
+    public parse(data: any): [number, string?] {
         if (typeof data === "number") {
             this.value = data;
             return [data, this.description];

@@ -1,10 +1,8 @@
-import format = require("string-format");
-
 import { IPhraseInfo, Phrase } from "./phrase";
 
 export class SimplePhrase extends Phrase {
-    private defaults: { [key: string]: string };
-    private templates: { [key: string]: string };
+    protected templates: { [key: string]: string };
+    protected defaults: { [key: string]: string };
 
     constructor(info: IPhraseInfo, defaults: { [key: string]: string } | string) {
         super(info);
@@ -18,15 +16,11 @@ export class SimplePhrase extends Phrase {
         this.templates = defaults;
     }
 
-    public setTemplate(language: string, template: string) {
-        this.templates[language] = template;
+    public get(language: string) {
+        return this.templates[language];
     }
 
-    public format(language: string, stuff: { [key: string]: any } ) {
-        return format(this.templates[language], stuff);
-    }
-
-    public parse(language: string, data: object): [string, string] {
+    public parse(language: string, data: object): [string, string?] {
         if (typeof data === "string") {
             this.templates[language] = data;
             return [data, this.description];

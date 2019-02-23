@@ -3,7 +3,7 @@ import { EventEmitter } from "events";
 export abstract class ConfigEntry extends EventEmitter implements IEntryInfo {
     public name: string;
     public fullName: string;
-    public description: string;
+    public description?: string;
     public loadStage: number;
     private parent?: ConfigEntry;
 
@@ -57,14 +57,14 @@ export abstract class ConfigEntry extends EventEmitter implements IEntryInfo {
 
     public abstract get(): any;
 
-    public parse(data: any): [any, string] {
+    public parse(data: any): [any, string?] {
         return [data, ""];
     }
 }
 
 export interface IEntryInfo {
     name: string;
-    description: string;
+    description?: string;
     // TODO Implement
     optional?: boolean;
     loadStage?: number;

@@ -24,12 +24,10 @@ export abstract class Command {
     constructor(info: ICommandInfo, args: Argument[], allowEveryone = false, defaultPermission?: Permission) {
         this.name = info.name;
         this.localizedName = new SimplePhrase({
-            description: `The name for the command ${this.name}`,
             name: "name",
         }, this.name);
         this.description = info.description;
         this.localizedDescription = new SimplePhrase({
-            description: `The description for the command ${this.name}`,
             name: "description",
         }, this.name);
         this.argPhrases = [];
@@ -44,18 +42,15 @@ export abstract class Command {
             argument.register(this);
         }
         this.defaultPermission = defaultPermission || new Permission({
-            description: `Gives the permission for the command ${info.name}`,
             name: info.name,
         }, allowEveryone);
     }
 
     public register(commands: Commands) {
         this.argPhraseGroup = new PhraseGroup({
-            description: `Command arguments`,
             name: "arguments",
         }, this.argPhrases);
         this.phraseGroup = new PhraseGroup({
-            description: `Language definitions for the command ${this.name}`,
             name: this.name,
         }, [ this.localizedDescription, this.localizedName, this.argPhraseGroup ]);
         commands.registerPhrase(this.phraseGroup);
@@ -74,27 +69,43 @@ export abstract class Command {
         return this.defaultPermission;
     }
 
-    public async command(context: ICommandContext) {
+    public async command(context: ICommandContext): Promise<[string, { [key: string]: string }]|undefined> {
         const rawArguments = context.passed.split(" ");
         // Negative if not enough arguments, 0 if correct amount, positive if too many
         const deltaArgs = rawArguments.length - this.arguments.length;
-        if (deltaArgs < 0) { return; } // For now
-        // Combine extra arguments if the last argument allows it
-        if (deltaArgs > 0 && this.arguments[this.arguments.length - 1].allowCombining) {
-            for (let i = deltaArgs; i > 0; i--) {
-                rawArguments.push(rawArguments.pop() + " " + rawArguments.pop());
+        if (deltaArgs < 0) { return ["tooFewArguments", {
+            required: this.arguments.length.toString(),
+            supplied: rawArguments.length.toString(),
+        }]; }
+        if (deltaArgs > 0) {
+            // Combine extra arguments if the last argument allows it
+            if (this.arguments[this.arguments.length - 1].allowCombining) {
+                for (let i = deltaArgs; i > 0; i--) {
+                    rawArguments.push(rawArguments.pop() + " " + rawArguments.pop());
+                }
+            } else {
+                return ["tooManyArguments", {
+                    required: this.arguments.length.toString(),
+                    supplied: rawArguments.length.toString(),
+                }];
             }
         }
         const parsed: any[] = [];
         for (const argument of this.arguments) {
             const rawArgument = rawArguments.shift()!;
             if (!argument.check(rawArgument)) {
-                continue; // For now
+                return ["invalidArgument", { argument: rawArgument }];
             }
             parsed.push(argument.parse(rawArgument));
         }
         if (await this.defaultPermission.checkFull(context.message.member)) {
-            await this.execute({...context, arguments: parsed, rawArguments});
+            try {
+                await this.execute({...context, arguments: parsed, rawArguments});
+            } catch (err) {
+                return ["executionError", { error: err.toString() }];
+            }
+        } else {
+            return ["noPermission", { command: this.name }];
         }
     }
 

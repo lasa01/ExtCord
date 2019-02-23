@@ -13,7 +13,7 @@ export class BooleanConfigEntry extends ConfigEntry {
         return this.value || this.defaultValue || false;
     }
 
-    public parse(data: any): [boolean, string] {
+    public parse(data: any): [boolean, string?] {
         if (typeof data === "boolean") {
             this.value = data;
             return [data, this.description];

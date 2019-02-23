@@ -14,16 +14,13 @@ export abstract class Argument {
     constructor(info: IArgumentInfo, optional = false, allowCombining = false) {
         this.name = info.name;
         this.localizedName = new SimplePhrase({
-            description: `The name for the argument ${this.name}`,
             name: "name",
         }, this.name);
         this.description = info.description;
         this.localizedDescription = new SimplePhrase({
-            description: `The description for the argument ${this.name}`,
             name: "description",
         }, this.name);
         this.phraseGroup = new PhraseGroup({
-            description: `Language definitions for the argument ${this.name}`,
             name: this.name,
         }, [ this.localizedDescription, this.localizedName ]);
         this.allowCombining = allowCombining;

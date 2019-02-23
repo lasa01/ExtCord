@@ -89,7 +89,7 @@ export class Languages {
         for (const [, phrase] of this.phrases) {
             const [data, comment] = phrase.parse(id, parsed[phrase.name]);
             parsed[phrase.name] = data;
-            if (!parsed[phrase.name + "__commentBefore__"]) {
+            if (!parsed[phrase.name + "__commentBefore__"] && comment) {
                 Object.defineProperty(parsed, phrase.name + "__commentBefore__", { enumerable: false, writable: true});
                 parsed[phrase.name + "__commentBefore__"] = comment;
             }

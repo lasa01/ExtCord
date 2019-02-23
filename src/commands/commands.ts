@@ -8,6 +8,7 @@ import { Database } from "../database/database";
 import { Languages } from "../language/languages";
 import { Phrase } from "../language/phrase/phrase";
 import { PhraseGroup } from "../language/phrase/phrasegroup";
+import { TemplatePhrase } from "../language/phrase/templatephrase";
 import { Permission } from "../permissions/permission";
 import { PermissionGroup } from "../permissions/permissiongroup";
 import { Permissions } from "../permissions/permissions";
@@ -20,14 +21,44 @@ export class Commands {
     private configEntry?: ConfigEntryGroup;
     private permissionTemplate: Map<string, Permission>;
     private permission?: Permission;
-    private phrases: Phrase[];
+    private commandPhrases: Phrase[];
+    private commandPhraseGroup?: PhraseGroup;
+    private phrases: {
+        [key: string]: TemplatePhrase;
+        executionError: TemplatePhrase;
+        invalidArgument: TemplatePhrase;
+        invalidCommand: TemplatePhrase;
+        noPermission: TemplatePhrase;
+        tooFewArguments: TemplatePhrase;
+        tooManyArguments: TemplatePhrase;
+    };
     private phraseGroup?: PhraseGroup;
 
     constructor(logger: Logger) {
         this.logger = logger;
         this.commands = new Map();
         this.permissionTemplate = new Map();
-        this.phrases = [];
+        this.commandPhrases = [];
+        this.phrases = {
+            executionError: new TemplatePhrase({
+                name: "executionError",
+            }, "Execution failed: {error}"),
+            invalidArgument: new TemplatePhrase({
+                name: "invalidArgument",
+            }, "Argument \"{argument}\" is invalid"),
+            invalidCommand: new TemplatePhrase({
+                name: "invalidCommand",
+            }, "Command {command} not found"),
+            noPermission: new TemplatePhrase({
+                name: "noPermission",
+            }, "You lack permissions to execute the command \"{command}\""),
+            tooFewArguments: new TemplatePhrase({
+                name: "tooFewArguments",
+            }, "Too few arguments supplied: {supplied} supplied, {required} required"),
+            tooManyArguments: new TemplatePhrase({
+                name: "tooManyArguments",
+            }, "Too many arguments supplied: {supplied} supplied, {required} required"),
+        };
     }
 
     public async message(message: Message) {
@@ -36,7 +67,10 @@ export class Commands {
         if (!message.content.startsWith(prefix)) { return; }
         const text = message.content.replace(prefix, "").trim();
         const command = text.split(" ", 1)[0];
-        if (!command || !this.commands.has(command)) { return; } // For now
+        if (!command || !this.commands.has(command)) {
+            await message.reply(this.phrases.invalidCommand.format("en", { command }));
+            return;
+        }
         const commandInstance = this.commands.get(command)!;
         const passed = text.replace(command, "").trim();
         const context = {
@@ -46,10 +80,11 @@ export class Commands {
             prefix,
         };
         this.logger.debug(`Executing command ${command}`);
-        try {
-            await commandInstance.command(context);
-        } catch (err) {
-            this.logger.error(`Error while executing command ${command}: ${err}`);
+        const err = await commandInstance.command(context);
+        if (err) {
+            const errPhrase = this.phrases[err[0]];
+            await message.reply(errPhrase.format("en", err[1]));
+            return;
         }
     }
 
@@ -67,7 +102,7 @@ export class Commands {
     }
 
     public registerPhrase(phrase: Phrase) {
-        this.phrases.push(phrase);
+        this.commandPhrases.push(phrase);
     }
 
     public registerConfig(config: Config, database: Database) {
@@ -76,7 +111,6 @@ export class Commands {
             name: "prefix",
         }, database, "!");
         this.configEntry = new ConfigEntryGroup({
-            description: "Commands configuration",
             name: "commands",
         }, [ this.prefixConfigEntry ]);
         config.register(this.configEntry);
@@ -84,17 +118,20 @@ export class Commands {
 
     public registerPermissions(permissions: Permissions) {
         this.permission = new PermissionGroup({
-            description: "Command permissions",
+            description: "Permissions for command execution",
             name: "commands",
         }, Array.from(this.permissionTemplate.values()));
         permissions.register(this.permission);
     }
 
     public registerLanguages(languages: Languages) {
-        this.phraseGroup = new PhraseGroup({
-            description: "Language definitions for commands",
+        this.commandPhraseGroup = new PhraseGroup({
+            description: "Language definitions for individual commands",
             name: "commands",
-        }, this.phrases);
+        }, this.commandPhrases);
+        this.phraseGroup = new PhraseGroup({
+            name: "commands",
+        }, [ ...Object.values(this.phrases), this.commandPhraseGroup ]);
         languages.register(this.phraseGroup);
     }
 

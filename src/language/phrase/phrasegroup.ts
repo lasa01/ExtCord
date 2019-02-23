@@ -11,7 +11,7 @@ export class PhraseGroup extends Phrase {
         }
     }
 
-    public parse(language: string, data: any): [object, string] {
+    public parse(language: string, data: any): [object, string?] {
         if (typeof data !== "object") {
             data = {};
         }

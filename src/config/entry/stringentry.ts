@@ -13,7 +13,7 @@ export class StringConfigEntry extends ConfigEntry {
         return this.value || this.defaultValue || "";
     }
 
-    public parse(data: any): [string, string] {
+    public parse(data: any): [string, string?] {
         if (typeof data === "string") {
             this.value = data;
             return [data, this.description];
