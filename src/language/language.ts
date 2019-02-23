@@ -1,4 +1,4 @@
-export default class Language {
+export class Language {
     public id: string; // ISO 639-1
     public name: string;
 

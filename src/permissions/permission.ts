@@ -1,18 +1,18 @@
-import Discord from "discord.js";
+import { GuildMember, Role } from "discord.js";
 import { Repository } from "typeorm";
-import Winston from "winston";
+import { Logger } from "winston";
 
-import BooleanConfigEntry from "../config/entry/booleanentry";
-import ConfigEntry from "../config/entry/entry";
-import MemberPermissionEntity from "./database/memberpermissionentity";
-import RolePermissionEntity from "./database/rolepermissionentity";
-import Permissions from "./permissions";
+import { BooleanConfigEntry } from "../config/entry/booleanentry";
+import { ConfigEntry } from "../config/entry/entry";
+import { MemberPermissionEntity } from "./database/memberpermissionentity";
+import { RolePermissionEntity } from "./database/rolepermissionentity";
+import { Permissions } from "./permissions";
 
-export default class Permission {
+export class Permission {
     public name: string;
     public fullName: string;
     public description: string;
-    private logger?: Winston.Logger;
+    private logger?: Logger;
     private permissions?: Permissions;
     private memberRepo?: Repository<MemberPermissionEntity>;
     private roleRepo?: Repository<RolePermissionEntity>;
@@ -46,7 +46,7 @@ export default class Permission {
         return this.defaultEntry;
     }
 
-    public async checkFull(member: Discord.GuildMember): Promise<boolean> {
+    public async checkFull(member: GuildMember): Promise<boolean> {
         const result = await this.checkFullNoDefault(member);
         if (result !== undefined) {
             return result;
@@ -55,7 +55,7 @@ export default class Permission {
         return this.getDefault();
     }
 
-    public async checkFullNoDefault(member: Discord.GuildMember): Promise<boolean|undefined> {
+    public async checkFullNoDefault(member: GuildMember): Promise<boolean|undefined> {
         this.logger!.debug(`Checking for permission ${this.fullName} for member ${member.id}`);
         this.ensureRepo();
         let result = await this.checkMember(member);
@@ -77,7 +77,7 @@ export default class Permission {
         }
     }
 
-    public async checkRole(role: Discord.Role): Promise<boolean> {
+    public async checkRole(role: Role): Promise<boolean> {
         const result = await this.checkRoleNoDefault(role);
         if (result !== undefined) {
             return result;
@@ -86,7 +86,7 @@ export default class Permission {
         return this.getDefault();
     }
 
-    public async checkRoleNoDefault(role: Discord.Role): Promise<boolean|undefined> {
+    public async checkRoleNoDefault(role: Role): Promise<boolean|undefined> {
         this.logger!.debug(`Checking for permission ${this.fullName} for role ${role.id}`);
         this.ensureRepo();
         let result = await this.checkRolePart(role);
@@ -103,7 +103,7 @@ export default class Permission {
         }
     }
 
-    private async checkMember(member: Discord.GuildMember): Promise<boolean|undefined> {
+    private async checkMember(member: GuildMember): Promise<boolean|undefined> {
         const memberEntity = await this.permissions!.database.repos.member!.getEntity(member);
         const permission = await this.memberRepo!.findOne({
             member: memberEntity,
@@ -114,15 +114,15 @@ export default class Permission {
         }
     }
 
-    private async checkRoles(member: Discord.GuildMember): Promise<boolean|undefined> {
+    private async checkRoles(member: GuildMember): Promise<boolean|undefined> {
         // Roles sorted by position, TODO optimize speed (get all from database and check positions after?)
-        for (const role of Array.from(member.roles.values()).sort(Discord.Role.comparePositions)) {
+        for (const role of Array.from(member.roles.values()).sort(Role.comparePositions)) {
             const permission = await this.checkRolePart(role);
             if (permission !== undefined) { return permission; }
         }
     }
 
-    private async checkRolePart(role: Discord.Role) {
+    private async checkRolePart(role: Role) {
         const roleEntity = await this.roleRepo!.findOne({where: {
             guildId: role.guild.id,
             roleId: role.id,

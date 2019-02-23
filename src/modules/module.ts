@@ -1,6 +1,6 @@
-import Bot from "../bot";
+import { Bot } from "../bot";
 
-export default abstract class Module {
+export abstract class Module {
     public author: string;
     public name: string;
     protected bot: Bot;

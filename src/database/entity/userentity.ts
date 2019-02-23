@@ -1,9 +1,9 @@
 import { Column, Entity, OneToMany, PrimaryColumn } from "typeorm";
 
-import MemberEntity from "./memberentity";
+import { MemberEntity } from "./memberentity";
 
 @Entity("users")
-export default class UserEntity {
+export class UserEntity {
     @PrimaryColumn()
     public id!: string;
 

@@ -1,6 +1,6 @@
-import ConfigEntry, { IEntryInfo } from "./entry";
+import { ConfigEntry, IEntryInfo } from "./entry";
 
-export default class NumberConfigEntry extends ConfigEntry {
+export class NumberConfigEntry extends ConfigEntry {
     private value?: number;
     private defaultValue?: number;
 

@@ -1,31 +1,36 @@
-import Discord from "discord.js";
-import Winston from "winston";
+import { Message } from "discord.js";
+import { Logger } from "winston";
 
-import Config from "../config/config";
-import ConfigEntryGroup from "../config/entry/entrygroup";
-import StringGuildConfigEntry from "../config/entry/guild/stringguildentry";
-import Database from "../database/database";
-import Permission from "../permissions/permission";
-import PermissionGroup from "../permissions/permissiongroup";
-import Permissions from "../permissions/permissions";
-import Argument from "./arguments/argument";
-import Command from "./command";
+import { Config } from "../config/config";
+import { ConfigEntryGroup } from "../config/entry/entrygroup";
+import { StringGuildConfigEntry } from "../config/entry/guild/stringguildentry";
+import { Database } from "../database/database";
+import { Languages } from "../language/languages";
+import { Phrase } from "../language/phrase/phrase";
+import { PhraseGroup } from "../language/phrase/phrasegroup";
+import { Permission } from "../permissions/permission";
+import { PermissionGroup } from "../permissions/permissiongroup";
+import { Permissions } from "../permissions/permissions";
+import { Command } from "./command";
 
-export default class Commands {
+export class Commands {
     public prefixConfigEntry?: StringGuildConfigEntry;
-    private logger: Winston.Logger;
+    private logger: Logger;
     private commands: Map<string, Command>;
     private configEntry?: ConfigEntryGroup;
     private permissionTemplate: Map<string, Permission>;
     private permission?: Permission;
+    private phrases: Phrase[];
+    private phraseGroup?: PhraseGroup;
 
-    constructor(logger: Winston.Logger) {
+    constructor(logger: Logger) {
         this.logger = logger;
         this.commands = new Map();
         this.permissionTemplate = new Map();
+        this.phrases = [];
     }
 
-    public async message(message: Discord.Message) {
+    public async message(message: Message) {
         if (!message.guild) { return; } // For now
         const prefix = await this.prefixConfigEntry!.guildGet(message.guild);
         if (!message.content.startsWith(prefix)) { return; }
@@ -56,8 +61,13 @@ export default class Commands {
                 return;
             }
         }
+        command.register(this);
         this.commands.set(command.name, command);
         this.permissionTemplate.set(command.name, command.getPermission());
+    }
+
+    public registerPhrase(phrase: Phrase) {
+        this.phrases.push(phrase);
     }
 
     public registerConfig(config: Config, database: Database) {
@@ -80,6 +90,14 @@ export default class Commands {
         permissions.register(this.permission);
     }
 
+    public registerLanguages(languages: Languages) {
+        this.phraseGroup = new PhraseGroup({
+            description: "Language definitions for commands",
+            name: "commands",
+        }, this.phrases);
+        languages.register(this.phraseGroup);
+    }
+
     public getStatus() {
         return `${this.commands.size} commands loaded: ${Array.from(this.commands.keys()).join(", ")}`;
     }
@@ -87,7 +105,7 @@ export default class Commands {
 
 export interface ICommandContext {
     prefix: string;
-    message: Discord.Message;
+    message: Message;
     command: string;
     passed: string;
 }

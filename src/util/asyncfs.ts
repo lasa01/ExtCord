@@ -1,9 +1,8 @@
-import FS from "fs";
-import Util from "util";
+import FS = require("fs");
+import { promisify } from "util";
 
-export default {
-    readFile: Util.promisify(FS.readFile),
-    readdir: Util.promisify(FS.readdir),
-    stat: Util.promisify(FS.stat),
-    writeFile: Util.promisify(FS.writeFile),
-};
+export const mkdir = promisify(FS.mkdir);
+export const readFile = promisify(FS.readFile);
+export const readdir = promisify(FS.readdir);
+export const stat = promisify(FS.stat);
+export const writeFile = promisify(FS.writeFile);

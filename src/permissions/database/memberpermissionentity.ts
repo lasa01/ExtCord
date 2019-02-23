@@ -1,8 +1,8 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import MemberEntity from "../../database/entity/memberentity";
+import { MemberEntity } from "../../database/entity/memberentity";
 
 @Entity("memberPermissions")
-export default class MemberPermissionEntity {
+export class MemberPermissionEntity {
     @PrimaryGeneratedColumn()
     public id!: number;
 

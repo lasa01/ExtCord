@@ -1,73 +1,81 @@
-import Path from "path";
-import Winston from "winston";
+import { resolve } from "path";
+import { Logger } from "winston";
 
-import Config from "../config/config";
-import ConfigEntryGroup from "../config/entry/entrygroup";
-import StringGuildConfigEntry from "../config/entry/guild/stringguildentry";
-import StringConfigEntry from "../config/entry/stringentry";
-import Database from "../database/database";
-import AsyncFS from "../util/asyncfs";
-import Serializer from "../util/serializer";
-import Language from "./language";
-import BasePhrase from "./phrase/basephrase";
+import { Config } from "../config/config";
+import { ConfigEntryGroup } from "../config/entry/entrygroup";
+import { StringGuildConfigEntry } from "../config/entry/guild/stringguildentry";
+import { StringConfigEntry } from "../config/entry/stringentry";
+import { Database } from "../database/database";
+import { mkdir, readdir, readFile, writeFile } from "../util/asyncfs";
+import { extension, parse, stringify } from "../util/serializer";
+import { Language } from "./language";
+import { Phrase } from "./phrase/phrase";
 
-export default class Languages {
+export class Languages {
     public languageConfigEntry?: StringGuildConfigEntry;
     public languageNameConfigEntry?: StringConfigEntry;
     public languageDirConfigEntry?: StringConfigEntry;
-    private logger: Winston.Logger;
+    private logger: Logger;
     private languages: Map<string, Language>;
-    private phrases: Map<string, BasePhrase>;
+    private phrases: Map<string, Phrase>;
     private configEntry?: ConfigEntryGroup;
 
-    constructor(logger: Winston.Logger) {
+    constructor(logger: Logger) {
         this.logger = logger;
         this.languages = new Map();
         this.phrases = new Map();
     }
 
-    public register(phrase: BasePhrase) {
+    public register(phrase: Phrase) {
         this.phrases.set(phrase.name, phrase);
     }
 
     public async loadAll(directory?: string) {
         directory = directory || this.languageDirConfigEntry!.get();
         this.logger.info("Loading all languages");
-        const dirContent = await AsyncFS.readdir(Path.resolve(process.cwd(), directory));
+        // Ensure directory exists
+        try {
+            await mkdir(directory);
+        } catch (err) {
+            if (err.code !== "EEXIST") {
+                throw err;
+            }
+        }
+        // Filter out wrong extensions
+        const dirContent = (await readdir(directory)).filter((file) => file.endsWith(extension));
         // If no languages exist, write a default language file
         if (dirContent.length === 0) {
-            let content = Serializer.stringify({
+            let content = stringify({
                 id: this.languageConfigEntry!.get(),
                 name: this.languageNameConfigEntry!.get(),
             });
             content = await this.loadText(content);
-            await AsyncFS.writeFile(Path.resolve(process.cwd(), directory, this.languageConfigEntry!.get()), content);
+            await writeFile(resolve(directory, this.languageConfigEntry!.get() + extension), content);
         }
         for (const filename of dirContent) {
-            const path = Path.resolve(process.cwd(), this.languageDirConfigEntry!.get(), filename);
+            const path = resolve(this.languageDirConfigEntry!.get(), filename);
             await this.loadFile(path);
         }
     }
 
     public async loadFile(path: string) {
-        if (!path.endsWith(Serializer.extension)) { return; }
         let content;
         try {
-            content = await AsyncFS.readFile(path, "utf8");
+            content = await readFile(path, "utf8");
         } catch (err) {
             this.logger.error(`An error occured while reading language ${path}: ${err}`);
             return;
         }
         const newContent = await this.loadText(content);
         if (newContent !== content) {
-            await AsyncFS.writeFile(path, newContent);
+            await writeFile(path, newContent);
         }
     }
 
     public async loadText(content: string) {
-        let parsed: any;
+        let parsed: { [key: string]: any };
         try {
-            parsed = Serializer.parse(content);
+            parsed = parse(content);
         } catch {
             this.logger.error("An error occured while loading a language");
             return content;
@@ -82,10 +90,11 @@ export default class Languages {
             const [data, comment] = phrase.parse(id, parsed[phrase.name]);
             parsed[phrase.name] = data;
             if (!parsed[phrase.name + "__commentBefore__"]) {
+                Object.defineProperty(parsed, phrase.name + "__commentBefore__", { enumerable: false, writable: true});
                 parsed[phrase.name + "__commentBefore__"] = comment;
             }
         }
-        return Serializer.stringify(parsed);
+        return stringify(parsed);
     }
 
     public registerConfig(config: Config, database: Database) {
@@ -106,5 +115,9 @@ export default class Languages {
             name: "languages",
         }, [ this.languageConfigEntry, this.languageDirConfigEntry ]);
         config.register(this.configEntry);
+    }
+
+    public getStatus() {
+        return `${this.phrases.size} phrases loaded: ${Array.from(this.phrases.keys()).join(", ")}`;
     }
 }

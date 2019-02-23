@@ -1,9 +1,9 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
-import GuildEntity from "../../../../database/entity/guildentity";
+import { GuildEntity } from "../../../../database/entity/guildentity";
 
 @Entity("numberGuildConfigs")
-export default class NumberConfigEntity {
+export class NumberConfigEntity {
     @PrimaryGeneratedColumn()
     public id!: number;
 

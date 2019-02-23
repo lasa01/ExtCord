@@ -1,31 +1,57 @@
-import EventEmitter from "events";
-import Winston from "winston";
+import { EventEmitter } from "events";
+import { Logger } from "winston";
 
-import Database from "../database/database";
-import AsyncFS from "../util/asyncfs";
-import Serializer from "../util/serializer";
-import ConfigEntry from "./entry/entry";
-import BooleanConfigEntity from "./entry/guild/database/booleanconfigentity";
-import NumberConfigEntity from "./entry/guild/database/numberconfigentity";
-import StringConfigEntity from "./entry/guild/database/stringconfigentity";
+import { Database } from "../database/database";
+import { readFile, writeFile } from "../util/asyncfs";
+import { parse, stringify } from "../util/serializer";
+import { ConfigEntry } from "./entry/entry";
+import { BooleanConfigEntity } from "./entry/guild/database/booleanconfigentity";
+import { NumberConfigEntity } from "./entry/guild/database/numberconfigentity";
+import { StringConfigEntity } from "./entry/guild/database/stringconfigentity";
 
-export default class Config extends EventEmitter {
+export class Config extends EventEmitter {
     public static registerDatabase(database: Database) {
         database.registerEntity(BooleanConfigEntity);
         database.registerEntity(NumberConfigEntity);
         database.registerEntity(StringConfigEntity);
     }
 
-    private logger: Winston.Logger;
+    private logger: Logger;
+    private configFile: string;
     private entries: Map<string, ConfigEntry>;
     private stages: Map<number, ConfigEntry[]>;
     private orderedStages?: number[];
 
-    constructor(logger: Winston.Logger) {
+    constructor(logger: Logger, configFile: string) {
         super();
         this.logger = logger;
+        this.configFile = configFile;
         this.entries = new Map();
         this.stages = new Map();
+    }
+
+    // Strongly typed events
+
+    public addListener(event: "loaded", listener: (stage: number) => void): this;
+    public addListener(event: string, listener: (...args: any[]) => void) { return super.addListener(event, listener); }
+
+    public emit(event: "loaded", stage: number): boolean;
+    public emit(event: string, ...args: any[]) { return super.emit(event, ...args); }
+
+    public on(event: "loaded", listener: (stage: number) => void): this;
+    public on(event: string, listener: (...args: any[]) => void) { return super.on(event, listener); }
+
+    public once(event: "loaded", listener: (stage: number) => void): this;
+    public once(event: string, listener: (...args: any[]) => void) { return super.once(event, listener); }
+
+    public prependListener(event: "loaded", listener: (stage: number) => void): this;
+    public prependListener(event: string, listener: (...args: any[]) => void) {
+        return super.prependListener(event, listener);
+    }
+
+    public prependOnceListener(event: "loaded", listener: (stage: number) => void): this;
+    public prependOnceListener(event: string, listener: (...args: any[]) => void) {
+        return super.prependOnceListener(event, listener);
     }
 
     public register(entry: ConfigEntry) {
@@ -45,7 +71,8 @@ export default class Config extends EventEmitter {
         }
     }
 
-    public async loadNext(filename: string): Promise<number> {
+    public async loadNext(filename?: string): Promise<number> {
+        filename = filename || this.configFile;
         if (!this.orderedStages) {
             this.orderedStages = Array.from(this.stages.keys());
             this.orderedStages.sort((a, b) => a - b);
@@ -58,7 +85,8 @@ export default class Config extends EventEmitter {
         return stage;
     }
 
-    public async load(stage: number, filename: string) {
+    public async load(stage: number, filename?: string) {
+        filename = filename || this.configFile;
         this.logger.info(`Loading config stage ${stage}`);
         const entries = this.stages.get(stage);
         if (!entries) {
@@ -67,10 +95,10 @@ export default class Config extends EventEmitter {
         }
         this.logger.debug(`Stage has ${entries.length} entries`);
         let content: string;
-        let parsed: any;
+        let parsed: { [key: string]: any };
         try {
-            content = await AsyncFS.readFile(filename, "utf8");
-            parsed = Serializer.parse(content);
+            content = await readFile(filename, "utf8");
+            parsed = parse(content);
         } catch {
             content = "";
             parsed = {};
@@ -79,13 +107,14 @@ export default class Config extends EventEmitter {
             const [data, comment] = entry.parse(parsed[entry.name]);
             parsed[entry.name] = data;
             if (!parsed[entry.name + "__commentBefore__"]) {
+                Object.defineProperty(parsed, entry.name + "__commentBefore__", { enumerable: false, writable: true});
                 parsed[entry.name + "__commentBefore__"] = comment;
             }
             entry.emit("loaded");
         }
-        const newContent = Serializer.stringify(parsed);
+        const newContent = stringify(parsed);
         if (newContent !== content) {
-            await AsyncFS.writeFile(filename, content);
+            await writeFile(filename, newContent);
         }
         this.emit("loaded", stage);
     }

@@ -1,10 +1,10 @@
 import { Logger } from "typeorm";
-import Winston from "winston";
+import { Logger as WinstonLogger } from "winston";
 
-export default class LoggerBridge implements Logger {
-    private logger: Winston.Logger;
+export class LoggerBridge implements Logger {
+    private logger: WinstonLogger;
 
-    constructor(logger: Winston.Logger) {
+    constructor(logger: WinstonLogger) {
         this.logger = logger;
     }
 

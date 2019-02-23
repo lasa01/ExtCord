@@ -1,6 +1,6 @@
-import ConfigEntry, { IEntryInfo } from "./entry";
+import { ConfigEntry, IEntryInfo } from "./entry";
 
-export default class ConfigEntryGroup extends ConfigEntry {
+export class ConfigEntryGroup extends ConfigEntry {
     public entries: Map<string, ConfigEntry>;
     private value?: object;
 
@@ -43,7 +43,7 @@ export default class ConfigEntryGroup extends ConfigEntry {
         return out;
     }
 
-    public parse(data: any): [object, string] {
+    public parse(data: any): [any, string] {
         if (typeof data !== "object") {
             data = {};
         }
@@ -51,6 +51,7 @@ export default class ConfigEntryGroup extends ConfigEntry {
             const [parsed, comment] = entry.parse(data[name]);
             data[name] = parsed;
             if (!data[name + "__commentBefore__"]) {
+                Object.defineProperty(data, name + "__commentBefore__", { enumerable: false, writable: true});
                 data[name + "__commentBefore__"] = comment;
             }
         }

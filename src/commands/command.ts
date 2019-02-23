@@ -1,19 +1,38 @@
-import Discord from "discord.js";
+import { Message } from "discord.js";
 
-import Module from "../modules/module";
-import Permission from "../permissions/permission";
-import Argument from "./arguments/argument";
-import { ICommandContext } from "./commands";
+import { Phrase } from "../language/phrase/phrase";
+import { PhraseGroup } from "../language/phrase/phrasegroup";
+import { SimplePhrase } from "../language/phrase/simplephrase";
+import { Module } from "../modules/module";
+import { Permission } from "../permissions/permission";
+import { Argument } from "./arguments/argument";
+import { Commands, ICommandContext } from "./commands";
 
-export default class Command {
+export abstract class Command {
     public name: string;
+    public localizedName: SimplePhrase;
+    public description: string;
+    public localizedDescription: SimplePhrase;
     public from?: Module;
     public author: string;
     public arguments: Argument[];
     private defaultPermission: Permission;
+    private phraseGroup?: PhraseGroup;
+    private argPhraseGroup?: PhraseGroup;
+    private argPhrases: Phrase[];
 
     constructor(info: ICommandInfo, args: Argument[], allowEveryone = false, defaultPermission?: Permission) {
         this.name = info.name;
+        this.localizedName = new SimplePhrase({
+            description: `The name for the command ${this.name}`,
+            name: "name",
+        }, this.name);
+        this.description = info.description;
+        this.localizedDescription = new SimplePhrase({
+            description: `The description for the command ${this.name}`,
+            name: "description",
+        }, this.name);
+        this.argPhrases = [];
         if (Module.isPrototypeOf(info.author)) {
             this.from = info.author as Module;
             this.author = this.from.author;
@@ -21,10 +40,29 @@ export default class Command {
             this.author = info.author as string;
         }
         this.arguments = args;
+        for (const argument of this.arguments) {
+            argument.register(this);
+        }
         this.defaultPermission = defaultPermission || new Permission({
             description: `Gives the permission for the command ${info.name}`,
             name: info.name,
         }, allowEveryone);
+    }
+
+    public register(commands: Commands) {
+        this.argPhraseGroup = new PhraseGroup({
+            description: `Command arguments`,
+            name: "arguments",
+        }, this.argPhrases);
+        this.phraseGroup = new PhraseGroup({
+            description: `Language definitions for the command ${this.name}`,
+            name: this.name,
+        }, [ this.localizedDescription, this.localizedName, this.argPhraseGroup ]);
+        commands.registerPhrase(this.phraseGroup);
+    }
+
+    public registerPhrase(phrase: Phrase) {
+        this.argPhrases.push(phrase);
     }
 
     public rename() {
@@ -60,12 +98,12 @@ export default class Command {
         }
     }
 
-    protected async execute(context: IExecutionContext) { return; }
+    public abstract async execute(context: IExecutionContext): Promise<void>;
 
 }
 
 export interface IExecutionContext {
-    message: Discord.Message;
+    message: Message;
     prefix: string;
     command: string;
     rawArguments: string[];
@@ -74,5 +112,6 @@ export interface IExecutionContext {
 
 export interface ICommandInfo {
     name: string;
+    description: string;
     author: string | Module;
 }

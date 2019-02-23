@@ -1,6 +1,6 @@
-import ConfigEntry, { IEntryInfo } from "./entry";
+import { ConfigEntry, IEntryInfo } from "./entry";
 
-export default class BooleanConfigEntry extends ConfigEntry {
+export class BooleanConfigEntry extends ConfigEntry {
     private value?: boolean;
     private defaultValue?: boolean;
 

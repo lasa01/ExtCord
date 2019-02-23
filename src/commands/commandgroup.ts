@@ -1,8 +1,8 @@
-import PermissionGroup from "../permissions/permissiongroup";
-import StringArgument from "./arguments/stringargument";
-import Command, { ICommandInfo, IExecutionContext } from "./command";
+import { PermissionGroup } from "../permissions/permissiongroup";
+import { StringArgument } from "./arguments/stringargument";
+import { Command, ICommandInfo, IExecutionContext } from "./command";
 
-export default class CommandGroup extends Command {
+export class CommandGroup extends Command {
     public children: Map<string, Command>;
 
     constructor(info: ICommandInfo, children: Command[], allowEveryone = false) {
@@ -18,9 +18,16 @@ export default class CommandGroup extends Command {
             name: info.name,
         }, permissions));
         this.children = new Map();
+        for (const child of children) {
+            this.children.set(child.name, child);
+        }
     }
 
-    protected async execute(context: IExecutionContext) {
-        // TODO call correct child command
+    public async execute(context: IExecutionContext) {
+        const subcommand: string = context.arguments.shift();
+        if (!this.children.has(subcommand)) {
+            return; // For now
+        }
+        this.children.get(subcommand)!.execute(context);
     }
 }

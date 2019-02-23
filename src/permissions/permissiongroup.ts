@@ -1,8 +1,8 @@
-import ConfigEntryGroup from "../config/entry/entrygroup";
-import Permission, { IPermissionInfo } from "./permission";
-import Permissions from "./permissions";
+import { ConfigEntryGroup } from "../config/entry/entrygroup";
+import { IPermissionInfo, Permission } from "./permission";
+import { Permissions } from "./permissions";
 
-export default class PermissionGroup extends Permission {
+export class PermissionGroup extends Permission {
     public children: Map<string, Permission>;
 
     constructor(info: IPermissionInfo, children: Permission[]) {

@@ -1,11 +1,11 @@
-import Discord from "discord.js";
+import { Guild } from "discord.js";
 import { EntityRepository, Repository } from "typeorm";
 
-import GuildEntity from "../entity/guildentity";
+import { GuildEntity } from "../entity/guildentity";
 
 @EntityRepository(GuildEntity)
-export default class GuildRepository extends Repository<GuildEntity> {
-    public async getEntity(guild: Discord.Guild) {
+export class GuildRepository extends Repository<GuildEntity> {
+    public async getEntity(guild: Guild) {
         const structure = {
             id: guild.id,
             name: guild.name,

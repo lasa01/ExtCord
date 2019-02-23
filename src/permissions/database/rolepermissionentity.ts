@@ -1,8 +1,8 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import RoleEntity from "../../database/entity/roleentity";
+import { RoleEntity } from "../../database/entity/roleentity";
 
 @Entity("rolePermissions")
-export default class RolePermissionEntity {
+export class RolePermissionEntity {
     @PrimaryGeneratedColumn()
     public id!: number;
 

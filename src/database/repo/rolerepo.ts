@@ -1,12 +1,12 @@
-import Discord from "discord.js";
+import { Role } from "discord.js";
 import { EntityRepository, Repository } from "typeorm";
 
-import RoleEntity from "../entity/roleentity";
-import GuildRepository from "./guildrepo";
+import { RoleEntity } from "../entity/roleentity";
+import { GuildRepository } from "./guildrepo";
 
 @EntityRepository(RoleEntity)
-export default class RoleRepository extends Repository<RoleEntity> {
-    public async getEntity(role: Discord.Role) {
+export class RoleRepository extends Repository<RoleEntity> {
+    public async getEntity(role: Role) {
         let entity = await this.findOne({ where: { guildId: role.guild.id, roleId: role.id } });
         if (!entity) {
             const guild = await this.manager.getCustomRepository(GuildRepository).getEntity(role.guild);

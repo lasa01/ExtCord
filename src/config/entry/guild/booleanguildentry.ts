@@ -1,12 +1,12 @@
-import Discord from "discord.js";
+import { Guild } from "discord.js";
 import { Repository } from "typeorm";
 
-import Database from "../../../database/database";
-import BooleanConfigEntry from "../booleanentry";
+import { Database } from "../../../database/database";
+import { BooleanConfigEntry } from "../booleanentry";
 import { IEntryInfo } from "../entry";
-import BooleanConfigEntity from "./database/booleanconfigentity";
+import { BooleanConfigEntity } from "./database/booleanconfigentity";
 
-export default class BooleanGuildConfigEntry extends BooleanConfigEntry {
+export class BooleanGuildConfigEntry extends BooleanConfigEntry {
     private database: Database;
     private repo?: Repository<BooleanConfigEntity>;
 
@@ -16,12 +16,12 @@ export default class BooleanGuildConfigEntry extends BooleanConfigEntry {
         this.database = database;
     }
 
-    public async guildGet(guild: Discord.Guild): Promise<boolean> {
+    public async guildGet(guild: Guild): Promise<boolean> {
         const entity = await this.guildGetEntity(guild);
         return entity.value;
     }
 
-    public async guildSet(guild: Discord.Guild, value: boolean) {
+    public async guildSet(guild: Guild, value: boolean) {
         const entity = await this.guildGetEntity(guild);
         entity.value = value;
         await this.repo!.save(entity);
@@ -32,7 +32,7 @@ export default class BooleanGuildConfigEntry extends BooleanConfigEntry {
         this.repo = await this.database.connection!.getRepository(BooleanConfigEntity);
     }
 
-    private async guildGetEntity(guild: Discord.Guild) {
+    private async guildGetEntity(guild: Guild) {
         await this.ensureRepo();
         let entity = await this.repo!.findOne({ where: {
             guildId: guild.id,

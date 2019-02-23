@@ -70,5 +70,8 @@ modules
 # databases
 *.sqlite
 
+# language files
+languages
+
 # docs for now
 docs

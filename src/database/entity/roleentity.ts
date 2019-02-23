@@ -1,9 +1,9 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
-import GuildEntity from "./guildentity";
+import { GuildEntity } from "./guildentity";
 
 @Entity("roles")
-export default class RoleEntity {
+export class RoleEntity {
     @PrimaryGeneratedColumn()
     public id!: number;
 

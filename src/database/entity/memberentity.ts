@@ -1,10 +1,10 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
-import GuildEntity from "./guildentity";
-import UserEntity from "./userentity";
+import { GuildEntity } from "./guildentity";
+import { UserEntity } from "./userentity";
 
 @Entity("members")
-export default class MemberEntity {
+export class MemberEntity {
     @PrimaryGeneratedColumn()
     public id!: number;
 

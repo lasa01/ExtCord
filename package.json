@@ -4,9 +4,9 @@
   "description": "Discord bot",
   "main": "dist/index.js",
   "scripts": {
-    "start": "node dist/index.js",
+    "start": "node dist/extcord.js",
     "build": "tsc -b src_modules",
-    "build-bot": "tsc -b src",
+    "build:bot": "tsc -b src",
     "typedoc": "cd src && typedoc"
   },
   "repository": {
@@ -19,25 +19,38 @@
     "url": "https://github.com/lasa01/ExtCord/issues"
   },
   "homepage": "https://github.com/lasa01/ExtCord#readme",
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "bin": {
+    "extcord": "./bin/extcord"
+  },
+  "files": [
+    "dist",
+    "modules",
+    "bin"
+  ],
   "dependencies": {
-    "discord.js": "11.x",
-    "erlpack": "github:hammerandchisel/erlpack",
-    "hjson": "3.x",
-    "libsodium-wrappers": "0.7.x",
-    "node-opus": "0.3.x",
-    "reflect-metadata": "0.1.x",
-    "sqlite3": "4.x",
-    "typeorm": "0.2.x",
-    "uws": "99.x",
-    "winston": "3.x",
-    "yargs": "12.x"
+    "discord.js": "^11.4.2",
+    "erlpack": "github:discordapp/erlpack",
+    "hjson": "^3.1.2",
+    "libsodium-wrappers": "^0.7.4",
+    "node-opus": "^0.2.7",
+    "reflect-metadata": "^0.1.13",
+    "sqlite3": "^4.0.6",
+    "string-format": "^2.0.0",
+    "typeorm": "^0.2.13",
+    "uws": "^9.14.0",
+    "winston": "^3.2.1",
+    "yargs": "^12.0.5"
   },
   "devDependencies": {
-    "@types/hjson": "2.x",
+    "@types/hjson": "^2.4.1",
     "@types/node": "8.x",
-    "@types/yargs": "12.x",
-    "tslint": "5.x",
-    "typedoc": "0.14.x",
-    "typescript": "3.x"
+    "@types/string-format": "^2.0.0",
+    "@types/yargs": "^12.0.5",
+    "tslint": "^5.12.1",
+    "typedoc": "^0.14.2",
+    "typescript": "^3.0.0"
   }
 }

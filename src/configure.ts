@@ -1,4 +1,4 @@
-export default class Configure {
+export class Configure {
     private configFile: string;
 
     constructor(configFile: string) {

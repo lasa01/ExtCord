@@ -1,12 +1,12 @@
-import Discord from "discord.js";
+import { Guild } from "discord.js";
 import { Repository } from "typeorm";
 
-import Database from "../../../database/database";
+import { Database } from "../../../database/database";
 import { IEntryInfo } from "../entry";
-import NumberConfigEntry from "../numberentry";
-import NumberConfigEntity from "./database/numberconfigentity";
+import { NumberConfigEntry } from "../numberentry";
+import { NumberConfigEntity } from "./database/numberconfigentity";
 
-export default class NumberGuildConfigEntry extends NumberConfigEntry {
+export class NumberGuildConfigEntry extends NumberConfigEntry {
     private database: Database;
     private repo?: Repository<NumberConfigEntity>;
 
@@ -16,12 +16,12 @@ export default class NumberGuildConfigEntry extends NumberConfigEntry {
         this.database = database;
     }
 
-    public async guildGet(guild: Discord.Guild): Promise<number> {
+    public async guildGet(guild: Guild): Promise<number> {
         const entity = await this.guildGetEntity(guild);
         return entity.value;
     }
 
-    public async guildSet(guild: Discord.Guild, value: number) {
+    public async guildSet(guild: Guild, value: number) {
         const entity = await this.guildGetEntity(guild);
         entity.value = value;
         await this.repo!.save(entity);
@@ -32,7 +32,7 @@ export default class NumberGuildConfigEntry extends NumberConfigEntry {
         this.repo = await this.database.connection!.getRepository(NumberConfigEntity);
     }
 
-    private async guildGetEntity(guild: Discord.Guild) {
+    private async guildGetEntity(guild: Guild) {
         await this.ensureRepo();
         let entity = await this.repo!.findOne({ where: {
             guildId: guild.id,

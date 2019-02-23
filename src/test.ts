@@ -1,21 +1,21 @@
-import Readline from "readline";
+import { createInterface } from "readline";
 
-import Winston from "winston";
+import { createLogger, format, transports } from "winston";
 
-import Config from "./config/config";
-import ConfigEntryGroup from "./config/entry/entrygroup";
-import NumberConfigEntry from "./config/entry/numberentry";
-import StringConfigEntry from "./config/entry/stringentry";
+import { Config } from "./config/config";
+import { ConfigEntryGroup } from "./config/entry/entrygroup";
+import { NumberConfigEntry } from "./config/entry/numberentry";
+import { StringConfigEntry } from "./config/entry/stringentry";
 
-import Database from "./database/database";
-import MemberPermissionEntity from "./permissions/database/memberpermissionentity";
-import Permissions from "./permissions/permissions";
+import { Database } from "./database/database";
+import { MemberPermissionEntity } from "./permissions/database/memberpermissionentity";
+import { Permissions } from "./permissions/permissions";
 
-const log = Winston.createLogger({
-    format: Winston.format.cli(),
+const log = createLogger({
+    format: format.cli(),
     level: "silly",
     transports: [
-        new Winston.transports.Console(),
+        new transports.Console(),
     ],
 });
 
@@ -28,7 +28,7 @@ const tests: {
 
 async function testConfig() {
     // Test config
-    const config = new Config(log);
+    const config = new Config(log, "configtest.hjson");
 
     const entries = [
         new StringConfigEntry({ name: "early", description: "This is an early one", loadStage: 0 }, "snail"),
@@ -47,7 +47,7 @@ async function testConfig() {
     }
 
     while (config.hasNext()) {
-        log.info(`Loaded stage: ${(await config.loadNext("configtest.hjson")).toString()}`);
+        log.info(`Loaded stage: ${(await config.loadNext()).toString()}`);
         for (const entry of entries) {
             const lines = entry.print().split("\n");
             lines.forEach((line) => log.info("    " + line));
@@ -118,7 +118,7 @@ async function testDatabase() {
     await pRepo.save([perm, perm2]);
 }
 
-const readline = Readline.createInterface({
+const readline = createInterface({
     input: process.stdin,
     output: process.stdout,
 });

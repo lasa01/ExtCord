@@ -1,26 +1,24 @@
-import EventEmitter from "events";
-import Readline from "readline";
+import { EventEmitter } from "events";
+import { createInterface, ReadLine } from "readline";
 
-import Discord from "discord.js";
-import { ConnectionOptions } from "typeorm";
-import Winston from "winston";
+import { Client } from "discord.js";
+import { Logger, transports } from "winston";
 
-import Commands from "./commands/commands";
-import Config from "./config/config";
-import ConfigEntryGroup from "./config/entry/entrygroup";
-import NumberConfigEntry from "./config/entry/numberentry";
-import StringConfigEntry from "./config/entry/stringentry";
-import Database from "./database/database";
-import Languages from "./language/languages";
-import Modules from "./modules/modules";
-import Permissions from "./permissions/permissions";
+import { Commands } from "./commands/commands";
+import { Config } from "./config/config";
+import { ConfigEntryGroup } from "./config/entry/entrygroup";
+import { NumberConfigEntry } from "./config/entry/numberentry";
+import { StringConfigEntry } from "./config/entry/stringentry";
+import { Database } from "./database/database";
+import { Languages } from "./language/languages";
+import { Modules } from "./modules/modules";
+import { Permissions } from "./permissions/permissions";
 
-export default class Bot extends EventEmitter {
-    public logger: Winston.Logger;
-    public readline?: Readline.ReadLine;
-    public client?: Discord.Client;
+export class Bot extends EventEmitter {
+    public logger: Logger;
+    public readline?: ReadLine;
+    public client?: Client;
     public config: Config;
-    public configFile: string;
     public database: Database;
     public permissions: Permissions;
     public commands: Commands;
@@ -40,10 +38,10 @@ export default class Bot extends EventEmitter {
         },
     };
 
-    constructor(configFile: string, logger: Winston.Logger) {
+    constructor(configFile: string, logger: Logger) {
         super();
         this.logger = logger;
-        this.config = new Config(logger);
+        this.config = new Config(logger, configFile);
         this.configEntries = {
             client: {
                 messageCacheLifetime: new NumberConfigEntry({
@@ -85,7 +83,6 @@ export default class Bot extends EventEmitter {
         }, Object.values(this.configEntries.client));
         this.config.register(this.configEntries.loggerGroup);
         this.config.register(this.configEntries.clientGroup);
-        this.configFile = configFile;
         this.database = new Database(logger);
         this.database.registerConfig(this.config);
         Config.registerDatabase(this.database);
@@ -98,27 +95,54 @@ export default class Bot extends EventEmitter {
         this.modules.registerConfig(this.config);
     }
 
+    // Strongly typed events
+
+    public addListener(event: "ready" | "stop", listener: () => void): this;
+    public addListener(event: string, listener: (...args: any[]) => void) { return super.addListener(event, listener); }
+
+    public emit(event: "ready" | "stop"): boolean;
+    public emit(event: string, ...args: any[]) { return super.emit(event, ...args); }
+
+    public on(event: "ready" | "stop", listener: () => void): this;
+    public on(event: string, listener: (...args: any[]) => void) { return super.on(event, listener); }
+
+    public once(event: "ready" | "stop", listener: () => void): this;
+    public once(event: string, listener: (...args: any[]) => void) { return super.once(event, listener); }
+
+    public prependListener(event: "ready" | "stop", listener: () => void): this;
+    public prependListener(event: string, listener: (...args: any[]) => void) {
+        return super.prependListener(event, listener);
+    }
+
+    public prependOnceListener(event: "ready" | "stop", listener: () => void): this;
+    public prependOnceListener(event: string, listener: (...args: any[]) => void) {
+        return super.prependOnceListener(event, listener);
+    }
+
     public async run() {
         this.logger.info("Loading config");
         while (this.config.hasNext()) {
-            const stage = await this.config.loadNext(this.configFile);
+            const stage = await this.config.loadNext();
             if (stage === 0) {
                 this.logger.info("Reconfiguring logger");
                 this.logger.configure({
                     level: this.logger.level === "info" ? this.configEntries.logger.loglevel.get() : this.logger.level,
                     transports: [
-                        new Winston.transports.Console(),
-                        new Winston.transports.File( { filename: this.configEntries.logger.file.get() } ),
+                        new transports.Console(),
+                        new transports.File( { filename: this.configEntries.logger.file.get() } ),
                     ],
                 });
                 await this.modules.loadAll();
                 this.commands.registerPermissions(this.permissions);
                 this.permissions.registerConfig(this.config);
+                this.commands.registerLanguages(this.languges);
+                await this.languges.loadAll();
                 this.logger.debug(this.permissions.getStatus());
                 this.logger.debug(this.commands.getStatus());
+                this.logger.debug(this.languges.getStatus());
             } else if (stage === 1) {
                 await this.database.connect();
-                this.client = new Discord.Client({
+                this.client = new Client({
                     messageCacheLifetime: this.configEntries.client.messageCacheLifetime.get(),
                     messageCacheMaxSize: this.configEntries.client.messageCacheMaxSize.get(),
                     messageSweepInterval: this.configEntries.client.messageCacheSweepInterval.get(),
@@ -134,7 +158,7 @@ export default class Bot extends EventEmitter {
     }
 
     public setInteractive(input: NodeJS.ReadableStream) {
-        this.readline = Readline.createInterface({
+        this.readline = createInterface({
             input,
         });
         this.readline.on("line", (line: string) => {
