@@ -8,6 +8,10 @@ import { Permission } from "../permissions/permission";
 import { Argument } from "./arguments/argument";
 import { Commands, ICommandContext } from "./commands";
 
+interface IArgumentTree extends Array<IArgumentTree|Argument> {
+    [key: number]: IArgumentTree|Argument;
+}
+
 export abstract class Command {
     public name: string;
     public localizedName: SimplePhrase;
@@ -20,6 +24,8 @@ export abstract class Command {
     private phraseGroup?: PhraseGroup;
     private argPhraseGroup?: PhraseGroup;
     private argPhrases: Phrase[];
+    private argCombinations: Argument[][];
+    private argCheckTree: IArgumentTree;
 
     constructor(info: ICommandInfo, args: Argument[], allowEveryone = false, defaultPermission?: Permission) {
         this.name = info.name;
@@ -38,9 +44,28 @@ export abstract class Command {
             this.author = info.author as string;
         }
         this.arguments = args;
+        // Build possible argument combinations
+        this.argCombinations = [[]];
         for (const argument of this.arguments) {
+            if (argument.optional) {
+                // For optional arguments, clone all combinations, and add the optional
+                // argument to the other clone, and merge the clones into one list of combinations
+                const optIncludedComb = [...this.argCombinations];
+                for (const combination of optIncludedComb) {
+                    combination.push(argument);
+                }
+                this.argCombinations = [...this.argCombinations, ...optIncludedComb];
+            } else {
+                // Non-optional arguments must be added to every possible combination
+                for (const combination of this.argCombinations) {
+                    combination.push(argument);
+                }
+            }
             argument.register(this);
         }
+        // Build optimal argument checking order
+        this.argCheckTree = [[]];
+        // TODO
         this.defaultPermission = defaultPermission || new Permission({
             name: info.name,
         }, allowEveryone);
