@@ -24,13 +24,13 @@ export class Commands {
     private commandPhrases: Phrase[];
     private commandPhraseGroup?: PhraseGroup;
     private phrases: {
-        [key: string]: TemplatePhrase;
-        executionError: TemplatePhrase;
-        invalidArgument: TemplatePhrase;
-        invalidCommand: TemplatePhrase;
-        noPermission: TemplatePhrase;
-        tooFewArguments: TemplatePhrase;
-        tooManyArguments: TemplatePhrase;
+        executionError: TemplatePhrase<{ error: string}>;
+        invalidArgument: TemplatePhrase<{ argument: string }>;
+        invalidCommand: TemplatePhrase<{ command: string }>;
+        noPermission: TemplatePhrase<{ command: string }>;
+        tooFewArguments: TemplatePhrase<{ supplied: string, required: string }>;
+        tooManyArguments: TemplatePhrase<{ supplied: string, required: string }>;
+        [key: string]: TemplatePhrase<any>;
     };
     private phraseGroup?: PhraseGroup;
 
@@ -42,22 +42,36 @@ export class Commands {
         this.phrases = {
             executionError: new TemplatePhrase({
                 name: "executionError",
-            }, "Execution failed: {error}"),
+            }, "Execution failed: {error}", {
+                error: "The error that occured",
+            }),
             invalidArgument: new TemplatePhrase({
                 name: "invalidArgument",
-            }, "Argument \"{argument}\" is invalid"),
+            }, "Argument \"{argument}\" is invalid", {
+                argument: "The invalid argument",
+            }),
             invalidCommand: new TemplatePhrase({
                 name: "invalidCommand",
-            }, "Command {command} not found"),
+            }, "Command {command} not found", {
+                command: "The called command",
+            }),
             noPermission: new TemplatePhrase({
                 name: "noPermission",
-            }, "You lack permissions to execute the command \"{command}\""),
+            }, "You lack permissions to execute the command \"{command}\"", {
+                command: "The called command",
+            }),
             tooFewArguments: new TemplatePhrase({
                 name: "tooFewArguments",
-            }, "Too few arguments supplied: {supplied} supplied, {required} required"),
+            }, "Too few arguments supplied: {supplied} supplied, {required} required", {
+                required: "The amount of required arguments",
+                supplied: "The amount of supplied arguments",
+            }),
             tooManyArguments: new TemplatePhrase({
                 name: "tooManyArguments",
-            }, "Too many arguments supplied: {supplied} supplied, {required} required"),
+            }, "Too many arguments supplied: {supplied} supplied, {required} required", {
+                required: "The amount of required arguments",
+                supplied: "The amount of supplied arguments",
+            }),
         };
     }
 

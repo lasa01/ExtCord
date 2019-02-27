@@ -14,6 +14,28 @@ import { Languages } from "./language/languages";
 import { Modules } from "./modules/modules";
 import { Permissions } from "./permissions/permissions";
 
+// Event definitions
+// tslint:disable-next-line:interface-name
+export interface Bot {
+    /** @event */
+    addListener(event: "ready" | "stop", listener: () => void): this;
+
+    /** @event */
+    emit(event: "ready" | "stop"): boolean;
+
+    /** @event */
+    on(event: "ready" | "stop", listener: () => void): this;
+
+    /** @event */
+    once(event: "ready" | "stop", listener: () => void): this;
+
+    /** @event */
+    prependListener(event: "ready" | "stop", listener: () => void): this;
+
+    /** @event */
+    prependOnceListener(event: "ready" | "stop", listener: () => void): this;
+}
+
 export class Bot extends EventEmitter {
     public logger: Logger;
     public readline?: ReadLine;
@@ -93,30 +115,6 @@ export class Bot extends EventEmitter {
         this.languges.registerConfig(this.config, this.database);
         this.modules = new Modules(logger, this);
         this.modules.registerConfig(this.config);
-    }
-
-    // Strongly typed events
-
-    public addListener(event: "ready" | "stop", listener: () => void): this;
-    public addListener(event: string, listener: (...args: any[]) => void) { return super.addListener(event, listener); }
-
-    public emit(event: "ready" | "stop"): boolean;
-    public emit(event: string, ...args: any[]) { return super.emit(event, ...args); }
-
-    public on(event: "ready" | "stop", listener: () => void): this;
-    public on(event: string, listener: (...args: any[]) => void) { return super.on(event, listener); }
-
-    public once(event: "ready" | "stop", listener: () => void): this;
-    public once(event: string, listener: (...args: any[]) => void) { return super.once(event, listener); }
-
-    public prependListener(event: "ready" | "stop", listener: () => void): this;
-    public prependListener(event: string, listener: (...args: any[]) => void) {
-        return super.prependListener(event, listener);
-    }
-
-    public prependOnceListener(event: "ready" | "stop", listener: () => void): this;
-    public prependOnceListener(event: string, listener: (...args: any[]) => void) {
-        return super.prependOnceListener(event, listener);
     }
 
     public async run() {

@@ -1,13 +1,30 @@
 import { EventEmitter } from "events";
+import { readFile, writeFile } from "fs-extra";
 import { Logger } from "winston";
 
 import { Database } from "../database/database";
-import { readFile, writeFile } from "../util/asyncfs";
 import { parse, stringify } from "../util/serializer";
 import { ConfigEntry } from "./entry/entry";
 import { BooleanConfigEntity } from "./entry/guild/database/booleanconfigentity";
 import { NumberConfigEntity } from "./entry/guild/database/numberconfigentity";
 import { StringConfigEntity } from "./entry/guild/database/stringconfigentity";
+
+// Event definitions
+// tslint:disable-next-line:interface-name
+export interface Config {
+    /** @event */
+    addListener(event: "loaded", listener: (stage: number) => void): this;
+    /** @event */
+    emit(event: "loaded", stage: number): boolean;
+    /** @event */
+    on(event: "loaded", listener: (stage: number) => void): this;
+    /** @event */
+    once(event: "loaded", listener: (stage: number) => void): this;
+    /** @event */
+    prependListener(event: "loaded", listener: (stage: number) => void): this;
+    /** @event */
+    prependOnceListener(event: "loaded", listener: (stage: number) => void): this;
+}
 
 export class Config extends EventEmitter {
     public static registerDatabase(database: Database) {
@@ -28,30 +45,6 @@ export class Config extends EventEmitter {
         this.configFile = configFile;
         this.entries = new Map();
         this.stages = new Map();
-    }
-
-    // Strongly typed events
-
-    public addListener(event: "loaded", listener: (stage: number) => void): this;
-    public addListener(event: string, listener: (...args: any[]) => void) { return super.addListener(event, listener); }
-
-    public emit(event: "loaded", stage: number): boolean;
-    public emit(event: string, ...args: any[]) { return super.emit(event, ...args); }
-
-    public on(event: "loaded", listener: (stage: number) => void): this;
-    public on(event: string, listener: (...args: any[]) => void) { return super.on(event, listener); }
-
-    public once(event: "loaded", listener: (stage: number) => void): this;
-    public once(event: string, listener: (...args: any[]) => void) { return super.once(event, listener); }
-
-    public prependListener(event: "loaded", listener: (stage: number) => void): this;
-    public prependListener(event: string, listener: (...args: any[]) => void) {
-        return super.prependListener(event, listener);
-    }
-
-    public prependOnceListener(event: "loaded", listener: (stage: number) => void): this;
-    public prependOnceListener(event: string, listener: (...args: any[]) => void) {
-        return super.prependOnceListener(event, listener);
     }
 
     public register(entry: ConfigEntry) {

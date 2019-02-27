@@ -1,3 +1,4 @@
+import { ensureDir, readdir, readFile, writeFile } from "fs-extra";
 import { resolve } from "path";
 import { Logger } from "winston";
 
@@ -6,7 +7,6 @@ import { ConfigEntryGroup } from "../config/entry/entrygroup";
 import { StringGuildConfigEntry } from "../config/entry/guild/stringguildentry";
 import { StringConfigEntry } from "../config/entry/stringentry";
 import { Database } from "../database/database";
-import { mkdir, readdir, readFile, writeFile } from "../util/asyncfs";
 import { extension, parse, stringify } from "../util/serializer";
 import { Language } from "./language";
 import { Phrase } from "./phrase/phrase";
@@ -33,14 +33,7 @@ export class Languages {
     public async loadAll(directory?: string) {
         directory = directory || this.languageDirConfigEntry!.get();
         this.logger.info("Loading all languages");
-        // Ensure directory exists
-        try {
-            await mkdir(directory);
-        } catch (err) {
-            if (err.code !== "EEXIST") {
-                throw err;
-            }
-        }
+        await ensureDir(directory);
         // Filter out wrong extensions
         const dirContent = (await readdir(directory)).filter((file) => file.endsWith(extension));
         // If no languages exist, write a default language file

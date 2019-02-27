@@ -1,3 +1,4 @@
+import { ensureDir, readdir, stat } from "fs-extra";
 import { resolve } from "path";
 import { Logger } from "winston";
 
@@ -5,7 +6,6 @@ import { Bot } from "../bot";
 import { Config } from "../config/config";
 import { ConfigEntryGroup } from "../config/entry/entrygroup";
 import { StringConfigEntry } from "../config/entry/stringentry";
-import { mkdir, readdir, stat } from "../util/asyncfs";
 import { Module } from "./module";
 
 export class Modules {
@@ -44,14 +44,7 @@ export class Modules {
     public async loadAll(moduleDir?: string) {
         moduleDir = moduleDir || this.moduleDirConfigEntry!.get();
         this.logger.info("Loading all modules");
-        // Ensure directory exists
-        try {
-            await mkdir(moduleDir);
-        } catch (err) {
-            if (err.code !== "EEXIST") {
-                throw err;
-            }
-        }
+        await ensureDir(moduleDir);
         const modules = await readdir(moduleDir);
         for (const filename of modules) {
             let path = resolve(moduleDir, filename);

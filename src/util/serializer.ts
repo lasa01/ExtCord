@@ -1,5 +1,8 @@
 import Hjson = require("hjson");
 
+/**
+ * @ignore
+ */
 export function parse(text: string) {
     const setComments = (object: any) => {
         if (object.__COMMENTS__) {
@@ -22,6 +25,9 @@ export function parse(text: string) {
     return data;
 }
 
+/**
+ * @ignore
+ */
 export function stringify(data: any) {
     const regex = /^#|^\/\//;
     const getComments = (object: any, level = 1) => {
@@ -40,29 +46,37 @@ export function stringify(data: any) {
             if (!object.__COMMENTS__.c[name]) { object.__COMMENTS__.c[name] = ["", ""]; }
             if (object[name + "__commentBefore__"]) {
                 const lines = object[name + "__commentBefore__"].split("\n");
-                let comment = "";
+                let comment: string|undefined;
                 // Check that every line of comment begins with a correct character
-                for (let line of lines) {
-                    line = line.trim();
+                for (let line of lines as string[]) {
+                    line = line || "";
                     if (!regex.test(line)) {
                         line = "# " + line;
                     }
-                    comment += line;
+                    if (comment === undefined) {
+                        comment = "  ".repeat(level) + line;
+                    } else {
+                        comment += "\n" + "  ".repeat(level) + line;
+                    }
                 }
-                object.__COMMENTS__.c[name][0] = "  ".repeat(level) + comment;
+                object.__COMMENTS__.c[name][0] = comment;
             }
             if (object[name + "__commentAfter__"]) {
                 const lines = object[name + "__commentAfter__"].split("\n");
-                let comment = "";
+                let comment: string|undefined;
                 // Check that every line of comment begins with a correct character
-                for (let line of lines) {
-                    line = line.trim();
+                for (let line of lines as string[]) {
+                    line = line.trim() || "";
                     if (!regex.test(line)) {
                         line = "# " + line;
                     }
-                    comment += line;
+                    if (comment === undefined) {
+                        comment = "  ".repeat(level) + line;
+                    } else {
+                        comment += "\n" + "  ".repeat(level) + line;
+                    }
                 }
-                object.__COMMENTS__.c[name][1] = "  ".repeat(level) + comment;
+                object.__COMMENTS__.c[name][1] = comment;
             }
             if (typeof value === "object") {
                 getComments(value, level + 1);
@@ -73,4 +87,7 @@ export function stringify(data: any) {
     return Hjson.stringify(data, { keepWsc: true });
 }
 
+/**
+ * @ignore
+ */
 export const extension = ".hjson";

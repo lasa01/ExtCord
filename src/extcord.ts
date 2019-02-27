@@ -5,6 +5,9 @@ import { Bot } from "./bot";
 import { Configure } from "./configure";
 import { extension } from "./util/serializer";
 
+/**
+ * @ignore
+ */
 const args = Yargs.usage("Usage: $0 <command> [options]")
     .command(["run [configFile]", "$0"], "run the bot",
         (yargs) => yargs.positional("configFile", {
@@ -39,6 +42,9 @@ const args = Yargs.usage("Usage: $0 <command> [options]")
     })
     .argv;
 
+/**
+ * @ignore
+ */
 function initLogger(verbose: number): Logger {
     const levels: { [key: number]: string } = {
         0: "error",

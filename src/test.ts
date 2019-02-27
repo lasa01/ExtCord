@@ -11,6 +11,9 @@ import { Database } from "./database/database";
 import { MemberPermissionEntity } from "./permissions/database/memberpermissionentity";
 import { Permissions } from "./permissions/permissions";
 
+/**
+ * @ignore
+ */
 const log = createLogger({
     format: format.cli(),
     level: "silly",
@@ -19,6 +22,9 @@ const log = createLogger({
     ],
 });
 
+/**
+ * @ignore
+ */
 const tests: {
     [key: string]: () => Promise<any>;
 } = {
@@ -26,6 +32,9 @@ const tests: {
     database: testDatabase,
 };
 
+/**
+ * @ignore
+ */
 async function testConfig() {
     // Test config
     const config = new Config(log, "configtest.hjson");
@@ -55,6 +64,9 @@ async function testConfig() {
     }
 }
 
+/**
+ * @ignore
+ */
 async function testDatabase() {
     // Test database
     const database = new Database(log);
@@ -118,6 +130,9 @@ async function testDatabase() {
     await pRepo.save([perm, perm2]);
 }
 
+/**
+ * @ignore
+ */
 const readline = createInterface({
     input: process.stdin,
     output: process.stdout,

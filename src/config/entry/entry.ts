@@ -1,5 +1,22 @@
 import { EventEmitter } from "events";
 
+// Event definitions
+// tslint:disable-next-line:interface-name
+export interface ConfigEntry {
+    /** @event */
+    addListener(event: "loaded", listener: () => void): this;
+    /** @event */
+    emit(event: "loaded"): boolean;
+    /** @event */
+    on(event: "loaded", listener: () => void): this;
+    /** @event */
+    once(event: "loaded", listener: () => void): this;
+    /** @event */
+    prependListener(event: "loaded", listener: () => void): this;
+    /** @event */
+    prependOnceListener(event: "loaded", listener: () => void): this;
+}
+
 export abstract class ConfigEntry extends EventEmitter implements IEntryInfo {
     public name: string;
     public fullName: string;
@@ -13,30 +30,6 @@ export abstract class ConfigEntry extends EventEmitter implements IEntryInfo {
         this.fullName = info.name;
         this.description = info.description;
         this.loadStage = info.loadStage === undefined ? 1 : info.loadStage;
-    }
-
-    // Strongly typed events
-
-    public addListener(event: "loaded", listener: () => void): this;
-    public addListener(event: string, listener: (...args: any[]) => void) { return super.addListener(event, listener); }
-
-    public emit(event: "loaded"): boolean;
-    public emit(event: string, ...args: any[]) { return super.emit(event, ...args); }
-
-    public on(event: "loaded", listener: () => void): this;
-    public on(event: string, listener: (...args: any[]) => void) { return super.on(event, listener); }
-
-    public once(event: "loaded", listener: () => void): this;
-    public once(event: string, listener: (...args: any[]) => void) { return super.once(event, listener); }
-
-    public prependListener(event: "loaded", listener: () => void): this;
-    public prependListener(event: string, listener: (...args: any[]) => void) {
-        return super.prependListener(event, listener);
-    }
-
-    public prependOnceListener(event: "loaded", listener: () => void): this;
-    public prependOnceListener(event: string, listener: (...args: any[]) => void) {
-        return super.prependOnceListener(event, listener);
     }
 
     public setParent(parent: ConfigEntry) {
