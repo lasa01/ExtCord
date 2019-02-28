@@ -45,3 +45,5 @@ export { Permission } from "./permissions/permission";
 export { PermissionGroup } from "./permissions/permissiongroup";
 export { MemberPermissionEntity } from "./permissions/database/memberpermissionentity";
 export { RolePermissionEntity } from "./permissions/database/rolepermissionentity";
+
+export { Serializer } from "./util/serializer";

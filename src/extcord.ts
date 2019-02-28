@@ -3,7 +3,7 @@ import Yargs = require("yargs");
 
 import { Bot } from "./bot";
 import { Configure } from "./configure";
-import { extension } from "./util/serializer";
+import { Serializer } from "./util/serializer";
 
 /**
  * @ignore
@@ -11,7 +11,7 @@ import { extension } from "./util/serializer";
 const args = Yargs.usage("Usage: $0 <command> [options]")
     .command(["run [configFile]", "$0"], "run the bot",
         (yargs) => yargs.positional("configFile", {
-            default: "config" + extension,
+            default: "config" + Serializer.extension,
             describe: "config file to use",
         }),
         (argv) => {
@@ -29,7 +29,7 @@ const args = Yargs.usage("Usage: $0 <command> [options]")
         })
     .command(["configure [configFile]", "config"], "configure the bot",
         (yargs) => yargs.positional("configFile", {
-            default: "config" + extension,
+            default: "config" + Serializer.extension,
             describe: "config file to use",
         }),
         (argv) => { const configure = new Configure(argv.configFile); })

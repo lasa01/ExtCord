@@ -3,7 +3,7 @@ import { readFile, writeFile } from "fs-extra";
 import { Logger } from "winston";
 
 import { Database } from "../database/database";
-import { parse, stringify } from "../util/serializer";
+import { Serializer } from "../util/serializer";
 import { ConfigEntry } from "./entry/entry";
 import { BooleanConfigEntity } from "./entry/guild/database/booleanconfigentity";
 import { NumberConfigEntity } from "./entry/guild/database/numberconfigentity";
@@ -91,7 +91,7 @@ export class Config extends EventEmitter {
         let parsed: { [key: string]: any };
         try {
             content = await readFile(filename, "utf8");
-            parsed = parse(content);
+            parsed = Serializer.parse(content);
         } catch {
             content = "";
             parsed = {};
@@ -105,7 +105,7 @@ export class Config extends EventEmitter {
             }
             entry.emit("loaded");
         }
-        const newContent = stringify(parsed);
+        const newContent = Serializer.stringify(parsed);
         if (newContent !== content) {
             await writeFile(filename, newContent);
         }

@@ -1,3 +1,4 @@
+import { EventEmitter } from "events";
 import { ensureDir, readdir, readFile, writeFile } from "fs-extra";
 import { resolve } from "path";
 import { Logger } from "winston";
@@ -7,22 +8,37 @@ import { ConfigEntryGroup } from "../config/entry/entrygroup";
 import { StringGuildConfigEntry } from "../config/entry/guild/stringguildentry";
 import { StringConfigEntry } from "../config/entry/stringentry";
 import { Database } from "../database/database";
-import { extension, parse, stringify } from "../util/serializer";
-import { Language } from "./language";
+import { Serializer } from "../util/serializer";
 import { Phrase } from "./phrase/phrase";
 
-export class Languages {
+// Event definitions
+// tslint:disable-next-line:interface-name
+export interface Languages {
+    /** @event */
+    addListener(event: "loaded", listener: () => void): this;
+    /** @event */
+    emit(event: "loaded"): boolean;
+    /** @event */
+    on(event: "loaded", listener: () => void): this;
+    /** @event */
+    once(event: "loaded", listener: () => void): this;
+    /** @event */
+    prependListener(event: "loaded", listener: () => void): this;
+    /** @event */
+    prependOnceListener(event: "loaded", listener: () => void): this;
+}
+
+export class Languages extends EventEmitter {
     public languageConfigEntry?: StringGuildConfigEntry;
     public languageNameConfigEntry?: StringConfigEntry;
     public languageDirConfigEntry?: StringConfigEntry;
     private logger: Logger;
-    private languages: Map<string, Language>;
     private phrases: Map<string, Phrase>;
     private configEntry?: ConfigEntryGroup;
 
     constructor(logger: Logger) {
+        super();
         this.logger = logger;
-        this.languages = new Map();
         this.phrases = new Map();
     }
 
@@ -35,20 +51,21 @@ export class Languages {
         this.logger.info("Loading all languages");
         await ensureDir(directory);
         // Filter out wrong extensions
-        const dirContent = (await readdir(directory)).filter((file) => file.endsWith(extension));
+        const dirContent = (await readdir(directory)).filter((file) => file.endsWith(Serializer.extension));
         // If no languages exist, write a default language file
         if (dirContent.length === 0) {
-            let content = stringify({
+            let content = Serializer.stringify({
                 id: this.languageConfigEntry!.get(),
                 name: this.languageNameConfigEntry!.get(),
             });
             content = await this.loadText(content);
-            await writeFile(resolve(directory, this.languageConfigEntry!.get() + extension), content);
+            await writeFile(resolve(directory, this.languageConfigEntry!.get() + Serializer.extension), content);
         }
         for (const filename of dirContent) {
             const path = resolve(this.languageDirConfigEntry!.get(), filename);
             await this.loadFile(path);
         }
+        this.emit("loaded");
     }
 
     public async loadFile(path: string) {
@@ -68,7 +85,7 @@ export class Languages {
     public async loadText(content: string) {
         let parsed: { [key: string]: any };
         try {
-            parsed = parse(content);
+            parsed = Serializer.parse(content);
         } catch {
             this.logger.error("An error occured while loading a language");
             return content;
@@ -87,7 +104,7 @@ export class Languages {
                 parsed[phrase.name + "__commentBefore__"] = comment;
             }
         }
-        return stringify(parsed);
+        return Serializer.stringify(parsed);
     }
 
     public registerConfig(config: Config, database: Database) {

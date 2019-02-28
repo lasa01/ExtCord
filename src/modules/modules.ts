@@ -8,6 +8,23 @@ import { ConfigEntryGroup } from "../config/entry/entrygroup";
 import { StringConfigEntry } from "../config/entry/stringentry";
 import { Module } from "./module";
 
+// Event definitions
+// tslint:disable-next-line:interface-name
+export interface Modules {
+    /** @event */
+    addListener(event: "loaded", listener: () => void): this;
+    /** @event */
+    emit(event: "loaded"): boolean;
+    /** @event */
+    on(event: "loaded", listener: () => void): this;
+    /** @event */
+    once(event: "loaded", listener: () => void): this;
+    /** @event */
+    prependListener(event: "loaded", listener: () => void): this;
+    /** @event */
+    prependOnceListener(event: "loaded", listener: () => void): this;
+}
+
 export class Modules {
     public moduleDirConfigEntry?: StringConfigEntry;
     private logger: Logger;
@@ -74,6 +91,7 @@ export class Modules {
                 this.logger.error(`Error while loading module ${filename}: ${error}`);
             }
         }
+        this.emit("loaded");
     }
 
     public registerConfig(config: Config) {

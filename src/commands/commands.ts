@@ -1,4 +1,5 @@
 import { Message } from "discord.js";
+import { EventEmitter } from "events";
 import { Logger } from "winston";
 
 import { Config } from "../config/config";
@@ -14,7 +15,24 @@ import { PermissionGroup } from "../permissions/permissiongroup";
 import { Permissions } from "../permissions/permissions";
 import { Command } from "./command";
 
-export class Commands {
+// Event definitions
+// tslint:disable-next-line:interface-name
+export interface Commands {
+    /** @event */
+    addListener(event: "command", listener: (command: Command, context: ICommandContext) => void): this;
+    /** @event */
+    emit(event: "command", command: Command, context: ICommandContext): boolean;
+    /** @event */
+    on(event: "command", listener: (command: Command, context: ICommandContext) => void): this;
+    /** @event */
+    once(event: "command", listener: (command: Command, context: ICommandContext) => void): this;
+    /** @event */
+    prependListener(event: "command", listener: (command: Command, context: ICommandContext) => void): this;
+    /** @event */
+    prependOnceListener(event: "command", listener: (command: Command, context: ICommandContext) => void): this;
+}
+
+export class Commands extends EventEmitter {
     public prefixConfigEntry?: StringGuildConfigEntry;
     private logger: Logger;
     private commands: Map<string, Command>;
@@ -35,6 +53,7 @@ export class Commands {
     private phraseGroup?: PhraseGroup;
 
     constructor(logger: Logger) {
+        super();
         this.logger = logger;
         this.commands = new Map();
         this.permissionTemplate = new Map();
@@ -94,6 +113,7 @@ export class Commands {
             prefix,
         };
         this.logger.debug(`Executing command ${command}`);
+        this.emit("command", commandInstance, context);
         const err = await commandInstance.command(context);
         if (err) {
             const errPhrase = this.phrases[err[0]];
