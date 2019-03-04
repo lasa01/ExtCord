@@ -35,6 +35,7 @@ export interface Commands {
 export class Commands extends EventEmitter {
     public prefixConfigEntry?: StringGuildConfigEntry;
     private logger: Logger;
+    private languages: Languages;
     private commands: Map<string, Command>;
     private configEntry?: ConfigEntryGroup;
     private permissionTemplate: Map<string, Permission>;
@@ -52,9 +53,10 @@ export class Commands extends EventEmitter {
     };
     private phraseGroup?: PhraseGroup;
 
-    constructor(logger: Logger) {
+    constructor(logger: Logger, languages: Languages) {
         super();
         this.logger = logger;
+        this.languages = languages;
         this.commands = new Map();
         this.permissionTemplate = new Map();
         this.commandPhrases = [];
@@ -96,18 +98,20 @@ export class Commands extends EventEmitter {
 
     public async message(message: Message) {
         if (!message.guild) { return; } // For now
+        const language = await this.languages.languageConfigEntry!.guildGet(message.guild);
         const prefix = await this.prefixConfigEntry!.guildGet(message.guild);
         if (!message.content.startsWith(prefix)) { return; }
         const text = message.content.replace(prefix, "").trim();
         const command = text.split(" ", 1)[0];
         if (!command || !this.commands.has(command)) {
-            await message.reply(this.phrases.invalidCommand.format("en", { command }));
+            await message.reply(this.phrases.invalidCommand.format(language, { command }));
             return;
         }
         const commandInstance = this.commands.get(command)!;
         const passed = text.replace(command, "").trim();
         const context = {
             command,
+            language,
             message,
             passed,
             prefix,
@@ -117,7 +121,7 @@ export class Commands extends EventEmitter {
         const err = await commandInstance.command(context);
         if (err) {
             const errPhrase = this.phrases[err[0]];
-            await message.reply(errPhrase.format("en", err[1]));
+            await message.reply(errPhrase.format(language, err[1]));
             return;
         }
     }
@@ -158,7 +162,7 @@ export class Commands extends EventEmitter {
         permissions.register(this.permission);
     }
 
-    public registerLanguages(languages: Languages) {
+    public registerLanguages() {
         this.commandPhraseGroup = new PhraseGroup({
             description: "Language definitions for individual commands",
             name: "commands",
@@ -166,7 +170,7 @@ export class Commands extends EventEmitter {
         this.phraseGroup = new PhraseGroup({
             name: "commands",
         }, [ ...Object.values(this.phrases), this.commandPhraseGroup ]);
-        languages.register(this.phraseGroup);
+        this.languages.register(this.phraseGroup);
     }
 
     public getStatus() {
@@ -179,4 +183,5 @@ export interface ICommandContext {
     message: Message;
     command: string;
     passed: string;
+    language: string;
 }

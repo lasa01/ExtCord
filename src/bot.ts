@@ -44,7 +44,7 @@ export class Bot extends EventEmitter {
     public database: Database;
     public permissions: Permissions;
     public commands: Commands;
-    public languges: Languages;
+    public languages: Languages;
     public modules: Modules;
     private configEntries: {
         loggerGroup?: ConfigEntryGroup, clientGroup?: ConfigEntryGroup,
@@ -109,10 +109,10 @@ export class Bot extends EventEmitter {
         this.database.registerConfig(this.config);
         Config.registerDatabase(this.database);
         this.permissions = new Permissions(logger, this.database);
-        this.commands = new Commands(logger);
+        this.languages = new Languages(logger);
+        this.languages.registerConfig(this.config, this.database);
+        this.commands = new Commands(logger, this.languages);
         this.commands.registerConfig(this.config, this.database);
-        this.languges = new Languages(logger);
-        this.languges.registerConfig(this.config, this.database);
         this.modules = new Modules(logger, this);
         this.modules.registerConfig(this.config);
     }
@@ -133,11 +133,11 @@ export class Bot extends EventEmitter {
                 await this.modules.loadAll();
                 this.commands.registerPermissions(this.permissions);
                 this.permissions.registerConfig(this.config);
-                this.commands.registerLanguages(this.languges);
-                await this.languges.loadAll();
+                this.commands.registerLanguages();
+                await this.languages.loadAll();
                 this.logger.debug(this.permissions.getStatus());
                 this.logger.debug(this.commands.getStatus());
-                this.logger.debug(this.languges.getStatus());
+                this.logger.debug(this.languages.getStatus());
             } else if (stage === 1) {
                 await this.database.connect();
                 this.client = new Client({

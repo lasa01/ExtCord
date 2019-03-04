@@ -20,7 +20,7 @@ const args = Yargs.usage("Usage: $0 <command> [options]")
             bot.run().then(() => {
                 logger.info("Bot running");
             }).catch((err) => {
-                logger.error(err);
+                logger.error(err.stack || err);
                 bot.stop();
             });
             if (argv.interactive) {

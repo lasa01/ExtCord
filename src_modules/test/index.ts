@@ -5,6 +5,7 @@ export default class TestModule extends Module {
     private testCommand: Command;
     private permCommand: Command;
     private prefixCommand: Command;
+    private languageCommand: Command;
 
     constructor(bot: Bot) {
         super(bot, "lasa01", "test");
@@ -35,5 +36,12 @@ export default class TestModule extends Module {
             await context.message.reply("Prefix updated");
         });
         bot.commands.register(this.prefixCommand);
+        this.languageCommand = new SimpleCommand({description: "Change language", name: "language", author: this},
+        [new StringArgument({ description: "new language", name: "language" }, false, false,
+        (arg) => !!this.bot.languages)], async (context) => {
+            await this.bot.languages.languageConfigEntry!.guildSet(context.message.guild, context.arguments[0]);
+            await context.message.reply("Language updated");
+        });
+        bot.commands.register(this.languageCommand);
     }
 }

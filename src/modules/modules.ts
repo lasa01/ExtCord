@@ -1,3 +1,4 @@
+import { EventEmitter } from "events";
 import { ensureDir, readdir, stat } from "fs-extra";
 import { resolve } from "path";
 import { Logger } from "winston";
@@ -25,7 +26,7 @@ export interface Modules {
     prependOnceListener(event: "loaded", listener: () => void): this;
 }
 
-export class Modules {
+export class Modules extends EventEmitter {
     public moduleDirConfigEntry?: StringConfigEntry;
     private logger: Logger;
     private modules: Map<string, Module>;
@@ -33,6 +34,7 @@ export class Modules {
     private configEntry?: ConfigEntryGroup;
 
     constructor(logger: Logger, bot: Bot) {
+        super();
         this.logger = logger;
         this.modules = new Map();
         this.bot = bot;

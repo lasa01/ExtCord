@@ -24,6 +24,7 @@ export abstract class Command {
     private phraseGroup?: PhraseGroup;
     private argPhraseGroup?: PhraseGroup;
     private argPhrases: Phrase[];
+    private alwaysArgs: Argument[];
     private argCombinations: Argument[][];
     private argCheckTree: IArgumentTree;
 
@@ -45,9 +46,12 @@ export abstract class Command {
         }
         this.arguments = args;
         // Build possible argument combinations
+        this.alwaysArgs = [];
         this.argCombinations = [[]];
+        let alwaysArgsDone = false;
         for (const argument of this.arguments) {
             if (argument.optional) {
+                alwaysArgsDone = true;
                 // For optional arguments, clone all combinations, and add the optional
                 // argument to the other clone, and merge the clones into one list of combinations
                 const optIncludedComb = [...this.argCombinations];
@@ -56,9 +60,13 @@ export abstract class Command {
                 }
                 this.argCombinations = [...this.argCombinations, ...optIncludedComb];
             } else {
-                // Non-optional arguments must be added to every possible combination
-                for (const combination of this.argCombinations) {
-                    combination.push(argument);
+                if (alwaysArgsDone) {
+                    // Non-optional arguments must be added to every possible combination
+                     for (const combination of this.argCombinations) {
+                        combination.push(argument);
+                    }
+                } else {
+                    this.alwaysArgs.push(argument);
                 }
             }
             argument.register(this);
@@ -97,20 +105,22 @@ export abstract class Command {
     public async command(context: ICommandContext): Promise<[string, { [key: string]: string }]|undefined> {
         const rawArguments = context.passed.split(" ");
         // Negative if not enough arguments, 0 if correct amount, positive if too many
-        const deltaArgs = rawArguments.length - this.arguments.length;
-        if (deltaArgs < 0) { return ["tooFewArguments", {
-            required: this.arguments.length.toString(),
+        const maxArgs = this.arguments.length;
+        const minArgs = this.arguments.filter((arg) => !arg.optional).length;
+        if (rawArguments.length < minArgs) { return ["tooFewArguments", {
+            required: minArgs === maxArgs ? maxArgs.toString() : `${minArgs} - ${maxArgs}`,
             supplied: rawArguments.length.toString(),
         }]; }
-        if (deltaArgs > 0) {
+        if (rawArguments.length > maxArgs) {
             // Combine extra arguments if the last argument allows it
+            // This allows the last argument to optionally have spaces
             if (this.arguments[this.arguments.length - 1].allowCombining) {
-                for (let i = deltaArgs; i > 0; i--) {
+                for (let i = rawArguments.length - maxArgs; i > 0; i--) {
                     rawArguments.push(rawArguments.pop() + " " + rawArguments.pop());
                 }
             } else {
                 return ["tooManyArguments", {
-                    required: this.arguments.length.toString(),
+                    required: minArgs === maxArgs ? maxArgs.toString() : `${minArgs} - ${maxArgs}`,
                     supplied: rawArguments.length.toString(),
                 }];
             }
