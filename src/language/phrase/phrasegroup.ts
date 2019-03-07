@@ -8,6 +8,11 @@ export class PhraseGroup extends Phrase {
         this.phrases = new Map();
         for (const phrase of phrases) {
             this.phrases.set(phrase.name, phrase);
+            for (const language of phrase.languages) {
+                if (!this.languages.includes(language)) {
+                    this.languages.push(language);
+                }
+            }
         }
     }
 

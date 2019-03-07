@@ -1,4 +1,5 @@
 import { Message } from "discord.js";
+import { Logger } from "winston";
 
 import { Phrase } from "../language/phrase/phrase";
 import { PhraseGroup } from "../language/phrase/phrasegroup";
@@ -20,6 +21,7 @@ export abstract class Command {
     public from?: Module;
     public author: string;
     public arguments: Argument[];
+    private minArguments: number;
     private defaultPermission: Permission;
     private phraseGroup?: PhraseGroup;
     private argPhraseGroup?: PhraseGroup;
@@ -27,6 +29,7 @@ export abstract class Command {
     private alwaysArgs: Argument[];
     private argCombinations: Argument[][];
     private argCheckTree: IArgumentTree;
+    private logger?: Logger;
 
     constructor(info: ICommandInfo, args: Argument[], allowEveryone = false, defaultPermission?: Permission) {
         this.name = info.name;
@@ -45,6 +48,7 @@ export abstract class Command {
             this.author = info.author as string;
         }
         this.arguments = args;
+        this.minArguments = 0;
         // Build possible argument combinations
         this.alwaysArgs = [];
         this.argCombinations = [[]];
@@ -60,6 +64,7 @@ export abstract class Command {
                 }
                 this.argCombinations = [...this.argCombinations, ...optIncludedComb];
             } else {
+                this.minArguments++;
                 if (alwaysArgsDone) {
                     // Non-optional arguments must be added to every possible combination
                      for (const combination of this.argCombinations) {
@@ -87,6 +92,12 @@ export abstract class Command {
             name: this.name,
         }, [ this.localizedDescription, this.localizedName, this.argPhraseGroup ]);
         commands.registerPhrase(this.phraseGroup);
+        commands.registerPermission(this.getPermission());
+        this.logger = commands.logger;
+    }
+
+    public getPermission() {
+        return this.defaultPermission;
     }
 
     public registerPhrase(phrase: Phrase) {
@@ -98,17 +109,13 @@ export abstract class Command {
         return this.name;
     }
 
-    public getPermission() {
-        return this.defaultPermission;
-    }
-
     public async command(context: ICommandContext): Promise<[string, { [key: string]: string }]|undefined> {
+        if (this.logger) { this.logger.debug(`Command: ${context.command}`); }
         const rawArguments = context.passed.split(" ");
-        // Negative if not enough arguments, 0 if correct amount, positive if too many
+        if (this.logger) { this.logger.debug(`Arguments: ${rawArguments.join(", ")}`); }
         const maxArgs = this.arguments.length;
-        const minArgs = this.arguments.filter((arg) => !arg.optional).length;
-        if (rawArguments.length < minArgs) { return ["tooFewArguments", {
-            required: minArgs === maxArgs ? maxArgs.toString() : `${minArgs} - ${maxArgs}`,
+        if (rawArguments.length < this.minArguments) { return ["tooFewArguments", {
+            required: (this.minArguments === maxArgs) ? maxArgs.toString() : `${this.minArguments} - ${maxArgs}`,
             supplied: rawArguments.length.toString(),
         }]; }
         if (rawArguments.length > maxArgs) {
@@ -120,7 +127,8 @@ export abstract class Command {
                 }
             } else {
                 return ["tooManyArguments", {
-                    required: minArgs === maxArgs ? maxArgs.toString() : `${minArgs} - ${maxArgs}`,
+                    required: (this.minArguments === maxArgs) ?
+                        maxArgs.toString() : `${this.minArguments} - ${maxArgs}`,
                     supplied: rawArguments.length.toString(),
                 }];
             }

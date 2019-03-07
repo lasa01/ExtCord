@@ -19,12 +19,14 @@ export interface Phrase {
 
 export abstract class Phrase extends EventEmitter {
     public name: string;
+    public languages: string[];
     public description?: string;
 
     constructor(info: IPhraseInfo) {
         super();
         this.name = info.name;
         this.description = info.description;
+        this.languages = [];
     }
 
     public abstract parse(language: string, data: any): [any, string?];

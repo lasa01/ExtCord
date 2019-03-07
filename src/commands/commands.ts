@@ -34,11 +34,11 @@ export interface Commands {
 
 export class Commands extends EventEmitter {
     public prefixConfigEntry?: StringGuildConfigEntry;
-    private logger: Logger;
+    public logger: Logger;
     private languages: Languages;
     private commands: Map<string, Command>;
     private configEntry?: ConfigEntryGroup;
-    private permissionTemplate: Map<string, Permission>;
+    private permissions: Permission[];
     private permission?: Permission;
     private commandPhrases: Phrase[];
     private commandPhraseGroup?: PhraseGroup;
@@ -58,7 +58,7 @@ export class Commands extends EventEmitter {
         this.logger = logger;
         this.languages = languages;
         this.commands = new Map();
-        this.permissionTemplate = new Map();
+        this.permissions = [];
         this.commandPhrases = [];
         this.phrases = {
             executionError: new TemplatePhrase({
@@ -98,7 +98,7 @@ export class Commands extends EventEmitter {
 
     public async message(message: Message) {
         if (!message.guild) { return; } // For now
-        const language = await this.languages.languageConfigEntry!.guildGet(message.guild);
+        const language = await this.languages.getLanguage(message.guild);
         const prefix = await this.prefixConfigEntry!.guildGet(message.guild);
         if (!message.content.startsWith(prefix)) { return; }
         const text = message.content.replace(prefix, "").trim();
@@ -136,7 +136,10 @@ export class Commands extends EventEmitter {
         }
         command.register(this);
         this.commands.set(command.name, command);
-        this.permissionTemplate.set(command.name, command.getPermission());
+    }
+
+    public registerPermission(permission: Permission) {
+        this.permissions.push(permission);
     }
 
     public registerPhrase(phrase: Phrase) {
@@ -158,7 +161,7 @@ export class Commands extends EventEmitter {
         this.permission = new PermissionGroup({
             description: "Permissions for command execution",
             name: "commands",
-        }, Array.from(this.permissionTemplate.values()));
+        }, this.permissions);
         permissions.register(this.permission);
     }
 

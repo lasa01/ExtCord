@@ -12,6 +12,11 @@ export class SimplePhrase extends Phrase {
                 en: defaults,
             };
         }
+        for (const language of Object.keys(defaults)) {
+            if (!this.languages.includes(language)) {
+                this.languages.push(language);
+            }
+        }
         this.defaults = defaults;
         this.templates = defaults;
     }
