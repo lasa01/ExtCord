@@ -132,8 +132,9 @@ export class Bot extends EventEmitter {
                 });
                 await this.modules.loadAll();
                 this.commands.registerPermissions(this.permissions);
-                this.permissions.registerConfig(this.config);
                 this.commands.registerLanguages();
+                this.permissions.registerConfig(this.config);
+                this.permissions.registerLanguages(this.languages);
                 await this.languages.loadAll();
                 this.logger.debug(this.permissions.getStatus());
                 this.logger.debug(this.commands.getStatus());

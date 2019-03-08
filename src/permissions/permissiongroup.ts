@@ -16,7 +16,7 @@ export class PermissionGroup extends Permission {
         }, configs));
         this.children = new Map();
         for (const child of children) {
-            child.setParent(this);
+            child.registerParent(this);
             this.children.set(child.name, child);
         }
     }
@@ -28,10 +28,10 @@ export class PermissionGroup extends Permission {
         }
     }
 
-    public setPermissions(permissions: Permissions) {
-        super.setPermissions(permissions);
+    public register(permissions: Permissions) {
+        super.register(permissions);
         for (const [, child] of this.children) {
-            child.setPermissions(permissions);
+            child.register(permissions);
         }
     }
 }

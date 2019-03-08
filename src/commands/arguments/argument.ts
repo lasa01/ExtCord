@@ -28,7 +28,7 @@ export abstract class Argument {
     }
 
     public register(command: Command) {
-        command.registerPhrase(this.phraseGroup);
+        command.registerArgPhrase(this.phraseGroup);
     }
 
     public abstract check(data: string): boolean;

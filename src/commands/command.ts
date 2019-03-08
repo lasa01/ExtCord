@@ -26,6 +26,8 @@ export abstract class Command {
     private phraseGroup?: PhraseGroup;
     private argPhraseGroup?: PhraseGroup;
     private argPhrases: Phrase[];
+    private subPhraseGroup?: PhraseGroup;
+    private subPhrases: Phrase[];
     private alwaysArgs: Argument[];
     private argCombinations: Argument[][];
     private argCheckTree: IArgumentTree;
@@ -41,6 +43,7 @@ export abstract class Command {
             name: "description",
         }, this.name);
         this.argPhrases = [];
+        this.subPhrases = [];
         if (Module.isPrototypeOf(info.author)) {
             this.from = info.author as Module;
             this.author = this.from.author;
@@ -85,23 +88,27 @@ export abstract class Command {
     }
 
     public register(commands: Commands) {
-        this.argPhraseGroup = new PhraseGroup({
-            name: "arguments",
-        }, this.argPhrases);
-        this.phraseGroup = new PhraseGroup({
-            name: this.name,
-        }, [ this.localizedDescription, this.localizedName, this.argPhraseGroup ]);
-        commands.registerPhrase(this.phraseGroup);
+        this.makePhrases();
+        commands.registerPhrase(this.phraseGroup!);
         commands.registerPermission(this.getPermission());
         this.logger = commands.logger;
     }
 
-    public getPermission() {
-        return this.defaultPermission;
+    public registerParent(parent: Command) {
+        this.makePhrases();
+        parent.registerSubPhrase(this.phraseGroup!);
     }
 
-    public registerPhrase(phrase: Phrase) {
+    public registerArgPhrase(phrase: Phrase) {
         this.argPhrases.push(phrase);
+    }
+
+    public registerSubPhrase(phrase: Phrase) {
+        this.subPhrases.push(phrase);
+    }
+
+    public getPermission() {
+        return this.defaultPermission;
     }
 
     public rename() {
@@ -111,7 +118,9 @@ export abstract class Command {
 
     public async command(context: ICommandContext): Promise<[string, { [key: string]: string }]|undefined> {
         if (this.logger) { this.logger.debug(`Command: ${context.command}`); }
-        const rawArguments = context.passed.split(" ");
+        // Set to an empty array if the string is empty,
+        // since the split function would return an array with an empty string, and we don't want that
+        const rawArguments = context.passed === "" ? [] : context.passed.split(" ");
         if (this.logger) { this.logger.debug(`Arguments: ${rawArguments.join(", ")}`); }
         const maxArgs = this.arguments.length;
         if (rawArguments.length < this.minArguments) { return ["tooFewArguments", {
@@ -154,6 +163,17 @@ export abstract class Command {
 
     public abstract async execute(context: IExecutionContext): Promise<void>;
 
+    private makePhrases() {
+        this.argPhraseGroup = new PhraseGroup({
+            name: "arguments",
+        }, this.argPhrases);
+        this.subPhraseGroup = new PhraseGroup({
+            name: "subcommands",
+        }, this.subPhrases);
+        this.phraseGroup = new PhraseGroup({
+            name: this.name,
+        }, [ this.localizedDescription, this.localizedName, this.argPhraseGroup, this.subPhraseGroup ]);
+    }
 }
 
 export interface IExecutionContext {

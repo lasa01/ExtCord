@@ -20,6 +20,7 @@ export class CommandGroup extends Command {
         this.children = new Map();
         for (const child of children) {
             this.children.set(child.name, child);
+            child.registerParent(this);
         }
     }
 

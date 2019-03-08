@@ -38,7 +38,7 @@ export default class TestModule extends Module {
         bot.commands.register(this.prefixCommand);
         this.languageCommand = new SimpleCommand({description: "Change language", name: "language", author: this},
         [new StringArgument({ description: "new language", name: "language" }, false, false,
-        (arg) => !!this.bot.languages)], async (context) => {
+        (arg) => this.bot.languages.languages.includes(arg))], async (context) => {
             await this.bot.languages.languageConfigEntry!.guildSet(context.message.guild, context.arguments[0]);
             await context.message.reply("Language updated");
         });

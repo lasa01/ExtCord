@@ -4,6 +4,9 @@ import { Logger } from "winston";
 
 import { BooleanConfigEntry } from "../config/entry/booleanentry";
 import { ConfigEntry } from "../config/entry/entry";
+import { Phrase } from "../language/phrase/phrase";
+import { PhraseGroup } from "../language/phrase/phrasegroup";
+import { SimplePhrase } from "../language/phrase/simplephrase";
 import { MemberPermissionEntity } from "./database/memberpermissionentity";
 import { RolePermissionEntity } from "./database/rolepermissionentity";
 import { Permissions } from "./permissions";
@@ -12,6 +15,11 @@ export class Permission {
     public name: string;
     public fullName: string;
     public description?: string;
+    public localizedDescription?: SimplePhrase;
+    private subPhrases: Phrase[];
+    private subPhraseGroup?: PhraseGroup;
+    private phrases: Phrase[];
+    private phraseGroup: PhraseGroup;
     private logger?: Logger;
     private permissions?: Permissions;
     private memberRepo?: Repository<MemberPermissionEntity>;
@@ -22,20 +30,46 @@ export class Permission {
     constructor(info: IPermissionInfo, defaultPermission: boolean, defaultEntry?: ConfigEntry) {
         this.name = info.name;
         this.description = info.description;
+        if (this.description) {
+            this.localizedDescription = new SimplePhrase({
+                name: "description",
+            }, this.description);
+        }
+        this.subPhrases = [];
         this.fullName = info.name;
         this.defaultEntry = defaultEntry || new BooleanConfigEntry({
             description: info.description,
             name: info.name,
         }, defaultPermission);
+        if (this.localizedDescription) {
+            this.phrases = [this.localizedDescription];
+        } else {
+            this.phrases = [];
+        }
+        if (this.subPhrases.length !== 0) {
+            this.subPhraseGroup = new PhraseGroup({
+                name: "phrases",
+            }, this.subPhrases);
+            this.phrases.push(this.subPhraseGroup);
+        }
+        this.phraseGroup = new PhraseGroup({
+            name: this.name,
+        }, this.phrases);
     }
 
-    public setPermissions(permissions: Permissions) {
+    public register(permissions: Permissions) {
         this.permissions = permissions;
         this.logger = permissions.logger;
+        permissions.registerPhrase(this.phraseGroup);
     }
 
-    public setParent(parent: Permission) {
+    public registerPhrase(phrase: Phrase) {
+        this.subPhrases.push(phrase);
+    }
+
+    public registerParent(parent: Permission) {
         this.parent = parent;
+        parent.registerPhrase(this.phraseGroup);
     }
 
     public updateFullName() {
