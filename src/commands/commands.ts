@@ -13,6 +13,7 @@ import { TemplatePhrase } from "../language/phrase/templatephrase";
 import { Permission } from "../permissions/permission";
 import { PermissionGroup } from "../permissions/permissiongroup";
 import { Permissions } from "../permissions/permissions";
+import { BuiltInArguments } from "./arguments/builtinarguments";
 import { Command } from "./command";
 
 // Event definitions
@@ -51,6 +52,7 @@ export class Commands extends EventEmitter {
         tooManyArguments: TemplatePhrase<{ supplied: string, required: string }>;
         [key: string]: TemplatePhrase<any>;
     };
+    private argumentsGroup?: PhraseGroup;
     private phraseGroup?: PhraseGroup;
 
     constructor(logger: Logger, languages: Languages) {
@@ -170,9 +172,13 @@ export class Commands extends EventEmitter {
             description: "Language definitions for individual commands",
             name: "commands",
         }, this.commandPhrases);
+        this.argumentsGroup = new PhraseGroup({
+            description: "Built-in arguments",
+            name: "arguments",
+        }, Object.values(BuiltInArguments).map((arg) => arg.getPhrase()));
         this.phraseGroup = new PhraseGroup({
             name: "commands",
-        }, [ ...Object.values(this.phrases), this.commandPhraseGroup ]);
+        }, [ this.argumentsGroup, ...Object.values(this.phrases), this.commandPhraseGroup ]);
         this.languages.register(this.phraseGroup);
     }
 

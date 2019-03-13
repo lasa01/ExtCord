@@ -8,8 +8,18 @@ export const Serializer = {
                 for (const o of object.__COMMENTS__.o) {
                     Object.defineProperty(object, o + "__commentBefore__", { enumerable: false, writable: true});
                     Object.defineProperty(object, o + "__commentAfter__", { enumerable: false, writable: true});
-                    object[o + "__commentBefore__"] = object.__COMMENTS__.c[o][0].trim();
-                    object[o + "__commentAfter__"] = object.__COMMENTS__.c[o][1].trim();
+                    const commentsBefore = (object.__COMMENTS__.c[o][0] as string).split("\n");
+                    const commentsBeforeFixed = [];
+                    for (const comment of commentsBefore) {
+                        commentsBeforeFixed.push(comment.trim());
+                    }
+                    object[o + "__commentBefore__"] = commentsBeforeFixed.join("\n");
+                    const commentsAfter = (object.__COMMENTS__.c[o][1] as string).split("\n");
+                    const commentsAfterFixed = [];
+                    for (const comment of commentsAfter) {
+                        commentsAfterFixed.push(comment.trim());
+                    }
+                    object[o + "__commentAfter__"] = commentsAfterFixed.join("\n");
                 }
                 object.__COMMENTS__ = undefined;
             }

@@ -58,9 +58,13 @@ export class Permission {
     }
 
     public register(permissions: Permissions) {
+        this.registerPermissions(permissions);
+        permissions.registerPhrase(this.phraseGroup);
+    }
+
+    public registerPermissions(permissions: Permissions) {
         this.permissions = permissions;
         this.logger = permissions.logger;
-        permissions.registerPhrase(this.phraseGroup);
     }
 
     public registerPhrase(phrase: Phrase) {

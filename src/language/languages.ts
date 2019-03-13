@@ -11,6 +11,7 @@ import { StringConfigEntry } from "../config/entry/stringentry";
 import { Database } from "../database/database";
 import { Serializer } from "../util/serializer";
 import { Phrase } from "./phrase/phrase";
+import { PhraseGroup } from "./phrase/phrasegroup";
 
 const DEFAULT_LANGUAGE = "en";
 

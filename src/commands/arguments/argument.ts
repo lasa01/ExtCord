@@ -10,6 +10,7 @@ export abstract class Argument {
     public optional: boolean;
     public allowCombining: boolean;
     private phraseGroup: PhraseGroup;
+    private registered: boolean;
 
     constructor(info: IArgumentInfo, optional = false, allowCombining = false) {
         this.name = info.name;
@@ -19,16 +20,24 @@ export abstract class Argument {
         this.description = info.description;
         this.localizedDescription = new SimplePhrase({
             name: "description",
-        }, this.name);
+        }, this.description);
         this.phraseGroup = new PhraseGroup({
             name: this.name,
         }, [ this.localizedDescription, this.localizedName ]);
         this.allowCombining = allowCombining;
         this.optional = optional;
+        this.registered = false;
     }
 
     public register(command: Command) {
-        command.registerArgPhrase(this.phraseGroup);
+        if (!this.registered) {
+            command.registerArgPhrase(this.getPhrase());
+            this.registered = true;
+        }
+    }
+
+    public getPhrase() {
+        return this.phraseGroup;
     }
 
     public abstract check(data: string): boolean;

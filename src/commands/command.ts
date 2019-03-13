@@ -7,11 +7,8 @@ import { SimplePhrase } from "../language/phrase/simplephrase";
 import { Module } from "../modules/module";
 import { Permission } from "../permissions/permission";
 import { Argument } from "./arguments/argument";
+import { CommandGroup } from "./commandgroup";
 import { Commands, ICommandContext } from "./commands";
-
-interface IArgumentTree extends Array<IArgumentTree|Argument> {
-    [key: number]: IArgumentTree|Argument;
-}
 
 export abstract class Command {
     public name: string;
@@ -21,16 +18,13 @@ export abstract class Command {
     public from?: Module;
     public author: string;
     public arguments: Argument[];
+    protected phraseGroup?: PhraseGroup;
     private minArguments: number;
     private defaultPermission: Permission;
-    private phraseGroup?: PhraseGroup;
     private argPhraseGroup?: PhraseGroup;
     private argPhrases: Phrase[];
-    private subPhraseGroup?: PhraseGroup;
-    private subPhrases: Phrase[];
     private alwaysArgs: Argument[];
     private argCombinations: Argument[][];
-    private argCheckTree: IArgumentTree;
     private logger?: Logger;
 
     constructor(info: ICommandInfo, args: Argument[], allowEveryone = false, defaultPermission?: Permission) {
@@ -43,7 +37,6 @@ export abstract class Command {
             name: "description",
         }, this.name);
         this.argPhrases = [];
-        this.subPhrases = [];
         if (Module.isPrototypeOf(info.author)) {
             this.from = info.author as Module;
             this.author = this.from.author;
@@ -80,7 +73,6 @@ export abstract class Command {
             argument.register(this);
         }
         // Build optimal argument checking order
-        this.argCheckTree = [[]];
         // TODO
         this.defaultPermission = defaultPermission || new Permission({
             name: info.name,
@@ -94,17 +86,13 @@ export abstract class Command {
         this.logger = commands.logger;
     }
 
-    public registerParent(parent: Command) {
+    public registerParent(parent: CommandGroup) {
         this.makePhrases();
         parent.registerSubPhrase(this.phraseGroup!);
     }
 
     public registerArgPhrase(phrase: Phrase) {
         this.argPhrases.push(phrase);
-    }
-
-    public registerSubPhrase(phrase: Phrase) {
-        this.subPhrases.push(phrase);
     }
 
     public getPermission() {
@@ -163,16 +151,13 @@ export abstract class Command {
 
     public abstract async execute(context: IExecutionContext): Promise<void>;
 
-    private makePhrases() {
+    protected makePhrases() {
         this.argPhraseGroup = new PhraseGroup({
             name: "arguments",
         }, this.argPhrases);
-        this.subPhraseGroup = new PhraseGroup({
-            name: "subcommands",
-        }, this.subPhrases);
         this.phraseGroup = new PhraseGroup({
             name: this.name,
-        }, [ this.localizedDescription, this.localizedName, this.argPhraseGroup, this.subPhraseGroup ]);
+        }, [ this.localizedDescription, this.localizedName, this.argPhraseGroup ]);
     }
 }
 

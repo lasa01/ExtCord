@@ -31,7 +31,7 @@ export class PermissionGroup extends Permission {
     public register(permissions: Permissions) {
         super.register(permissions);
         for (const [, child] of this.children) {
-            child.register(permissions);
+            child.registerPermissions(permissions);
         }
     }
 }

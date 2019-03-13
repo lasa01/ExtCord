@@ -6,6 +6,7 @@ export { CommandGroup } from "./commands/commandgroup";
 export { SimpleCommand } from "./commands/simplecommand";
 export { Argument } from "./commands/arguments/argument";
 export { StringArgument } from "./commands/arguments/stringargument";
+export { BuiltInArguments } from "./commands/arguments/builtinarguments";
 
 export { Config } from "./config/config";
 export { ConfigEntry } from "./config/entry/entry";
