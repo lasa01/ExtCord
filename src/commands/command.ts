@@ -86,9 +86,22 @@ export abstract class Command {
         this.logger = commands.logger;
     }
 
+    public unregister(commands: Commands) {
+        if (this.phraseGroup) {
+            commands.unregisterPhrase(this.phraseGroup);
+        }
+        commands.unregisterPermission(this.getPermission());
+    }
+
     public registerParent(parent: CommandGroup) {
         this.makePhrases();
         parent.registerSubPhrase(this.phraseGroup!);
+    }
+
+    public unregisterParent(parent: CommandGroup) {
+        if (this.phraseGroup) {
+            parent.unregisterSubPhrase(this.phraseGroup);
+        }
     }
 
     public registerArgPhrase(phrase: Phrase) {

@@ -30,6 +30,10 @@ export class CommandGroup extends Command {
         this.subPhrases.push(phrase);
     }
 
+    public unregisterSubPhrase(phrase: Phrase) {
+        this.subPhrases.splice(this.subPhrases.indexOf(phrase), 1);
+    }
+
     public async execute(context: IExecutionContext) {
         const subcommand: string = context.arguments.shift();
         if (!this.children.has(subcommand)) {

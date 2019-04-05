@@ -140,12 +140,25 @@ export class Commands extends EventEmitter {
         this.commands.set(command.name, command);
     }
 
+    public unregister(command: Command) {
+        command.unregister(this);
+        this.commands.delete(command.name);
+    }
+
     public registerPermission(permission: Permission) {
         this.permissions.push(permission);
     }
 
+    public unregisterPermission(permission: Permission) {
+        this.permissions.splice(this.permissions.indexOf(permission), 1);
+    }
+
     public registerPhrase(phrase: Phrase) {
         this.commandPhrases.push(phrase);
+    }
+
+    public unregisterPhrase(phrase: Phrase) {
+        this.commandPhrases.splice(this.commandPhrases.indexOf(phrase), 1);
     }
 
     public registerConfig(config: Config, database: Database) {
