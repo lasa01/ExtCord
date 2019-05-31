@@ -34,4 +34,11 @@ export class PermissionGroup extends Permission {
             child.registerPermissions(permissions);
         }
     }
+
+    public unregister(permissions: Permissions) {
+        super.unregister(permissions);
+        for (const [, child] of this.children) {
+            child.unregisterPermissions();
+        }
+    }
 }

@@ -56,6 +56,12 @@ export class Config extends EventEmitter {
         entry.updateFullName();
     }
 
+    public unregister(entry: ConfigEntry) {
+        this.entries.delete(entry.name);
+        const stage = this.stages.get(entry.loadStage)!;
+        stage.splice(stage.indexOf(entry));
+    }
+
     public hasNext() {
         if (!this.orderedStages) {
             return this.stages.size !== 0;
@@ -100,7 +106,7 @@ export class Config extends EventEmitter {
             const [data, comment] = entry.parse(parsed[entry.name]);
             parsed[entry.name] = data;
             if (!parsed[entry.name + "__commentBefore__"] && comment) {
-                Object.defineProperty(parsed, entry.name + "__commentBefore__", { enumerable: false, writable: true});
+                Object.defineProperty(parsed, entry.name + "__commentBefore__", { enumerable: false, writable: true });
                 parsed[entry.name + "__commentBefore__"] = comment;
             }
             entry.emit("loaded");

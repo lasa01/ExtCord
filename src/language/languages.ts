@@ -11,7 +11,6 @@ import { StringConfigEntry } from "../config/entry/stringentry";
 import { Database } from "../database/database";
 import { Serializer } from "../util/serializer";
 import { Phrase } from "./phrase/phrase";
-import { PhraseGroup } from "./phrase/phrasegroup";
 
 const DEFAULT_LANGUAGE = "en";
 
@@ -57,6 +56,10 @@ export class Languages extends EventEmitter {
                 this.languages.push(language);
             }
         }
+    }
+
+    public unregister(phrase: Phrase) {
+        this.phrases.delete(phrase.name);
     }
 
     public async loadAll(directory?: string) {

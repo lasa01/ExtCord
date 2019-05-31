@@ -62,18 +62,34 @@ export class Permission {
         permissions.registerPhrase(this.phraseGroup);
     }
 
+    public unregister(permissions: Permissions) {
+        permissions.unregisterPhrase(this.phraseGroup);
+    }
+
     public registerPermissions(permissions: Permissions) {
         this.permissions = permissions;
         this.logger = permissions.logger;
+    }
+
+    public unregisterPermissions() {
+        this.permissions = undefined;
     }
 
     public registerPhrase(phrase: Phrase) {
         this.subPhrases.push(phrase);
     }
 
+    public unregisterPhrase(phrase: Phrase) {
+        this.subPhrases.splice(this.subPhrases.indexOf(phrase), 1);
+    }
+
     public registerParent(parent: Permission) {
         this.parent = parent;
         parent.registerPhrase(this.phraseGroup);
+    }
+
+    public unregisterParent(parent: Permission) {
+        parent.unregisterPhrase(this.phraseGroup);
     }
 
     public updateFullName() {

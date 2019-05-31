@@ -37,8 +37,18 @@ export class Permissions {
         this.configTemplate.set(permission.name, permission.getConfigEntry());
     }
 
+    public unregister(permission: Permission) {
+        permission.unregister(this);
+        this.permissions.delete(permission.name);
+        this.configTemplate.delete(permission.name);
+    }
+
     public registerPhrase(phrase: Phrase) {
         this.phrases.push(phrase);
+    }
+
+    public unregisterPhrase(phrase: Phrase) {
+        this.phrases.splice(this.phrases.indexOf(phrase), 1);
     }
 
     public registerConfig(config: Config) {
