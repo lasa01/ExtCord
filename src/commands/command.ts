@@ -35,7 +35,7 @@ export abstract class Command {
         this.description = info.description;
         this.localizedDescription = new SimplePhrase({
             name: "description",
-        }, this.name);
+        }, this.description);
         this.argPhrases = [];
         if (Module.isPrototypeOf(info.author)) {
             this.from = info.author as Module;

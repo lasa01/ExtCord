@@ -37,6 +37,8 @@ export { Languages } from "./language/languages";
 export { Phrase } from "./language/phrase/phrase";
 export { SimplePhrase } from "./language/phrase/simplephrase";
 export { PhraseGroup } from "./language/phrase/phrasegroup";
+export { TemplatePhrase } from "./language/phrase/templatephrase";
+export { MessagePhrase } from "./language/phrase/messagephrase";
 
 export { Modules } from "./modules/modules";
 export { Module } from "./modules/module";
