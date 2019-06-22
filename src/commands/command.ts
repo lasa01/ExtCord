@@ -174,10 +174,7 @@ export abstract class Command {
     }
 }
 
-export interface IExecutionContext {
-    message: Message;
-    prefix: string;
-    command: string;
+export interface IExecutionContext extends ICommandContext {
     rawArguments: string[];
     arguments: any[];
 }

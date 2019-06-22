@@ -35,7 +35,7 @@ export class MessagePhrase<T extends { [key: string]: string }> extends Template
             this.templates[language] = data.text;
         }
         if (!this.templatesEmbed[language]) {
-            this.templatesEmbed.language = {
+            this.templatesEmbed[language] = {
                 timestamp: false,
             };
         }
@@ -93,7 +93,7 @@ export class MessagePhrase<T extends { [key: string]: string }> extends Template
             } else {
                 this.templatesEmbed[language].imageUrl = data.embed.imageUrl;
             }
-            if (typeof data.embed.timestamp !== "boolean") {
+            if (data.embed.timestamp && typeof data.embed.timestamp !== "boolean") {
                 valid = false;
             } else {
                 this.templatesEmbed[language].timestamp = data.embed.timestamp;
@@ -129,24 +129,25 @@ export class MessagePhrase<T extends { [key: string]: string }> extends Template
         }
     }
 
-    public formatEmbed(language: string, stuff: T): RichEmbed {
+    public formatEmbed(language: string, stuff?: T): RichEmbed {
+        const stuffOrEmpty = stuff || {};
         const embed = this.defaultsEmbed[language];
         return new RichEmbed({
             author: embed.author ? {
-                icon_url: embed.author.iconUrl ? format(embed.author.iconUrl, stuff) : undefined,
-                name: format(embed.author.name, stuff),
-                url: embed.author.url ? format(embed.author.url, stuff) : undefined,
+                icon_url: embed.author.iconUrl ? format(embed.author.iconUrl, stuffOrEmpty) : undefined,
+                name: format(embed.author.name, stuffOrEmpty),
+                url: embed.author.url ? format(embed.author.url, stuffOrEmpty) : undefined,
             } : undefined,
-            description: embed.description ? format(embed.description, stuff) : undefined,
+            description: embed.description ? format(embed.description, stuffOrEmpty) : undefined,
             footer: embed.footer ? {
-                icon_url: embed.footer.iconUrl ? format(embed.footer.iconUrl, stuff) : undefined,
-                text: embed.footer.text ? format(embed.footer.text, stuff) : undefined,
+                icon_url: embed.footer.iconUrl ? format(embed.footer.iconUrl, stuffOrEmpty) : undefined,
+                text: embed.footer.text ? format(embed.footer.text, stuffOrEmpty) : undefined,
             } : undefined,
-            image: embed.imageUrl ? { url: format(embed.imageUrl, stuff) } : undefined,
-            thumbnail: embed.thumbnailUrl ? { url: format(embed.thumbnailUrl, stuff) } : undefined,
+            image: embed.imageUrl ? { url: format(embed.imageUrl, stuffOrEmpty) } : undefined,
+            thumbnail: embed.thumbnailUrl ? { url: format(embed.thumbnailUrl, stuffOrEmpty) } : undefined,
             timestamp: embed.timestamp ? new Date() : undefined,
-            title: embed.title ? format(embed.title, stuff) : undefined,
-            url: embed.url ? format(embed.url, stuff) : undefined,
+            title: embed.title ? format(embed.title, stuffOrEmpty) : undefined,
+            url: embed.url ? format(embed.url, stuffOrEmpty) : undefined,
         });
     }
 }

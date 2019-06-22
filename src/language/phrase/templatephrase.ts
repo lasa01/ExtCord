@@ -13,7 +13,7 @@ export class TemplatePhrase<T extends { [key: string]: string }> extends SimpleP
         super(info, defaults);
     }
 
-    public format(language: string, stuff: T ) {
-        return format(this.templates[language], stuff);
+    public format(language: string, stuff?: T ) {
+        return format(this.templates[language], stuff || {});
     }
 }

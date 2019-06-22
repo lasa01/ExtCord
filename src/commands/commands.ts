@@ -7,9 +7,9 @@ import { ConfigEntryGroup } from "../config/entry/entrygroup";
 import { StringGuildConfigEntry } from "../config/entry/guild/stringguildentry";
 import { Database } from "../database/database";
 import { Languages } from "../language/languages";
+import { MessagePhrase } from "../language/phrase/messagephrase";
 import { Phrase } from "../language/phrase/phrase";
 import { PhraseGroup } from "../language/phrase/phrasegroup";
-import { TemplatePhrase } from "../language/phrase/templatephrase";
 import { Permission } from "../permissions/permission";
 import { PermissionGroup } from "../permissions/permissiongroup";
 import { Permissions } from "../permissions/permissions";
@@ -44,13 +44,13 @@ export class Commands extends EventEmitter {
     private commandPhrases: Phrase[];
     private commandPhraseGroup?: PhraseGroup;
     private phrases: {
-        executionError: TemplatePhrase<{ error: string}>;
-        invalidArgument: TemplatePhrase<{ argument: string }>;
-        invalidCommand: TemplatePhrase<{ command: string }>;
-        noPermission: TemplatePhrase<{ command: string }>;
-        tooFewArguments: TemplatePhrase<{ supplied: string, required: string }>;
-        tooManyArguments: TemplatePhrase<{ supplied: string, required: string }>;
-        [key: string]: TemplatePhrase<any>;
+        invalidCommand: MessagePhrase<{ command: string }>;
+        executionError: MessagePhrase<{ error: string}>;
+        invalidArgument: MessagePhrase<{ argument: string }>;
+        noPermission: MessagePhrase<{ command: string }>;
+        tooFewArguments: MessagePhrase<{ supplied: string, required: string }>;
+        tooManyArguments: MessagePhrase<{ supplied: string, required: string }>;
+        [key: string]: MessagePhrase<any>;
     };
     private argumentsGroup?: PhraseGroup;
     private phraseGroup?: PhraseGroup;
@@ -63,35 +63,59 @@ export class Commands extends EventEmitter {
         this.permissions = [];
         this.commandPhrases = [];
         this.phrases = {
-            executionError: new TemplatePhrase({
+            executionError: new MessagePhrase({
                 name: "executionError",
             }, "Execution failed: {error}", {
+                description: "Encountered an unknown error.\n`{error}`",
+                timestamp: false,
+                title: "Command execution failed",
+            }, {
                 error: "The error that occured",
             }),
-            invalidArgument: new TemplatePhrase({
+            invalidArgument: new MessagePhrase({
                 name: "invalidArgument",
-            }, "Argument \"{argument}\" is invalid", {
+            }, "Argument `{argument}` is invalid", {
+                description: "Argument `{argument}` is invalid.",
+                timestamp: false,
+                title: "Invalid argument",
+            }, {
                 argument: "The invalid argument",
             }),
-            invalidCommand: new TemplatePhrase({
+            invalidCommand: new MessagePhrase({
                 name: "invalidCommand",
             }, "Command {command} not found", {
+                description: "Command `{command}` doesn't exist.",
+                timestamp: false,
+                title: "Command not found",
+            }, {
                 command: "The called command",
             }),
-            noPermission: new TemplatePhrase({
+            noPermission: new MessagePhrase({
                 name: "noPermission",
-            }, "You lack permissions to execute the command \"{command}\"", {
+            }, "You lack permissions to execute the command `{command}`", {
+                description: "You lack the permissions required for the command `{command}`.",
+                timestamp: false,
+                title: "Insufficient permissions",
+            }, {
                 command: "The called command",
             }),
-            tooFewArguments: new TemplatePhrase({
+            tooFewArguments: new MessagePhrase({
                 name: "tooFewArguments",
             }, "Too few arguments supplied: {supplied} supplied, {required} required", {
+                description: "The command requires {required} arguments, instead of {supplied}.",
+                timestamp: false,
+                title: "Too few arguments",
+            }, {
                 required: "The amount of required arguments",
                 supplied: "The amount of supplied arguments",
             }),
-            tooManyArguments: new TemplatePhrase({
+            tooManyArguments: new MessagePhrase({
                 name: "tooManyArguments",
             }, "Too many arguments supplied: {supplied} supplied, {required} required", {
+                description: "The command requires {required} arguments, instead of {supplied}.",
+                timestamp: false,
+                title: "Too many arguments",
+            }, {
                 required: "The amount of required arguments",
                 supplied: "The amount of supplied arguments",
             }),
@@ -101,12 +125,23 @@ export class Commands extends EventEmitter {
     public async message(message: Message) {
         if (!message.guild) { return; } // For now
         const language = await this.languages.getLanguage(message.guild);
+        const useEmbeds = await this.languages.useEmbedsConfigEntry!.guildGet(message.guild);
+        const useMentions = await this.languages.useMentionsConfigEntry!.guildGet(message.guild);
+        const respond = async <T extends { [key: string]: string }>(phrase: MessagePhrase<T>, stuff?: T) => {
+            if (useMentions) {
+                await message.reply(useEmbeds ? "" : phrase.format(language, stuff),
+                useEmbeds ? { embed: phrase.formatEmbed(language, stuff) } : undefined);
+            } else {
+                await message.channel.send(useEmbeds ? "" : phrase.format(language, stuff),
+                useEmbeds ? { embed: phrase.formatEmbed(language, stuff) } : undefined);
+            }
+        };
         const prefix = await this.prefixConfigEntry!.guildGet(message.guild);
         if (!message.content.startsWith(prefix)) { return; }
         const text = message.content.replace(prefix, "").trim();
         const command = text.split(" ", 1)[0];
         if (!command || !this.commands.has(command)) {
-            await message.reply(this.phrases.invalidCommand.format(language, { command }));
+            await respond(this.phrases.invalidCommand, { command });
             return;
         }
         const commandInstance = this.commands.get(command)!;
@@ -117,14 +152,13 @@ export class Commands extends EventEmitter {
             message,
             passed,
             prefix,
+            respond,
         };
         this.logger.debug(`Executing command ${command}`);
         this.emit("command", commandInstance, context);
         const err = await commandInstance.command(context);
         if (err) {
-            const errPhrase = this.phrases[err[0]];
-            await message.reply(errPhrase.format(language, err[1]));
-            return;
+            await respond(this.phrases[err[0]], err[1]);
         }
     }
 
@@ -206,4 +240,5 @@ export interface ICommandContext {
     command: string;
     passed: string;
     language: string;
+    respond: <T extends { [key: string]: string }>(phrase: MessagePhrase<T>, stuff?: T) => Promise<void>;
 }

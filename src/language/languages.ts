@@ -6,6 +6,7 @@ import { Logger } from "winston";
 
 import { Config } from "../config/config";
 import { ConfigEntryGroup } from "../config/entry/entrygroup";
+import { BooleanGuildConfigEntry } from "../config/entry/guild/booleanguildentry";
 import { StringGuildConfigEntry } from "../config/entry/guild/stringguildentry";
 import { StringConfigEntry } from "../config/entry/stringentry";
 import { Database } from "../database/database";
@@ -35,6 +36,8 @@ export class Languages extends EventEmitter {
     public logger: Logger;
     public languages: string[];
     public languageConfigEntry?: StringGuildConfigEntry;
+    public useEmbedsConfigEntry?: BooleanGuildConfigEntry;
+    public useMentionsConfigEntry?: BooleanGuildConfigEntry;
     public languageNameConfigEntry?: StringConfigEntry;
     public languageDirConfigEntry?: StringConfigEntry;
     private phrases: Map<string, Phrase>;
@@ -122,6 +125,8 @@ export class Languages extends EventEmitter {
         }
         if (id === DEFAULT_LANGUAGE) {
             this.defaultLoaded = true;
+        } else if (!this.languages.includes(id)) {
+            this.languages.push(id);
         }
         for (const [, phrase] of this.phrases) {
             const [data, comment] = phrase.parse(id, parsed[phrase.name]);
@@ -139,6 +144,14 @@ export class Languages extends EventEmitter {
             description: "The default language ISO 639-1 code",
             name: "language",
         }, database, DEFAULT_LANGUAGE);
+        this.useEmbedsConfigEntry = new BooleanGuildConfigEntry({
+            description: "Use embeds when sending messages",
+            name: "useEmbeds",
+        }, database, true);
+        this.useMentionsConfigEntry = new BooleanGuildConfigEntry({
+            description: "Mention the author when replying to messages",
+            name: "useMentions",
+        }, database, false);
         this.languageNameConfigEntry = new StringConfigEntry({
             description: "The name of the default language",
             name: "languageName",
@@ -150,7 +163,8 @@ export class Languages extends EventEmitter {
         this.configEntry = new ConfigEntryGroup({
             description: "Languages configuration",
             name: "languages",
-        }, [ this.languageConfigEntry, this.languageDirConfigEntry ]);
+        }, [this.languageConfigEntry, this.useEmbedsConfigEntry,
+            this.useMentionsConfigEntry, this.languageDirConfigEntry]);
         config.register(this.configEntry);
     }
 
