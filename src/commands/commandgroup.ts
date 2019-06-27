@@ -4,12 +4,12 @@ import { PermissionGroup } from "../permissions/permissiongroup";
 import { BuiltInArguments } from "./arguments/builtinarguments";
 import { Command, ICommandInfo, IExecutionContext } from "./command";
 
-export class CommandGroup extends Command {
-    public children: Map<string, Command>;
+export class CommandGroup extends Command<[typeof BuiltInArguments.subCommand]> {
+    public children: Map<string, Command<any>>;
     private subPhraseGroup?: PhraseGroup;
     private subPhrases: Phrase[];
 
-    constructor(info: ICommandInfo, children: Command[], allowEveryone = false) {
+    constructor(info: ICommandInfo, children: ReadonlyArray<Command<any>>, allowEveryone = false) {
         const permissions = [];
         for (const child of children) {
             permissions.push(child.getPermission());
@@ -34,8 +34,8 @@ export class CommandGroup extends Command {
         this.subPhrases.splice(this.subPhrases.indexOf(phrase), 1);
     }
 
-    public async execute(context: IExecutionContext) {
-        const subcommand: string = context.arguments.shift();
+    public async execute(context: IExecutionContext<[typeof BuiltInArguments.subCommand]>) {
+        const subcommand = context.arguments[0];
         if (!this.children.has(subcommand)) {
             return; // For now
         }

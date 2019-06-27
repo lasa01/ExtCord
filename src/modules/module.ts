@@ -9,7 +9,7 @@ export abstract class Module {
     public name: string;
     protected bot: Bot;
     protected configEntries: ConfigEntry[];
-    protected commands: Command[];
+    protected commands: Array<Command<any>>;
     protected permissions: Permission[];
     protected phrases: Phrase[];
 
@@ -46,12 +46,12 @@ export abstract class Module {
         this.configEntries.splice(this.configEntries.indexOf(entry), 1);
     }
 
-    protected registerCommand(command: Command) {
+    protected registerCommand(command: Command<any>) {
         this.bot.commands.register(command);
         this.commands.push(command);
     }
 
-    protected unregisterCommand(command: Command) {
+    protected unregisterCommand(command: Command<any>) {
         this.bot.commands.unregister(command);
         this.commands.splice(this.commands.indexOf(command), 1);
     }

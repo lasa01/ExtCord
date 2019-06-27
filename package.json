@@ -31,28 +31,28 @@
     "bin"
   ],
   "dependencies": {
-    "discord.js": "^11.4.2",
+    "discord.js": "^11.5.1",
     "erlpack": "github:discordapp/erlpack",
     "fs-extra": "^7.0.1",
     "hjson": "^3.1.2",
     "libsodium-wrappers": "^0.7.4",
     "node-opus": "^0.2.7",
     "reflect-metadata": "^0.1.13",
-    "sqlite3": "^4.0.6",
+    "sqlite3": "^4.0.9",
     "string-format": "^2.0.0",
-    "typeorm": "^0.2.13",
+    "typeorm": "^0.2.18",
     "uws": "^9.14.0",
     "winston": "^3.2.1",
     "yargs": "^12.0.5"
   },
   "devDependencies": {
-    "@types/fs-extra": "^5.0.5",
+    "@types/fs-extra": "^5.1.0",
     "@types/hjson": "^2.4.1",
-    "@types/node": "8.x",
+    "@types/node": "^8.10.49",
     "@types/string-format": "^2.0.0",
-    "@types/yargs": "^12.0.5",
-    "tslint": "^5.12.1",
+    "@types/yargs": "^12.0.12",
+    "tslint": "^5.18.0",
     "typedoc": "^0.14.2",
-    "typescript": "^3.0.0"
+    "typescript": "^3.5.2"
   }
 }

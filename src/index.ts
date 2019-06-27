@@ -6,6 +6,8 @@ export { CommandGroup } from "./commands/commandgroup";
 export { SimpleCommand } from "./commands/simplecommand";
 export { Argument } from "./commands/arguments/argument";
 export { StringArgument } from "./commands/arguments/stringargument";
+export { IntArgument } from "./commands/arguments/intargument";
+export { FloatArgument } from "./commands/arguments/floatargument";
 export { BuiltInArguments } from "./commands/arguments/builtinarguments";
 
 export { Config } from "./config/config";
@@ -39,6 +41,7 @@ export { SimplePhrase } from "./language/phrase/simplephrase";
 export { PhraseGroup } from "./language/phrase/phrasegroup";
 export { TemplatePhrase } from "./language/phrase/templatephrase";
 export { MessagePhrase } from "./language/phrase/messagephrase";
+export { DynamicFieldMessagePhrase } from "./language/phrase/dynamicfieldmessagephrase";
 
 export { Modules } from "./modules/modules";
 export { Module } from "./modules/module";

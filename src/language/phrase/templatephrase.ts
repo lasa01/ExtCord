@@ -5,7 +5,7 @@ import { SimplePhrase } from "./simplephrase";
 
 export class TemplatePhrase<T extends { [key: string]: string }> extends SimplePhrase {
     constructor(info: IPhraseInfo, defaults: { [key: string]: string; } | string, templateDescription: T) {
-        let description = info.description ? info.description + "\n" : "" + "Available substitutes:";
+        let description = (info.description ? info.description + "\n" : "") + "Available substitutes:";
         for (const [key, value] of Object.entries(templateDescription)) {
             description += `\n{${key}}: ${value}`;
         }

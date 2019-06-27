@@ -1,6 +1,6 @@
 import { Argument, IArgumentInfo } from "./argument";
 
-export class StringArgument extends Argument {
+export class StringArgument extends Argument<string> {
     private customCheck: (data: string) => boolean;
 
     constructor(info: IArgumentInfo, optional = false, allowSpaces = false, check?: (data: string) => boolean) {

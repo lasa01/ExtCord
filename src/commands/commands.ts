@@ -7,6 +7,7 @@ import { ConfigEntryGroup } from "../config/entry/entrygroup";
 import { StringGuildConfigEntry } from "../config/entry/guild/stringguildentry";
 import { Database } from "../database/database";
 import { Languages } from "../language/languages";
+import { DynamicFieldMessagePhrase } from "../language/phrase/dynamicfieldmessagephrase";
 import { MessagePhrase } from "../language/phrase/messagephrase";
 import { Phrase } from "../language/phrase/phrase";
 import { PhraseGroup } from "../language/phrase/phrasegroup";
@@ -20,24 +21,24 @@ import { Command } from "./command";
 // tslint:disable-next-line:interface-name
 export interface Commands {
     /** @event */
-    addListener(event: "command", listener: (command: Command, context: ICommandContext) => void): this;
+    addListener(event: "command", listener: (command: Command<any>, context: ICommandContext) => void): this;
     /** @event */
-    emit(event: "command", command: Command, context: ICommandContext): boolean;
+    emit(event: "command", command: Command<any>, context: ICommandContext): boolean;
     /** @event */
-    on(event: "command", listener: (command: Command, context: ICommandContext) => void): this;
+    on(event: "command", listener: (command: Command<any>, context: ICommandContext) => void): this;
     /** @event */
-    once(event: "command", listener: (command: Command, context: ICommandContext) => void): this;
+    once(event: "command", listener: (command: Command<any>, context: ICommandContext) => void): this;
     /** @event */
-    prependListener(event: "command", listener: (command: Command, context: ICommandContext) => void): this;
+    prependListener(event: "command", listener: (command: Command<any>, context: ICommandContext) => void): this;
     /** @event */
-    prependOnceListener(event: "command", listener: (command: Command, context: ICommandContext) => void): this;
+    prependOnceListener(event: "command", listener: (command: Command<any>, context: ICommandContext) => void): this;
 }
 
 export class Commands extends EventEmitter {
     public prefixConfigEntry?: StringGuildConfigEntry;
     public logger: Logger;
     private languages: Languages;
-    private commands: Map<string, Command>;
+    private commands: Map<string, Command<any>>;
     private configEntry?: ConfigEntryGroup;
     private permissions: Permission[];
     private permission?: Permission;
@@ -127,13 +128,14 @@ export class Commands extends EventEmitter {
         const language = await this.languages.getLanguage(message.guild);
         const useEmbeds = await this.languages.useEmbedsConfigEntry!.guildGet(message.guild);
         const useMentions = await this.languages.useMentionsConfigEntry!.guildGet(message.guild);
-        const respond = async <T extends { [key: string]: string }>(phrase: MessagePhrase<T>, stuff?: T) => {
+        const respond = async <T extends { [key: string]: string }, U extends { [key: string]: string }>
+            (phrase: MessagePhrase<T> | DynamicFieldMessagePhrase<T, U>, stuff?: T, fieldStuff?: U[]) => {
             if (useMentions) {
-                await message.reply(useEmbeds ? "" : phrase.format(language, stuff),
-                useEmbeds ? { embed: phrase.formatEmbed(language, stuff) } : undefined);
+                await message.reply(useEmbeds ? "" : phrase.format(language, stuff, fieldStuff),
+                useEmbeds ? { embed: phrase.formatEmbed(language, stuff, fieldStuff) } : undefined);
             } else {
-                await message.channel.send(useEmbeds ? "" : phrase.format(language, stuff),
-                useEmbeds ? { embed: phrase.formatEmbed(language, stuff) } : undefined);
+                await message.channel.send(useEmbeds ? "" : phrase.format(language, stuff, fieldStuff),
+                useEmbeds ? { embed: phrase.formatEmbed(language, stuff, fieldStuff) } : undefined);
             }
         };
         const prefix = await this.prefixConfigEntry!.guildGet(message.guild);
@@ -162,7 +164,7 @@ export class Commands extends EventEmitter {
         }
     }
 
-    public register(command: Command) {
+    public register(command: Command<any>) {
         if (this.commands.has(command.name)) {
             this.logger.warn(`Multiple commands with the same name detected, renaming "${command.name}"`);
             if (this.commands.has(command.rename())) {
@@ -174,7 +176,7 @@ export class Commands extends EventEmitter {
         this.commands.set(command.name, command);
     }
 
-    public unregister(command: Command) {
+    public unregister(command: Command<any>) {
         command.unregister(this);
         this.commands.delete(command.name);
     }
@@ -240,5 +242,6 @@ export interface ICommandContext {
     command: string;
     passed: string;
     language: string;
-    respond: <T extends { [key: string]: string }>(phrase: MessagePhrase<T>, stuff?: T) => Promise<void>;
+    respond: <T extends { [key: string]: string }, U extends { [key: string]: string }>
+        (phrase: MessagePhrase<T> | DynamicFieldMessagePhrase<T, U>, stuff?: T, fieldStuff?: U[]) => Promise<void>;
 }

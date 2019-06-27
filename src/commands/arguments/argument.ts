@@ -2,7 +2,7 @@ import { PhraseGroup } from "../../language/phrase/phrasegroup";
 import { SimplePhrase } from "../../language/phrase/simplephrase";
 import { Command } from "../command";
 
-export abstract class Argument {
+export abstract class Argument<T> {
     public name: string;
     public localizedName: SimplePhrase;
     public description: string;
@@ -29,7 +29,7 @@ export abstract class Argument {
         this.registered = false;
     }
 
-    public register(command: Command) {
+    public register(command: Command<any>) {
         if (!this.registered) {
             command.registerArgPhrase(this.getPhrase());
             this.registered = true;
@@ -42,7 +42,7 @@ export abstract class Argument {
 
     public abstract check(data: string): boolean;
 
-    public abstract parse(data: string): any;
+    public abstract parse(data: string): T;
 }
 
 export interface IArgumentInfo {

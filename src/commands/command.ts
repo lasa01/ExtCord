@@ -1,4 +1,3 @@
-import { Message } from "discord.js";
 import { Logger } from "winston";
 
 import { Phrase } from "../language/phrase/phrase";
@@ -10,24 +9,24 @@ import { Argument } from "./arguments/argument";
 import { CommandGroup } from "./commandgroup";
 import { Commands, ICommandContext } from "./commands";
 
-export abstract class Command {
+export abstract class Command<T extends ReadonlyArray<Argument<any>>> {
     public name: string;
     public localizedName: SimplePhrase;
     public description: string;
     public localizedDescription: SimplePhrase;
     public from?: Module;
     public author: string;
-    public arguments: Argument[];
+    public arguments: T;
     protected phraseGroup?: PhraseGroup;
     private minArguments: number;
     private defaultPermission: Permission;
     private argPhraseGroup?: PhraseGroup;
     private argPhrases: Phrase[];
-    private alwaysArgs: Argument[];
-    private argCombinations: Argument[][];
+    private alwaysArgs: Array<Argument<any>>;
+    private argCombinations: Array<Array<Argument<any>>>;
     private logger?: Logger;
 
-    constructor(info: ICommandInfo, args: Argument[], allowEveryone = false, defaultPermission?: Permission) {
+    constructor(info: ICommandInfo, args: T, allowEveryone = false, defaultPermission?: Permission) {
         this.name = info.name;
         this.localizedName = new SimplePhrase({
             name: "name",
@@ -117,7 +116,7 @@ export abstract class Command {
         return this.name;
     }
 
-    public async command(context: ICommandContext): Promise<[string, { [key: string]: string }]|undefined> {
+    public async command(context: ICommandContext): Promise<Readonly<[string, { [key: string]: string }]>|undefined> {
         if (this.logger) { this.logger.debug(`Command: ${context.command}`); }
         // Set to an empty array if the string is empty,
         // since the split function would return an array with an empty string, and we don't want that
@@ -153,7 +152,9 @@ export abstract class Command {
         }
         if (await this.defaultPermission.checkFull(context.message.member)) {
             try {
-                await this.execute({...context, arguments: parsed, rawArguments});
+                await this.execute({
+                    ...context, arguments: parsed as unknown as ArgumentsParseReturns<T>, rawArguments,
+                });
             } catch (err) {
                 return ["executionError", { error: err.toString() }];
             }
@@ -162,7 +163,7 @@ export abstract class Command {
         }
     }
 
-    public abstract async execute(context: IExecutionContext): Promise<void>;
+    public abstract async execute(context: IExecutionContext<T>): Promise<void>;
 
     protected makePhrases() {
         this.argPhraseGroup = new PhraseGroup({
@@ -174,9 +175,9 @@ export abstract class Command {
     }
 }
 
-export interface IExecutionContext extends ICommandContext {
+export interface IExecutionContext<T extends ReadonlyArray<Argument<any>>> extends ICommandContext {
     rawArguments: string[];
-    arguments: any[];
+    arguments: ArgumentsParseReturns<T>;
 }
 
 export interface ICommandInfo {
@@ -184,3 +185,7 @@ export interface ICommandInfo {
     description: string;
     author: string | Module;
 }
+
+type ArgumentsParseReturns<T extends ReadonlyArray<Argument<any>>> = {
+    [P in keyof T]: T[P] extends Argument<infer U> ? U : never
+};
