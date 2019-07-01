@@ -16,6 +16,7 @@ import { PermissionGroup } from "../permissions/permissiongroup";
 import { Permissions } from "../permissions/permissions";
 import { BuiltInArguments } from "./arguments/builtinarguments";
 import { Command } from "./command";
+import { CommandPhrases } from "./commandphrases";
 
 // Event definitions
 // tslint:disable-next-line:interface-name
@@ -44,15 +45,6 @@ export class Commands extends EventEmitter {
     private permission?: Permission;
     private commandPhrases: Phrase[];
     private commandPhraseGroup?: PhraseGroup;
-    private phrases: {
-        invalidCommand: MessagePhrase<{ command: string }>;
-        executionError: MessagePhrase<{ error: string}>;
-        invalidArgument: MessagePhrase<{ argument: string }>;
-        noPermission: MessagePhrase<{ command: string }>;
-        tooFewArguments: MessagePhrase<{ supplied: string, required: string }>;
-        tooManyArguments: MessagePhrase<{ supplied: string, required: string }>;
-        [key: string]: MessagePhrase<any>;
-    };
     private argumentsGroup?: PhraseGroup;
     private phraseGroup?: PhraseGroup;
 
@@ -63,68 +55,21 @@ export class Commands extends EventEmitter {
         this.commands = new Map();
         this.permissions = [];
         this.commandPhrases = [];
-        this.phrases = {
-            executionError: new MessagePhrase({
-                name: "executionError",
-            }, "Execution failed: {error}", {
-                description: "Encountered an unknown error.\n`{error}`",
-                timestamp: false,
-                title: "Command execution failed",
-            }, {
-                error: "The error that occured",
-            }),
-            invalidArgument: new MessagePhrase({
-                name: "invalidArgument",
-            }, "Argument `{argument}` is invalid", {
-                description: "Argument `{argument}` is invalid.",
-                timestamp: false,
-                title: "Invalid argument",
-            }, {
-                argument: "The invalid argument",
-            }),
-            invalidCommand: new MessagePhrase({
-                name: "invalidCommand",
-            }, "Command {command} not found", {
-                description: "Command `{command}` doesn't exist.",
-                timestamp: false,
-                title: "Command not found",
-            }, {
-                command: "The called command",
-            }),
-            noPermission: new MessagePhrase({
-                name: "noPermission",
-            }, "You lack permissions to execute the command `{command}`", {
-                description: "You lack the permissions required for the command `{command}`.",
-                timestamp: false,
-                title: "Insufficient permissions",
-            }, {
-                command: "The called command",
-            }),
-            tooFewArguments: new MessagePhrase({
-                name: "tooFewArguments",
-            }, "Too few arguments supplied: {supplied} supplied, {required} required", {
-                description: "The command requires {required} arguments, instead of {supplied}.",
-                timestamp: false,
-                title: "Too few arguments",
-            }, {
-                required: "The amount of required arguments",
-                supplied: "The amount of supplied arguments",
-            }),
-            tooManyArguments: new MessagePhrase({
-                name: "tooManyArguments",
-            }, "Too many arguments supplied: {supplied} supplied, {required} required", {
-                description: "The command requires {required} arguments, instead of {supplied}.",
-                timestamp: false,
-                title: "Too many arguments",
-            }, {
-                required: "The amount of required arguments",
-                supplied: "The amount of supplied arguments",
-            }),
-        };
     }
 
     public async message(message: Message) {
-        if (!message.guild) { return; } // For now
+        if (!message.guild || message.author.bot) { return; } // For now
+        const prefix = await this.prefixConfigEntry!.guildGet(message.guild);
+        const mention = `<@${message.client.user.id}>`;
+        let text;
+        if (message.content.startsWith(prefix)) {
+            text = message.content.replace(prefix, "").trim();
+        } else if (message.content.startsWith(mention)) {
+            text = message.content.replace(mention, "").trim();
+        } else {
+            return;
+        }
+        const command = text.split(" ", 1)[0];
         const language = await this.languages.getLanguage(message.guild);
         const useEmbeds = await this.languages.useEmbedsConfigEntry!.guildGet(message.guild);
         const useMentions = await this.languages.useMentionsConfigEntry!.guildGet(message.guild);
@@ -138,12 +83,8 @@ export class Commands extends EventEmitter {
                 useEmbeds ? { embed: phrase.formatEmbed(language, stuff, fieldStuff) } : undefined);
             }
         };
-        const prefix = await this.prefixConfigEntry!.guildGet(message.guild);
-        if (!message.content.startsWith(prefix)) { return; }
-        const text = message.content.replace(prefix, "").trim();
-        const command = text.split(" ", 1)[0];
         if (!command || !this.commands.has(command)) {
-            await respond(this.phrases.invalidCommand, { command });
+            await respond(CommandPhrases.invalidCommand, { command });
             return;
         }
         const commandInstance = this.commands.get(command)!;
@@ -158,10 +99,7 @@ export class Commands extends EventEmitter {
         };
         this.logger.debug(`Executing command ${command}`);
         this.emit("command", commandInstance, context);
-        const err = await commandInstance.command(context);
-        if (err) {
-            await respond(this.phrases[err[0]], err[1]);
-        }
+        await commandInstance.command(context);
     }
 
     public register(command: Command<any>) {
@@ -227,7 +165,7 @@ export class Commands extends EventEmitter {
         }, Object.values(BuiltInArguments).map((arg) => arg.getPhrase()));
         this.phraseGroup = new PhraseGroup({
             name: "commands",
-        }, [ this.argumentsGroup, ...Object.values(this.phrases), this.commandPhraseGroup ]);
+        }, [ this.argumentsGroup, ...Object.values(CommandPhrases), this.commandPhraseGroup ]);
         this.languages.register(this.phraseGroup);
     }
 

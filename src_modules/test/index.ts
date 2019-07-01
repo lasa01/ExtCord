@@ -101,7 +101,7 @@ export default class TestModule extends Module {
         this.registerPhrase(languagePhrase);
         const languageCommand = new SimpleCommand({ description: "Change language", name: "language", author: this },
             [new StringArgument({ description: "New language", name: "language" }, false, false,
-            (arg) => this.bot.languages.languages.includes(arg))] as const, async (context) => {
+            async (arg) => this.bot.languages.languages.includes(arg))] as const, async (context) => {
                 await this.bot.languages.languageConfigEntry!.guildSet(context.message.guild, context.arguments[0]);
                 await context.respond(languagePhrase, { language: context.arguments[0] });
             });

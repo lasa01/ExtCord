@@ -1,3 +1,5 @@
+import { CommandPhrases } from "../commandphrases";
+import { ICommandContext } from "../commands";
 import { Argument, IArgumentInfo } from "./argument";
 
 export class FloatArgument extends Argument<number> {
@@ -10,12 +12,24 @@ export class FloatArgument extends Argument<number> {
         this.max = max;
     }
 
-    public check(data: string) {
+    public async check(data: string, context: ICommandContext) {
         const float = parseFloat(data);
-        return !isNaN(float) && this.min <= float && this.max >= float;
+        if (isNaN(float)) {
+            await context.respond(CommandPhrases.invalidNumberArgument, { argument: data });
+            return false;
+        }
+        if (this.min > float) {
+            await context.respond(CommandPhrases.tooSmallArgument, { argument: data, min: this.min.toString() });
+            return false;
+        }
+        if (this.max < float) {
+            await context.respond(CommandPhrases.tooBigArgument, { argument: data, max: this.max.toString() });
+            return false;
+        }
+        return true;
     }
 
-    public parse(data: string): number {
+    public parse(data: string, context: ICommandContext): number {
         return parseFloat(data);
     }
 }

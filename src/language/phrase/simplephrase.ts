@@ -1,3 +1,4 @@
+import { DEFAULT_LANGUAGE } from "../languages";
 import { IPhraseInfo, Phrase } from "./phrase";
 
 export class SimplePhrase extends Phrase {
@@ -8,8 +9,7 @@ export class SimplePhrase extends Phrase {
         super(info);
         if (typeof defaults === "string") {
             defaults = {
-                // TODO get default language
-                en: defaults,
+                [DEFAULT_LANGUAGE]: defaults,
             };
         }
         for (const language of Object.keys(defaults)) {

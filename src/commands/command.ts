@@ -7,6 +7,7 @@ import { Module } from "../modules/module";
 import { Permission } from "../permissions/permission";
 import { Argument } from "./arguments/argument";
 import { CommandGroup } from "./commandgroup";
+import { CommandPhrases } from "./commandphrases";
 import { Commands, ICommandContext } from "./commands";
 
 export abstract class Command<T extends ReadonlyArray<Argument<any>>> {
@@ -116,17 +117,20 @@ export abstract class Command<T extends ReadonlyArray<Argument<any>>> {
         return this.name;
     }
 
-    public async command(context: ICommandContext): Promise<Readonly<[string, { [key: string]: string }]>|undefined> {
+    public async command(context: ICommandContext): Promise<void> {
         if (this.logger) { this.logger.debug(`Command: ${context.command}`); }
         // Set to an empty array if the string is empty,
         // since the split function would return an array with an empty string, and we don't want that
         const rawArguments = context.passed === "" ? [] : context.passed.split(" ");
         if (this.logger) { this.logger.debug(`Arguments: ${rawArguments.join(", ")}`); }
         const maxArgs = this.arguments.length;
-        if (rawArguments.length < this.minArguments) { return ["tooFewArguments", {
-            required: (this.minArguments === maxArgs) ? maxArgs.toString() : `${this.minArguments} - ${maxArgs}`,
-            supplied: rawArguments.length.toString(),
-        }]; }
+        if (rawArguments.length < this.minArguments) {
+            await context.respond(CommandPhrases.tooFewArguments, {
+                required: (this.minArguments === maxArgs) ? maxArgs.toString() : `${this.minArguments} - ${maxArgs}`,
+                supplied: rawArguments.length.toString(),
+            });
+            return;
+        }
         if (rawArguments.length > maxArgs) {
             // Combine extra arguments if the last argument allows it
             // This allows the last argument to optionally have spaces
@@ -135,20 +139,21 @@ export abstract class Command<T extends ReadonlyArray<Argument<any>>> {
                     rawArguments.push(rawArguments.pop() + " " + rawArguments.pop());
                 }
             } else {
-                return ["tooManyArguments", {
+                await context.respond(CommandPhrases.tooManyArguments, {
                     required: (this.minArguments === maxArgs) ?
                         maxArgs.toString() : `${this.minArguments} - ${maxArgs}`,
                     supplied: rawArguments.length.toString(),
-                }];
+                });
+                return;
             }
         }
         const parsed: any[] = [];
         for (const argument of this.arguments) {
             const rawArgument = rawArguments.shift()!;
-            if (!argument.check(rawArgument)) {
-                return ["invalidArgument", { argument: rawArgument }];
+            if (!await argument.check(rawArgument, context)) {
+                return;
             }
-            parsed.push(argument.parse(rawArgument));
+            parsed.push(await argument.parse(rawArgument, context));
         }
         if (await this.defaultPermission.checkFull(context.message.member)) {
             try {
@@ -156,10 +161,12 @@ export abstract class Command<T extends ReadonlyArray<Argument<any>>> {
                     ...context, arguments: parsed as unknown as ArgumentsParseReturns<T>, rawArguments,
                 });
             } catch (err) {
-                return ["executionError", { error: err.toString() }];
+                await context.respond(CommandPhrases.executionError, { error: err.toString() });
+                return;
             }
         } else {
-            return ["noPermission", { command: this.name }];
+            await context.respond(CommandPhrases.noPermission, { command: this.name });
+            return;
         }
     }
 

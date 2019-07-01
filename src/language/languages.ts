@@ -13,7 +13,7 @@ import { Database } from "../database/database";
 import { Serializer } from "../util/serializer";
 import { Phrase } from "./phrase/phrase";
 
-const DEFAULT_LANGUAGE = "en";
+export const DEFAULT_LANGUAGE = "en";
 
 // Event definitions
 // tslint:disable-next-line:interface-name

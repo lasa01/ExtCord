@@ -1,5 +1,6 @@
 import format = require("string-format");
 
+import { DEFAULT_LANGUAGE } from "../languages";
 import { IBaseEmbed, IEmbedField, ILocalizedBaseEmbed, MessagePhrase } from "./messagephrase";
 import { IPhraseInfo } from "./phrase";
 
@@ -18,13 +19,12 @@ export class DynamicFieldMessagePhrase<T extends { [key: string]: string; },
         super(info, defaultsText, defaultsEmbed, templateDescription);
         if (typeof defaultsFieldText === "string") {
             defaultsFieldText = {
-                en: defaultsFieldText,
+                [DEFAULT_LANGUAGE]: defaultsFieldText,
             };
         }
         if (typeof defaultsField.inline === "boolean") {
             defaultsField = {
-                // TODO get default language
-                en: defaultsField as IEmbedField,
+                [DEFAULT_LANGUAGE]: defaultsField as IEmbedField,
             };
         }
         this.defaultsFieldText = defaultsFieldText;

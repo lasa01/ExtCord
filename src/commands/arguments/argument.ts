@@ -1,6 +1,7 @@
 import { PhraseGroup } from "../../language/phrase/phrasegroup";
 import { SimplePhrase } from "../../language/phrase/simplephrase";
 import { Command } from "../command";
+import { ICommandContext } from "../commands";
 
 export abstract class Argument<T> {
     public name: string;
@@ -31,7 +32,7 @@ export abstract class Argument<T> {
 
     public register(command: Command<any>) {
         if (!this.registered) {
-            command.registerArgPhrase(this.getPhrase());
+            command.registerArgPhrase(this.phraseGroup);
             this.registered = true;
         }
     }
@@ -40,9 +41,9 @@ export abstract class Argument<T> {
         return this.phraseGroup;
     }
 
-    public abstract check(data: string): boolean;
+    public abstract async check(data: string, context: ICommandContext): Promise<boolean>;
 
-    public abstract parse(data: string): T;
+    public abstract parse(data: string, context: ICommandContext): T;
 }
 
 export interface IArgumentInfo {

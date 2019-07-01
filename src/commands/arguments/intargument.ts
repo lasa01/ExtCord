@@ -1,3 +1,5 @@
+import { CommandPhrases } from "../commandphrases";
+import { ICommandContext } from "../commands";
 import { Argument, IArgumentInfo } from "./argument";
 
 export class IntArgument extends Argument<number> {
@@ -10,9 +12,21 @@ export class IntArgument extends Argument<number> {
         this.max = max;
     }
 
-    public check(data: string) {
+    public async check(data: string, context: ICommandContext) {
         const int = parseInt(data, 10);
-        return !isNaN(int) && this.min <= int && this.max >= int;
+        if (isNaN(int)) {
+            await context.respond(CommandPhrases.invalidIntegerArgument, { argument: data });
+            return false;
+        }
+        if (this.min > int) {
+            await context.respond(CommandPhrases.tooSmallArgument, { argument: data, min: this.min.toString() });
+            return false;
+        }
+        if (this.max < int) {
+            await context.respond(CommandPhrases.tooBigArgument, { argument: data, max: this.max.toString() });
+            return false;
+        }
+        return true;
     }
 
     public parse(data: string): number {

@@ -1,5 +1,6 @@
 import format = require("string-format");
 
+import { DEFAULT_LANGUAGE } from "../languages";
 import { IPhraseInfo } from "./phrase";
 import { TemplatePhrase } from "./templatephrase";
 
@@ -13,8 +14,7 @@ export class MessagePhrase<T extends { [key: string]: string }> extends Template
         super(info, defaultsText, templateDescription);
         if (typeof defaultsEmbed.timestamp === "boolean") {
             defaultsEmbed = {
-                // TODO get default language
-                en: defaultsEmbed as IBaseEmbed,
+                [DEFAULT_LANGUAGE]: defaultsEmbed as IBaseEmbed,
             };
         }
         this.defaultsEmbed = defaultsEmbed as ILocalizedBaseEmbed;
