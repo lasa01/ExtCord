@@ -16,10 +16,10 @@ export class Permission {
     public fullName: string;
     public description?: string;
     public localizedDescription?: SimplePhrase;
+    public phraseGroup: PhraseGroup;
     private subPhrases: Phrase[];
     private subPhraseGroup?: PhraseGroup;
     private phrases: Phrase[];
-    private phraseGroup: PhraseGroup;
     private logger?: Logger;
     private permissions?: Permissions;
     private memberRepo?: Repository<MemberPermissionEntity>;
@@ -59,11 +59,10 @@ export class Permission {
 
     public register(permissions: Permissions) {
         this.registerPermissions(permissions);
-        permissions.registerPhrase(this.phraseGroup);
     }
 
-    public unregister(permissions: Permissions) {
-        permissions.unregisterPhrase(this.phraseGroup);
+    public unregister() {
+        this.unregisterPermissions();
     }
 
     public registerPermissions(permissions: Permissions) {

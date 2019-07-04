@@ -1,5 +1,6 @@
 import {
-    Bot, DynamicFieldMessagePhrase, IntArgument, MessagePhrase, Module, Permission, SimpleCommand, StringArgument,
+    Bot, CommandPhrases, DynamicFieldMessagePhrase, IntArgument, MessagePhrase, Module, Permission, SimpleCommand,
+    SimplePhrase, StringArgument,
 } from "../..";
 
 export default class TestModule extends Module {
@@ -11,8 +12,7 @@ export default class TestModule extends Module {
             }, true);
         this.registerPermission(testPermission);
         const testPhrase = new MessagePhrase({
-                description: "Test command",
-                name: "testCommand",
+                name: "response",
             }, "Test {input}?", {
                 description: "Test: {input}?",
                 timestamp: false,
@@ -20,17 +20,16 @@ export default class TestModule extends Module {
             }, {
                 input: "Argument passed to command",
             });
-        this.registerPhrase(testPhrase);
         const testCommand = new SimpleCommand({ description: "Test command", name: "test", author: this },
             [new StringArgument({ description: "Text input for testing", name: "text" }, true, true)] as const,
             async (context) => {
                 await context.respond(testPhrase, { input: context.arguments[0] });
             }, true);
+        testCommand.registerPhrase(testPhrase);
         this.registerCommand(testCommand);
 
         const permResultPhrase = new MessagePhrase({
-                description: "Permission command result",
-                name: "permissionCommandResult",
+                name: "permissionResult",
             }, "Permission `{permission}` allowed: {result}", {
                 description: "Permission `{permission}` allowed: {result}.",
                 timestamp: false,
@@ -39,10 +38,8 @@ export default class TestModule extends Module {
                 permission: "Checked permission",
                 result: "Returned result",
             });
-        this.registerPhrase(permResultPhrase);
         const permNotFoundPhrase = new MessagePhrase({
-                description: "Permission command permission not found",
-                name: "permissionCommandNotFound",
+                name: "permissionNotFound",
             }, "Permission `{permission}` doesn't exist", {
                 description: "Permission `{permission}` doesn't exist.",
                 timestamp: false,
@@ -50,7 +47,6 @@ export default class TestModule extends Module {
             }, {
                 permission: "Checked permission",
             });
-        this.registerPhrase(permNotFoundPhrase);
         const permCommand = new SimpleCommand({ description: "Check permission", name: "permission", author: this },
             [new StringArgument({ description: "Permission to check", name: "permission" })] as const,
             async (context) => {
@@ -68,11 +64,12 @@ export default class TestModule extends Module {
                     await context.respond(permResultPhrase, { permission: context.arguments[0], result: resultText });
                 }
             }, true);
+        permCommand.registerPhrase(permResultPhrase);
+        permCommand.registerPhrase(permNotFoundPhrase);
         this.registerCommand(permCommand);
 
         const prefixPhrase = new MessagePhrase({
-                description: "Prefix command",
-                name: "prefixCommand",
+                name: "response",
             }, "Prefix updated to `{prefix}`", {
                 description: "New prefix is `{prefix}`.",
                 timestamp: false,
@@ -80,17 +77,16 @@ export default class TestModule extends Module {
             }, {
                 prefix: "New prefix",
             });
-        this.registerPhrase(prefixPhrase);
         const prefixCommand = new SimpleCommand({ description: "Change prefix", name: "prefix", author: this },
             [new StringArgument({ description: "New prefix", name: "prefix" })] as const, async (context) => {
                 await this.bot.commands.prefixConfigEntry!.guildSet(context.message.guild, context.arguments[0]);
                 await context.respond(prefixPhrase, { prefix: context.arguments[0] });
             });
+        prefixCommand.registerPhrase(prefixPhrase);
         this.registerCommand(prefixCommand);
 
         const languagePhrase = new MessagePhrase({
-                description: "Language command",
-                name: "languageCommand",
+                name: "response",
             }, "Language changed to `{language}`", {
                 description: "New language: `{language}`.",
                 timestamp: false,
@@ -98,18 +94,31 @@ export default class TestModule extends Module {
             }, {
                 language: "New language",
             });
-        this.registerPhrase(languagePhrase);
+        const invalidLanguagePhrase = new SimplePhrase({
+                name: "invalidLanguage",
+            }, "The argument is not a valid language");
         const languageCommand = new SimpleCommand({ description: "Change language", name: "language", author: this },
             [new StringArgument({ description: "New language", name: "language" }, false, false,
-            async (arg) => this.bot.languages.languages.includes(arg))] as const, async (context) => {
+            async (arg, context) => {
+                if (this.bot.languages.languages.includes(arg)) {
+                    return true;
+                } else {
+                    await context.respond(CommandPhrases.invalidArgument, {
+                        argument: arg,
+                        reason: invalidLanguagePhrase.get(context.language),
+                    });
+                    return false;
+                }
+            })] as const, async (context) => {
                 await this.bot.languages.languageConfigEntry!.guildSet(context.message.guild, context.arguments[0]);
                 await context.respond(languagePhrase, { language: context.arguments[0] });
             });
+        languageCommand.registerPhrase(languagePhrase);
+        languageCommand.registerPhrase(invalidLanguagePhrase);
         this.registerCommand(languageCommand);
 
         const embedPhrase = new MessagePhrase({
-                description: "Embed test command",
-                name: "embedCommand",
+                name: "response",
             }, "This is not an embed", {
                 description: "The argument provided was: {argument}",
                 fields: [
@@ -135,17 +144,16 @@ export default class TestModule extends Module {
             }, {
                 argument: "The argument provided for the command",
             });
-        this.registerPhrase(embedPhrase);
         const embedCommand = new SimpleCommand({ description: "Test embeds", name: "embed", author: this },
             [new StringArgument({ description: "Test argument", name: "test" }, true, true)] as const,
             async (context) => {
                 await context.respond(embedPhrase, { argument: context.arguments[0] });
             }, true);
+        embedCommand.registerPhrase(embedPhrase);
         this.registerCommand(embedCommand);
 
         const randomPhrase = new DynamicFieldMessagePhrase({
-                description: "Random command",
-                name: "randomCommand",
+                name: "response",
             }, "Random numbers:", {
                 description: "Here are your random numbers with an upper limit of {max}.",
                 timestamp: false,
@@ -160,7 +168,6 @@ export default class TestModule extends Module {
             }, {
                 number: "Random number",
             });
-        this.registerPhrase(randomPhrase);
         const randomCommand = new SimpleCommand({
                 author: this,
                 description: "Random number generator",
@@ -176,6 +183,7 @@ export default class TestModule extends Module {
                 }
                 await context.respond(randomPhrase, { n: n.toString(), max: max.toString() }, fields);
             }, true);
+        randomCommand.registerPhrase(randomPhrase);
         this.registerCommand(randomCommand);
     }
 }

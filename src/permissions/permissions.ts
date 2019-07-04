@@ -38,7 +38,7 @@ export class Permissions {
     }
 
     public unregister(permission: Permission) {
-        permission.unregister(this);
+        permission.unregister();
         this.permissions.delete(permission.name);
         this.configTemplate.delete(permission.name);
     }
@@ -61,7 +61,7 @@ export class Permissions {
 
     public registerLanguages(languages: Languages) {
         this.phraseGroup = new PhraseGroup({
-            description: "Language definitions for individual permissions",
+            description: "Built-in permissions",
             name: "permissions",
         }, this.phrases);
         languages.register(this.phraseGroup);

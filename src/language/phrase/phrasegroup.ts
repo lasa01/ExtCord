@@ -3,16 +3,33 @@ import { IPhraseInfo, Phrase } from "./phrase";
 export class PhraseGroup extends Phrase {
     public phrases: Map<string, Phrase>;
 
-    constructor(info: IPhraseInfo, phrases: Phrase[]) {
+    constructor(info: IPhraseInfo, phrases?: Phrase[]) {
         super(info);
         this.phrases = new Map();
-        for (const phrase of phrases) {
-            this.phrases.set(phrase.name, phrase);
-            for (const language of phrase.languages) {
-                if (!this.languages.includes(language)) {
-                    this.languages.push(language);
+        if (phrases) {
+            for (const phrase of phrases) {
+                this.phrases.set(phrase.name, phrase);
+                for (const language of phrase.languages) {
+                    if (!this.languages.includes(language)) {
+                        this.languages.push(language);
+                    }
                 }
             }
+        }
+    }
+
+    public addPhrase(phrase: Phrase) {
+        this.phrases.set(phrase.name, phrase);
+        for (const language of phrase.languages) {
+            if (!this.languages.includes(language)) {
+                this.languages.push(language);
+            }
+        }
+    }
+
+    public removePhrase(phrase: Phrase) {
+        if (this.phrases.has(phrase.name)) {
+            this.phrases.delete(phrase.name);
         }
     }
 

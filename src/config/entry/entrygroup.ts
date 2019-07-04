@@ -4,13 +4,28 @@ export class ConfigEntryGroup extends ConfigEntry {
     public entries: Map<string, ConfigEntry>;
     private value?: object;
 
-    constructor(info: IEntryInfo, entries: ConfigEntry[]) {
+    constructor(info: IEntryInfo, entries?: ConfigEntry[]) {
         super(info);
         this.entries = new Map();
-        for (const entry of entries) {
-            entry.setParent(this);
-            entry.setLoadStage(this.loadStage);
-            this.entries.set(entry.name, entry);
+        if (entries) {
+            for (const entry of entries) {
+                entry.setParent(this);
+                entry.setLoadStage(this.loadStage);
+                this.entries.set(entry.name, entry);
+            }
+        }
+    }
+
+    public addEntry(entry: ConfigEntry) {
+        entry.setParent(this);
+        entry.setLoadStage(this.loadStage);
+        this.entries.set(entry.name, entry);
+    }
+
+    public removeEntry(entry: ConfigEntry) {
+        if (this.entries.has(entry.name)) {
+            entry.removeParent();
+            this.entries.delete(entry.name);
         }
     }
 

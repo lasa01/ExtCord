@@ -43,7 +43,7 @@ export class Modules extends EventEmitter {
     public async loadModule(module: new (bot: Bot) => Module) {
         const constructed = new module(this.bot);
         if (constructed.name === "" || constructed.author === "") {
-            this.logger.error(`A module has an empty name and/or author`);
+            this.logger.error("A module has an empty name and/or author");
             await constructed.unload();
             return;
         }
@@ -57,6 +57,7 @@ export class Modules extends EventEmitter {
             }
         }
         this.modules.set(constructed.name, constructed);
+        constructed.load();
         this.logger.info(`Loaded module ${constructed.name}`);
     }
 
@@ -81,7 +82,7 @@ export class Modules extends EventEmitter {
                 }
             }
             // Skip files that aren't javascript
-            if (!path.endsWith(".js")) { return; }
+            if (!path.endsWith(".js")) { continue; }
             try {
                 const loaded = require(path).default;
                 if (!Module.isPrototypeOf(loaded)) {
@@ -90,7 +91,7 @@ export class Modules extends EventEmitter {
                 }
                 await this.loadModule(loaded);
             } catch (error) {
-                this.logger.error(`Error while loading module ${filename}: ${error}`);
+                this.logger.error(`Error while loading module ${filename}: ${error.stack || error}`);
             }
         }
         this.emit("loaded");

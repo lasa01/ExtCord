@@ -46,6 +46,7 @@ export class Commands extends EventEmitter {
     private commandPhrases: Phrase[];
     private commandPhraseGroup?: PhraseGroup;
     private argumentsGroup?: PhraseGroup;
+    private phrasesGroup?: PhraseGroup;
     private phraseGroup?: PhraseGroup;
 
     constructor(logger: Logger, languages: Languages) {
@@ -88,6 +89,10 @@ export class Commands extends EventEmitter {
             return;
         }
         const commandInstance = this.commands.get(command)!;
+        if (!await commandInstance.getPermission().checkFull(message.member)) {
+            await respond(CommandPhrases.noPermission, { command });
+            return;
+        }
         const passed = text.replace(command, "").trim();
         const context = {
             command,
@@ -156,16 +161,20 @@ export class Commands extends EventEmitter {
 
     public registerLanguages() {
         this.commandPhraseGroup = new PhraseGroup({
-            description: "Language definitions for individual commands",
+            description: "Built-in commands",
             name: "commands",
         }, this.commandPhrases);
         this.argumentsGroup = new PhraseGroup({
             description: "Built-in arguments",
             name: "arguments",
         }, Object.values(BuiltInArguments).map((arg) => arg.getPhrase()));
+        this.phrasesGroup = new PhraseGroup({
+            description: "Built-in phrases",
+            name: "phrases",
+        }, Object.values(CommandPhrases));
         this.phraseGroup = new PhraseGroup({
             name: "commands",
-        }, [ this.argumentsGroup, ...Object.values(CommandPhrases), this.commandPhraseGroup ]);
+        }, [ this.argumentsGroup, this.commandPhraseGroup, this.phrasesGroup ]);
         this.languages.register(this.phraseGroup);
     }
 

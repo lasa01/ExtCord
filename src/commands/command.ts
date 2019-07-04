@@ -18,11 +18,11 @@ export abstract class Command<T extends ReadonlyArray<Argument<any>>> {
     public from?: Module;
     public author: string;
     public arguments: T;
-    protected phraseGroup?: PhraseGroup;
+    public phraseGroup: PhraseGroup;
     private minArguments: number;
     private defaultPermission: Permission;
-    private argPhraseGroup?: PhraseGroup;
-    private argPhrases: Phrase[];
+    private argPhraseGroup: PhraseGroup;
+    private customPhraseGroup: PhraseGroup;
     private alwaysArgs: Array<Argument<any>>;
     private argCombinations: Array<Array<Argument<any>>>;
     private logger?: Logger;
@@ -36,13 +36,21 @@ export abstract class Command<T extends ReadonlyArray<Argument<any>>> {
         this.localizedDescription = new SimplePhrase({
             name: "description",
         }, this.description);
-        this.argPhrases = [];
         if (Module.isPrototypeOf(info.author)) {
             this.from = info.author as Module;
             this.author = this.from.author;
         } else {
             this.author = info.author as string;
         }
+        this.argPhraseGroup = new PhraseGroup({
+            name: "arguments",
+        });
+        this.customPhraseGroup = new PhraseGroup({
+            name: "phrases",
+        });
+        this.phraseGroup = new PhraseGroup({
+            name: this.name,
+        }, [ this.localizedDescription, this.localizedName, this.argPhraseGroup, this.customPhraseGroup ]);
         this.arguments = args;
         this.minArguments = 0;
         // Build possible argument combinations
@@ -80,32 +88,28 @@ export abstract class Command<T extends ReadonlyArray<Argument<any>>> {
     }
 
     public register(commands: Commands) {
-        this.makePhrases();
-        commands.registerPhrase(this.phraseGroup!);
         commands.registerPermission(this.getPermission());
         this.logger = commands.logger;
     }
 
     public unregister(commands: Commands) {
-        if (this.phraseGroup) {
-            commands.unregisterPhrase(this.phraseGroup);
-        }
         commands.unregisterPermission(this.getPermission());
     }
 
     public registerParent(parent: CommandGroup) {
-        this.makePhrases();
-        parent.registerSubPhrase(this.phraseGroup!);
+        parent.registerSubPhrase(this.phraseGroup);
     }
 
     public unregisterParent(parent: CommandGroup) {
-        if (this.phraseGroup) {
-            parent.unregisterSubPhrase(this.phraseGroup);
-        }
+        parent.unregisterSubPhrase(this.phraseGroup);
+    }
+
+    public registerPhrase(phrase: Phrase) {
+        this.customPhraseGroup.addPhrase(phrase);
     }
 
     public registerArgPhrase(phrase: Phrase) {
-        this.argPhrases.push(phrase);
+        this.argPhraseGroup.addPhrase(phrase);
     }
 
     public getPermission() {
@@ -155,31 +159,17 @@ export abstract class Command<T extends ReadonlyArray<Argument<any>>> {
             }
             parsed.push(await argument.parse(rawArgument, context));
         }
-        if (await this.defaultPermission.checkFull(context.message.member)) {
-            try {
-                await this.execute({
-                    ...context, arguments: parsed as unknown as ArgumentsParseReturns<T>, rawArguments,
-                });
-            } catch (err) {
-                await context.respond(CommandPhrases.executionError, { error: err.toString() });
-                return;
-            }
-        } else {
-            await context.respond(CommandPhrases.noPermission, { command: this.name });
+        try {
+            await this.execute({
+                ...context, arguments: parsed as unknown as ArgumentsParseReturns<T>, rawArguments,
+            });
+        } catch (err) {
+            await context.respond(CommandPhrases.executionError, { error: err.toString() });
             return;
         }
     }
 
     public abstract async execute(context: IExecutionContext<T>): Promise<void>;
-
-    protected makePhrases() {
-        this.argPhraseGroup = new PhraseGroup({
-            name: "arguments",
-        }, this.argPhrases);
-        this.phraseGroup = new PhraseGroup({
-            name: this.name,
-        }, [ this.localizedDescription, this.localizedName, this.argPhraseGroup ]);
-    }
 }
 
 export interface IExecutionContext<T extends ReadonlyArray<Argument<any>>> extends ICommandContext {

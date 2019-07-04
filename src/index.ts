@@ -9,6 +9,7 @@ export { StringArgument } from "./commands/arguments/stringargument";
 export { IntArgument } from "./commands/arguments/intargument";
 export { FloatArgument } from "./commands/arguments/floatargument";
 export { BuiltInArguments } from "./commands/arguments/builtinarguments";
+export { CommandPhrases } from "./commands/commandphrases";
 
 export { Config } from "./config/config";
 export { ConfigEntry } from "./config/entry/entry";

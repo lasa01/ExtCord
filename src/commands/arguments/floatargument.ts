@@ -15,15 +15,24 @@ export class FloatArgument extends Argument<number> {
     public async check(data: string, context: ICommandContext) {
         const float = parseFloat(data);
         if (isNaN(float)) {
-            await context.respond(CommandPhrases.invalidNumberArgument, { argument: data });
+            await context.respond(CommandPhrases.invalidArgument, {
+                argument: data,
+                reason: CommandPhrases.invalidNumberArgument.get(context.language),
+            });
             return false;
         }
         if (this.min > float) {
-            await context.respond(CommandPhrases.tooSmallArgument, { argument: data, min: this.min.toString() });
+            await context.respond(CommandPhrases.invalidArgument, {
+                argument: data,
+                reason: CommandPhrases.tooSmallArgument.format(context.language, { min: this.min.toString() }),
+            });
             return false;
         }
         if (this.max < float) {
-            await context.respond(CommandPhrases.tooBigArgument, { argument: data, max: this.max.toString() });
+            await context.respond(CommandPhrases.invalidArgument, {
+                argument: data,
+                reason: CommandPhrases.tooBigArgument.format(context.language, { max: this.max.toString() }),
+            });
             return false;
         }
         return true;

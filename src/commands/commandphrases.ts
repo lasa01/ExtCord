@@ -1,4 +1,6 @@
 import { MessagePhrase } from "../language/phrase/messagephrase";
+import { SimplePhrase } from "../language/phrase/simplephrase";
+import { TemplatePhrase } from "../language/phrase/templatephrase";
 
 export const CommandPhrases = {
     executionError: new MessagePhrase({
@@ -12,12 +14,13 @@ export const CommandPhrases = {
     }),
     invalidArgument: new MessagePhrase({
         name: "invalidArgument",
-    }, "Argument `{argument}` is invalid", {
-        description: "Argument `{argument}` is invalid.",
+    }, "Argument `{argument}` is invalid.\n{reason}", {
+        description: "Argument `{argument}` is invalid:\n{reason}",
         timestamp: false,
         title: "Invalid argument",
     }, {
         argument: "The invalid argument",
+        reason: "Why the argument is invalid",
     }),
     invalidCommand: new MessagePhrase({
         name: "invalidCommand",
@@ -28,24 +31,12 @@ export const CommandPhrases = {
     }, {
         command: "The called command",
     }),
-    invalidIntegerArgument: new MessagePhrase({
+    invalidIntegerArgument: new SimplePhrase({
         name: "invalidIntegerArgument",
-    }, "Argument `{argument}` is not a valid integer", {
-        description: "Argument `{argument}` is not a valid integer.",
-        timestamp: false,
-        title: "Invalid argument",
-    }, {
-        argument: "The invalid argument",
-    }),
-    invalidNumberArgument: new MessagePhrase({
+    }, "The argument is not a valid integer."),
+    invalidNumberArgument: new SimplePhrase({
         name: "invalidNumberArgument",
-    }, "Argument `{argument}` is not a valid number", {
-        description: "Argument `{argument}` is not a valid number.",
-        timestamp: false,
-        title: "Invalid argument",
-    }, {
-        argument: "The invalid argument",
-    }),
+    }, "The argument is not a valid number."),
     noPermission: new MessagePhrase({
         name: "noPermission",
     }, "You lack permissions to execute the command `{command}`", {
@@ -55,14 +46,9 @@ export const CommandPhrases = {
     }, {
         command: "The called command",
     }),
-    tooBigArgument: new MessagePhrase({
+    tooBigArgument: new TemplatePhrase({
         name: "tooSmallArgument",
-    }, "Argument `{argument}` is too big: it shouldn't be more than {max}", {
-        description: "Argument `{argument}` is too big.\nit shouldn't be more than {max}.",
-        timestamp: false,
-        title: "Invalid argument",
-    }, {
-        argument: "The invalid argument",
+    }, "The argument is too big: it shouldn't be more than {max}.", {
         max: "The maximum of the argument",
     }),
     tooFewArguments: new MessagePhrase({
@@ -85,14 +71,9 @@ export const CommandPhrases = {
         required: "The amount of required arguments",
         supplied: "The amount of supplied arguments",
     }),
-    tooSmallArgument: new MessagePhrase({
+    tooSmallArgument: new TemplatePhrase({
         name: "tooSmallArgument",
-    }, "Argument `{argument}` is too small: it should be at least {min}", {
-        description: "Argument `{argument}` is too small.\nIt should be at least {min}.",
-        timestamp: false,
-        title: "Invalid argument",
-    }, {
-        argument: "The invalid argument",
+    }, "The argument is too small: it should be at least {min}.", {
         min: "The minimum of the argument",
     }),
 };

@@ -1,8 +1,11 @@
 import { Bot } from "../bot";
 import { Command } from "../commands/command";
 import { ConfigEntry } from "../config/entry/entry";
+import { ConfigEntryGroup } from "../config/entry/entrygroup";
 import { Phrase } from "../language/phrase/phrase";
+import { PhraseGroup } from "../language/phrase/phrasegroup";
 import { Permission } from "../permissions/permission";
+import { PermissionGroup } from "../permissions/permissiongroup";
 
 export abstract class Module {
     public author: string;
@@ -12,6 +15,11 @@ export abstract class Module {
     protected commands: Array<Command<any>>;
     protected permissions: Permission[];
     protected phrases: Phrase[];
+    private configEntryGroup: ConfigEntryGroup;
+    private permissionGroup: PermissionGroup;
+    private phraseGroup: PhraseGroup;
+    private commandsPhraseGroup: PhraseGroup;
+    private permissionsPhraseGroup: PhraseGroup;
 
     public constructor(bot: Bot, author: string, name: string) {
         this.author = author;
@@ -21,58 +29,82 @@ export abstract class Module {
         this.commands = [];
         this.permissions = [];
         this.phrases = [];
+        this.configEntryGroup = new ConfigEntryGroup({ name });
+        this.permissionGroup = new PermissionGroup({ name });
+        this.commandsPhraseGroup = new PhraseGroup({ name: "commands" });
+        this.permissionsPhraseGroup = new PhraseGroup({ name: "permissions" });
+        this.phraseGroup = new PhraseGroup({ name }, [this.commandsPhraseGroup, this.permissionsPhraseGroup]);
     }
 
     public rename() {
         this.name = this.author + "-" + this.name;
     }
 
+    public load() {
+        this.bot.config.register(this.configEntryGroup);
+        this.bot.permissions.register(this.permissionGroup);
+        this.bot.languages.register(this.phraseGroup);
+    }
+
     public async unload() {
+        for (const phrase of this.phrases) {
+            this.unregisterPhrase(phrase);
+        }
         for (const command of this.commands) {
             this.unregisterCommand(command);
         }
         for (const permission of this.permissions) {
             this.unregisterPermission(permission);
         }
+        for (const phrase of this.phrases) {
+            this.unregisterPhrase(phrase);
+        }
+        this.bot.config.unregister(this.configEntryGroup);
+        this.bot.permissions.unregister(this.permissionGroup);
+        this.bot.languages.unregister(this.phraseGroup);
     }
 
     protected registerConfigEntry(entry: ConfigEntry) {
-        this.bot.config.register(entry);
+        this.configEntryGroup.addEntry(entry);
         this.configEntries.push(entry);
     }
 
     protected unregisterConfigEntry(entry: ConfigEntry) {
-        this.bot.config.unregister(entry);
+        this.configEntryGroup.addEntry(entry);
         this.configEntries.splice(this.configEntries.indexOf(entry), 1);
     }
 
     protected registerCommand(command: Command<any>) {
         this.bot.commands.register(command);
+        this.commandsPhraseGroup.addPhrase(command.phraseGroup);
         this.commands.push(command);
     }
 
     protected unregisterCommand(command: Command<any>) {
         this.bot.commands.unregister(command);
+        this.commandsPhraseGroup.removePhrase(command.phraseGroup);
         this.commands.splice(this.commands.indexOf(command), 1);
     }
 
     protected registerPermission(permission: Permission) {
-        this.bot.permissions.register(permission);
+        this.permissionGroup.addPermission(permission);
+        this.permissionsPhraseGroup.addPhrase(permission.phraseGroup);
         this.permissions.push(permission);
     }
 
     protected unregisterPermission(permission: Permission) {
-        this.bot.permissions.unregister(permission);
+        this.permissionGroup.removePermission(permission);
+        this.permissionsPhraseGroup.removePhrase(permission.phraseGroup);
         this.permissions.splice(this.permissions.indexOf(permission), 1);
     }
 
     protected registerPhrase(phrase: Phrase) {
-        this.bot.languages.register(phrase);
+        this.phraseGroup.addPhrase(phrase);
         this.phrases.push(phrase);
     }
 
     protected unregisterPhrase(phrase: Phrase) {
-        this.bot.languages.unregister(phrase);
+        this.phraseGroup.removePhrase(phrase);
         this.phrases.splice(this.phrases.indexOf(phrase), 1);
     }
 }

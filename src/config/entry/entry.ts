@@ -36,6 +36,10 @@ export abstract class ConfigEntry extends EventEmitter implements IEntryInfo {
         this.parent = parent;
     }
 
+    public removeParent() {
+        this.parent = undefined;
+    }
+
     public setLoadStage(stage: number) {
         this.loadStage = stage;
     }
