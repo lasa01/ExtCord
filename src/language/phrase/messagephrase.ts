@@ -5,6 +5,7 @@ import { IPhraseInfo } from "./phrase";
 import { TemplatePhrase } from "./templatephrase";
 
 import { RichEmbed } from "discord.js";
+import { SimplePhrase } from "./simplephrase";
 
 export class MessagePhrase<T extends { [key: string]: string }> extends TemplatePhrase<T> {
     protected defaultsEmbed: ILocalizedBaseEmbed;
@@ -165,7 +166,16 @@ export class MessagePhrase<T extends { [key: string]: string }> extends Template
         return [data, this.description];
     }
 
-    public formatEmbed(language: string, stuff?: T): RichEmbed {
+    public formatEmbed(language: string, stuff?: { [P in keyof T]: T[P]|SimplePhrase|TemplatePhrase<T> }): RichEmbed {
+        if (stuff) {
+            for (const [key, thing] of Object.entries(stuff)) {
+                if (thing instanceof SimplePhrase && thing !== this) {
+                    stuff[key as keyof T] = thing instanceof TemplatePhrase ?
+                    thing.format(language, stuff)  as T[keyof T] :
+                    thing.get(language) as T[keyof T];
+                }
+            }
+        }
         const stuffOrEmpty = stuff || {};
         const embed = this.defaultsEmbed[language];
         let fields: IEmbedField[] | undefined;

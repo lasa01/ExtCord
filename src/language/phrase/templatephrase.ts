@@ -13,7 +13,16 @@ export class TemplatePhrase<T extends { [key: string]: string }> extends SimpleP
         super(info, defaults);
     }
 
-    public format(language: string, stuff?: T ) {
+    public format(language: string, stuff?: { [P in keyof T]: T[P]|SimplePhrase|TemplatePhrase<T> }) {
+        if (stuff) {
+            for (const [key, thing] of Object.entries(stuff)) {
+                if (thing instanceof SimplePhrase && thing !== this) {
+                    stuff[key as keyof T] = thing instanceof TemplatePhrase ?
+                        thing.format(language, stuff)  as T[keyof T] :
+                        thing.get(language) as T[keyof T];
+                }
+            }
+        }
         return format(this.templates[language], stuff || {});
     }
 }

@@ -1,19 +1,22 @@
+import { MessagePhrase } from "../../language/phrase/messagephrase";
 import { PhraseGroup } from "../../language/phrase/phrasegroup";
 import { SimplePhrase } from "../../language/phrase/simplephrase";
+import { TemplatePhrase } from "../../language/phrase/templatephrase";
 import { Command } from "../command";
+import { CommandPhrases } from "../commandphrases";
 import { ICommandContext } from "../commands";
 
-export abstract class Argument<T> {
+export abstract class Argument<T, U extends boolean> {
     public name: string;
     public localizedName: SimplePhrase;
     public description: string;
     public localizedDescription: SimplePhrase;
-    public optional: boolean;
+    public optional: U;
     public allowCombining: boolean;
     private phraseGroup: PhraseGroup;
     private registered: boolean;
 
-    constructor(info: IArgumentInfo, optional = false, allowCombining = false) {
+    constructor(info: IArgumentInfo, optional: U, allowCombining = false) {
         this.name = info.name;
         this.localizedName = new SimplePhrase({
             name: "name",
@@ -41,7 +44,10 @@ export abstract class Argument<T> {
         return this.phraseGroup;
     }
 
-    public abstract async check(data: string, context: ICommandContext): Promise<boolean>;
+    public abstract async check(data: string, context: ICommandContext): Promise<
+            TemplatePhrase<typeof CommandPhrases.invalidArgument extends MessagePhrase<infer V> ? V : never>|
+            SimplePhrase|undefined
+        >;
 
     public abstract parse(data: string, context: ICommandContext): T;
 }

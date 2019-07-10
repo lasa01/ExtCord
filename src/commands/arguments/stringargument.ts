@@ -1,13 +1,23 @@
+import { MessagePhrase } from "../../language/phrase/messagephrase";
+import { SimplePhrase } from "../../language/phrase/simplephrase";
+import { TemplatePhrase } from "../../language/phrase/templatephrase";
+import { CommandPhrases } from "../commandphrases";
 import { ICommandContext } from "../commands";
 import { Argument, IArgumentInfo } from "./argument";
 
-export class StringArgument extends Argument<string> {
-    private customCheck: (data: string, context: ICommandContext) => Promise<boolean>;
+export class StringArgument<T extends boolean> extends Argument<string, T> {
+    private customCheck: (data: string, context: ICommandContext) => Promise<
+            TemplatePhrase<typeof CommandPhrases.invalidArgument extends MessagePhrase<infer V> ? V : never>|
+            SimplePhrase|undefined
+        >;
 
-    constructor(info: IArgumentInfo, optional = false, allowSpaces = false,
-                check?: (data: string, context: ICommandContext) => Promise<boolean>) {
+    constructor(info: IArgumentInfo, optional: T, allowSpaces = false,
+                check?: (data: string, context: ICommandContext) => Promise<
+                    TemplatePhrase<typeof CommandPhrases.invalidArgument extends MessagePhrase<infer V> ? V : never>|
+                    SimplePhrase|undefined
+                >) {
         super(info, optional, allowSpaces);
-        this.customCheck = check || (async () => true);
+        this.customCheck = check || (async () => undefined);
     }
 
     public async check(data: string, context: ICommandContext) {

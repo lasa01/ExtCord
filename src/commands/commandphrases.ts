@@ -1,12 +1,11 @@
 import { MessagePhrase } from "../language/phrase/messagephrase";
 import { SimplePhrase } from "../language/phrase/simplephrase";
-import { TemplatePhrase } from "../language/phrase/templatephrase";
 
 export const CommandPhrases = {
     executionError: new MessagePhrase({
         name: "executionError",
-    }, "Execution failed: {error}", {
-        description: "Encountered an unknown error.\n`{error}`",
+    }, "Execution failed due to an unknown error.\n```{error}```", {
+        description: "Encountered an unknown error.\n```{error}```",
         timestamp: false,
         title: "Command execution failed",
     }, {
@@ -15,7 +14,7 @@ export const CommandPhrases = {
     invalidArgument: new MessagePhrase({
         name: "invalidArgument",
     }, "Argument `{argument}` is invalid.\n{reason}", {
-        description: "Argument `{argument}` is invalid:\n{reason}",
+        description: "Argument `{argument}` is invalid.\n{reason}",
         timestamp: false,
         title: "Invalid argument",
     }, {
@@ -46,11 +45,9 @@ export const CommandPhrases = {
     }, {
         command: "The called command",
     }),
-    tooBigArgument: new TemplatePhrase({
+    tooBigArgument: new SimplePhrase({
         name: "tooSmallArgument",
-    }, "The argument is too big: it shouldn't be more than {max}.", {
-        max: "The maximum of the argument",
-    }),
+    }, "The supplied number is too big."),
     tooFewArguments: new MessagePhrase({
         name: "tooFewArguments",
     }, "Too few arguments supplied: {supplied} supplied, {required} required", {
@@ -71,9 +68,7 @@ export const CommandPhrases = {
         required: "The amount of required arguments",
         supplied: "The amount of supplied arguments",
     }),
-    tooSmallArgument: new TemplatePhrase({
+    tooSmallArgument: new SimplePhrase({
         name: "tooSmallArgument",
-    }, "The argument is too small: it should be at least {min}.", {
-        min: "The minimum of the argument",
-    }),
+    }, "The supplied number is too small."),
 };

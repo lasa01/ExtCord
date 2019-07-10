@@ -11,6 +11,8 @@ import { DynamicFieldMessagePhrase } from "../language/phrase/dynamicfieldmessag
 import { MessagePhrase } from "../language/phrase/messagephrase";
 import { Phrase } from "../language/phrase/phrase";
 import { PhraseGroup } from "../language/phrase/phrasegroup";
+import { SimplePhrase } from "../language/phrase/simplephrase";
+import { TemplatePhrase } from "../language/phrase/templatephrase";
 import { Permission } from "../permissions/permission";
 import { PermissionGroup } from "../permissions/permissiongroup";
 import { Permissions } from "../permissions/permissions";
@@ -75,7 +77,9 @@ export class Commands extends EventEmitter {
         const useEmbeds = await this.languages.useEmbedsConfigEntry!.guildGet(message.guild);
         const useMentions = await this.languages.useMentionsConfigEntry!.guildGet(message.guild);
         const respond = async <T extends { [key: string]: string }, U extends { [key: string]: string }>
-            (phrase: MessagePhrase<T> | DynamicFieldMessagePhrase<T, U>, stuff?: T, fieldStuff?: U[]) => {
+            (phrase: MessagePhrase<T> | DynamicFieldMessagePhrase<T, U>,
+             stuff?: { [P in keyof T]: T[P]|SimplePhrase|TemplatePhrase<T> },
+             fieldStuff?: Array<{ [P in keyof U]: U[P]|SimplePhrase|TemplatePhrase<U> }|undefined>) => {
             if (useMentions) {
                 await message.reply(useEmbeds ? "" : phrase.format(language, stuff, fieldStuff),
                 useEmbeds ? { embed: phrase.formatEmbed(language, stuff, fieldStuff) } : undefined);
@@ -190,5 +194,8 @@ export interface ICommandContext {
     passed: string;
     language: string;
     respond: <T extends { [key: string]: string }, U extends { [key: string]: string }>
-        (phrase: MessagePhrase<T> | DynamicFieldMessagePhrase<T, U>, stuff?: T, fieldStuff?: U[]) => Promise<void>;
+        (phrase: MessagePhrase<T> | DynamicFieldMessagePhrase<T, U>,
+         stuff?: { [P in keyof T]: T[P]|SimplePhrase|TemplatePhrase<T> },
+         fieldStuff?: Array<{ [P in keyof U]: U[P]|TemplatePhrase<U> }|undefined>)
+        => Promise<void>;
 }

@@ -3,6 +3,8 @@ import format = require("string-format");
 import { DEFAULT_LANGUAGE } from "../languages";
 import { IBaseEmbed, IEmbedField, ILocalizedBaseEmbed, MessagePhrase } from "./messagephrase";
 import { IPhraseInfo } from "./phrase";
+import { SimplePhrase } from "./simplephrase";
+import { TemplatePhrase } from "./templatephrase";
 
 export class DynamicFieldMessagePhrase<T extends { [key: string]: string; },
     U extends { [key: string]: string; }> extends MessagePhrase<T> {
@@ -73,11 +75,19 @@ export class DynamicFieldMessagePhrase<T extends { [key: string]: string; },
         return [parsed, comment];
     }
 
-    public format(language: string, stuff?: T, fieldStuff?: Array<U|undefined>) {
+    public format(language: string, stuff?: { [P in keyof T]: T[P]|SimplePhrase|TemplatePhrase<T> },
+                  fieldStuff?: Array<{ [P in keyof U]: U[P]|SimplePhrase|TemplatePhrase<U> }|undefined>) {
         let text = super.format(language, stuff);
         if (fieldStuff) {
             for (const fieldThing of fieldStuff) {
                 if (fieldThing) {
+                    for (const [key, thing] of Object.entries(fieldThing)) {
+                        if (thing instanceof SimplePhrase && thing !== this) {
+                            fieldThing[key as keyof U] = thing instanceof TemplatePhrase ?
+                            thing.format(language, fieldThing)  as U[keyof U] :
+                            thing.get(language) as U[keyof U];
+                        }
+                    }
                     text += "/n" + format(this.templatesFieldText[language], fieldThing);
                 } else {
                     text += "/n";
@@ -87,12 +97,20 @@ export class DynamicFieldMessagePhrase<T extends { [key: string]: string; },
         return text;
     }
 
-    public formatEmbed(language: string, stuff?: T, fieldStuff?: Array<U|undefined>) {
+    public formatEmbed(language: string, stuff?: { [P in keyof T]: T[P]|SimplePhrase|TemplatePhrase<T> },
+                       fieldStuff?: Array<{ [P in keyof U]: U[P]|SimplePhrase|TemplatePhrase<U> }|undefined>) {
         const embed = super.formatEmbed(language, stuff);
         if (fieldStuff) {
             const template = this.templatesField[language];
             for (const fieldThing of fieldStuff) {
                 if (fieldThing) {
+                    for (const [key, thing] of Object.entries(fieldThing)) {
+                        if (thing instanceof SimplePhrase && thing !== this) {
+                            fieldThing[key as keyof U] = thing instanceof TemplatePhrase ?
+                            thing.format(language, fieldThing)  as U[keyof U] :
+                            thing.get(language) as U[keyof U];
+                        }
+                    }
                     embed.addField(format(template.name, fieldThing), format(template.value, fieldThing),
                         template.inline);
                 } else {

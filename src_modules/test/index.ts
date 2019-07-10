@@ -1,5 +1,5 @@
 import {
-    Bot, CommandPhrases, DynamicFieldMessagePhrase, IntArgument, MessagePhrase, Module, Permission, SimpleCommand,
+    Bot, DynamicFieldMessagePhrase, IntArgument, MessagePhrase, Module, Permission, SimpleCommand,
     SimplePhrase, StringArgument,
 } from "../..";
 
@@ -21,7 +21,7 @@ export default class TestModule extends Module {
                 input: "Argument passed to command",
             });
         const testCommand = new SimpleCommand({ description: "Test command", name: "test", author: this },
-            [new StringArgument({ description: "Text input for testing", name: "text" }, true, true)] as const,
+            [new StringArgument({ description: "Text input for testing", name: "text" }, false, true)] as const,
             async (context) => {
                 await context.respond(testPhrase, { input: context.arguments[0] });
             }, true);
@@ -48,7 +48,7 @@ export default class TestModule extends Module {
                 permission: "Checked permission",
             });
         const permCommand = new SimpleCommand({ description: "Check permission", name: "permission", author: this },
-            [new StringArgument({ description: "Permission to check", name: "permission" })] as const,
+            [new StringArgument({ description: "Permission to check", name: "permission" }, false)] as const,
             async (context) => {
                 const perm = this.bot.permissions.get(context.arguments[0]);
                 if (!perm) {
@@ -78,7 +78,7 @@ export default class TestModule extends Module {
                 prefix: "New prefix",
             });
         const prefixCommand = new SimpleCommand({ description: "Change prefix", name: "prefix", author: this },
-            [new StringArgument({ description: "New prefix", name: "prefix" })] as const, async (context) => {
+            [new StringArgument({ description: "New prefix", name: "prefix" }, false)] as const, async (context) => {
                 await this.bot.commands.prefixConfigEntry!.guildSet(context.message.guild, context.arguments[0]);
                 await context.respond(prefixPhrase, { prefix: context.arguments[0] });
             });
@@ -99,15 +99,9 @@ export default class TestModule extends Module {
             }, "The argument is not a valid language");
         const languageCommand = new SimpleCommand({ description: "Change language", name: "language", author: this },
             [new StringArgument({ description: "New language", name: "language" }, false, false,
-            async (arg, context) => {
-                if (this.bot.languages.languages.includes(arg)) {
-                    return true;
-                } else {
-                    await context.respond(CommandPhrases.invalidArgument, {
-                        argument: arg,
-                        reason: invalidLanguagePhrase.get(context.language),
-                    });
-                    return false;
+            async (arg) => {
+                if (!this.bot.languages.languages.includes(arg)) {
+                    return invalidLanguagePhrase;
                 }
             })] as const, async (context) => {
                 await this.bot.languages.languageConfigEntry!.guildSet(context.message.guild, context.arguments[0]);
@@ -145,7 +139,7 @@ export default class TestModule extends Module {
                 argument: "The argument provided for the command",
             });
         const embedCommand = new SimpleCommand({ description: "Test embeds", name: "embed", author: this },
-            [new StringArgument({ description: "Test argument", name: "test" }, true, true)] as const,
+            [new StringArgument({ description: "Test argument", name: "test" }, false, true)] as const,
             async (context) => {
                 await context.respond(embedPhrase, { argument: context.arguments[0] });
             }, true);

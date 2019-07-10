@@ -10,7 +10,7 @@ import { CommandGroup } from "./commandgroup";
 import { CommandPhrases } from "./commandphrases";
 import { Commands, ICommandContext } from "./commands";
 
-export abstract class Command<T extends ReadonlyArray<Argument<any>>> {
+export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
     public name: string;
     public localizedName: SimplePhrase;
     public description: string;
@@ -19,12 +19,11 @@ export abstract class Command<T extends ReadonlyArray<Argument<any>>> {
     public author: string;
     public arguments: T;
     public phraseGroup: PhraseGroup;
+    public combineIndex?: number;
     private minArguments: number;
     private defaultPermission: Permission;
     private argPhraseGroup: PhraseGroup;
     private customPhraseGroup: PhraseGroup;
-    private alwaysArgs: Array<Argument<any>>;
-    private argCombinations: Array<Array<Argument<any>>>;
     private logger?: Logger;
 
     constructor(info: ICommandInfo, args: T, allowEveryone = false, defaultPermission?: Permission) {
@@ -53,35 +52,18 @@ export abstract class Command<T extends ReadonlyArray<Argument<any>>> {
         }, [ this.localizedDescription, this.localizedName, this.argPhraseGroup, this.customPhraseGroup ]);
         this.arguments = args;
         this.minArguments = 0;
-        // Build possible argument combinations
-        this.alwaysArgs = [];
-        this.argCombinations = [[]];
-        let alwaysArgsDone = false;
-        for (const argument of this.arguments) {
-            if (argument.optional) {
-                alwaysArgsDone = true;
-                // For optional arguments, clone all combinations, and add the optional
-                // argument to the other clone, and merge the clones into one list of combinations
-                const optIncludedComb = [...this.argCombinations];
-                for (const combination of optIncludedComb) {
-                    combination.push(argument);
-                }
-                this.argCombinations = [...this.argCombinations, ...optIncludedComb];
-            } else {
+        for (const [index, argument] of this.arguments.entries()) {
+            if (!argument.optional) {
                 this.minArguments++;
-                if (alwaysArgsDone) {
-                    // Non-optional arguments must be added to every possible combination
-                     for (const combination of this.argCombinations) {
-                        combination.push(argument);
-                    }
-                } else {
-                    this.alwaysArgs.push(argument);
+            }
+            if (argument.allowCombining) {
+                if (this.combineIndex !== undefined) {
+                    throw new Error("Combining shouldn't be allowed for more than one argument in a command");
                 }
+                this.combineIndex = index;
             }
             argument.register(this);
         }
-        // Build optimal argument checking order
-        // TODO
         this.defaultPermission = defaultPermission || new Permission({
             name: info.name,
         }, allowEveryone);
@@ -136,13 +118,9 @@ export abstract class Command<T extends ReadonlyArray<Argument<any>>> {
             return;
         }
         if (rawArguments.length > maxArgs) {
-            // Combine extra arguments if the last argument allows it
-            // This allows the last argument to optionally have spaces
-            if (this.arguments[this.arguments.length - 1].allowCombining) {
-                for (let i = rawArguments.length - maxArgs; i > 0; i--) {
-                    rawArguments.push(rawArguments.pop() + " " + rawArguments.pop());
-                }
-            } else {
+            // Combine extra arguments if it is allowed
+            // This allows one argument to optionally have spaces
+            if (!this.combineIndex) {
                 await context.respond(CommandPhrases.tooManyArguments, {
                     required: (this.minArguments === maxArgs) ?
                         maxArgs.toString() : `${this.minArguments} - ${maxArgs}`,
@@ -152,19 +130,34 @@ export abstract class Command<T extends ReadonlyArray<Argument<any>>> {
             }
         }
         const parsed: any[] = [];
-        for (const argument of this.arguments) {
-            const rawArgument = rawArguments.shift()!;
-            if (!await argument.check(rawArgument, context)) {
+        let rawIndex = 0;
+        for (const [index, argument] of this.arguments.entries()) {
+            let rawArgument = rawArguments[rawIndex];
+            const diff = rawArguments.length - this.arguments.length;
+            if (index === this.combineIndex) {
+                for (let i = 0; i < diff; i++) {
+                    rawIndex++;
+                    rawArgument += rawArguments[rawIndex];
+                }
+            }
+            const error = await argument.check(rawArgument, context);
+            if (!error) {
+                parsed.push(await argument.parse(rawArgument, context));
+                rawIndex++;
+            } else if (!argument.optional) {
+                await context.respond(CommandPhrases.invalidArgument, {
+                    argument: rawArgument,
+                    reason: error,
+                });
                 return;
             }
-            parsed.push(await argument.parse(rawArgument, context));
         }
         try {
             await this.execute({
                 ...context, arguments: parsed as unknown as ArgumentsParseReturns<T>, rawArguments,
             });
         } catch (err) {
-            await context.respond(CommandPhrases.executionError, { error: err.toString() });
+            await context.respond(CommandPhrases.executionError, { error: err.stack || err.toString() });
             return;
         }
     }
@@ -172,7 +165,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any>>> {
     public abstract async execute(context: IExecutionContext<T>): Promise<void>;
 }
 
-export interface IExecutionContext<T extends ReadonlyArray<Argument<any>>> extends ICommandContext {
+export interface IExecutionContext<T extends ReadonlyArray<Argument<any, boolean>>> extends ICommandContext {
     rawArguments: string[];
     arguments: ArgumentsParseReturns<T>;
 }
@@ -183,6 +176,8 @@ export interface ICommandInfo {
     author: string | Module;
 }
 
-type ArgumentsParseReturns<T extends ReadonlyArray<Argument<any>>> = {
-    [P in keyof T]: T[P] extends Argument<infer U> ? U : never
+type ArgumentsParseReturns<T extends ReadonlyArray<Argument<any, boolean>>> = {
+    [P in keyof T]: T[P] extends Argument<infer U, infer V> ?
+        V extends false ? U : U|undefined
+    : never
 };
