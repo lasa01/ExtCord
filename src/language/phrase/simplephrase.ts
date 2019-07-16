@@ -2,10 +2,10 @@ import { DEFAULT_LANGUAGE } from "../languages";
 import { IPhraseInfo, Phrase } from "./phrase";
 
 export class SimplePhrase extends Phrase {
-    protected templates: { [key: string]: string };
-    protected defaults: { [key: string]: string };
+    protected templates: ISimpleMap;
+    protected defaults: ISimpleMap;
 
-    constructor(info: IPhraseInfo, defaults: { [key: string]: string } | string) {
+    constructor(info: IPhraseInfo, defaults: ISimpleMap | string) {
         super(info);
         if (typeof defaults === "string") {
             defaults = {
@@ -30,7 +30,9 @@ export class SimplePhrase extends Phrase {
             this.templates[language] = data;
             return [data, this.description];
         } else  {
-            return [this.defaults[language] || "", this.description];
+            return [this.defaults[language] || this.defaults[DEFAULT_LANGUAGE], this.description];
         }
     }
 }
+
+export interface ISimpleMap { [key: string]: string; }

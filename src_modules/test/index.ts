@@ -1,6 +1,6 @@
 import {
-    Bot, DynamicFieldMessagePhrase, IntArgument, MessagePhrase, Module, Permission, SimpleCommand,
-    SimplePhrase, StringArgument,
+    Bot, CommandGroup, DynamicFieldMessagePhrase, IntArgument, MessagePhrase, Module, Permission,
+    SimpleCommand, SimplePhrase, StringArgument,
 } from "../..";
 
 export default class TestModule extends Module {
@@ -11,6 +11,12 @@ export default class TestModule extends Module {
                 name: "test",
             }, true);
         this.registerPermission(testPermission);
+        const commandGroup = new CommandGroup({
+            author: this,
+            description: "Test commands",
+            name: "test",
+        });
+        this.registerCommand(commandGroup);
         const testPhrase = new MessagePhrase({
                 name: "response",
             }, "Test {input}?", {
@@ -26,7 +32,7 @@ export default class TestModule extends Module {
                 await context.respond(testPhrase, { input: context.arguments[0] });
             }, true);
         testCommand.registerPhrase(testPhrase);
-        this.registerCommand(testCommand);
+        commandGroup.addSubcommand(testCommand);
 
         const permResultPhrase = new MessagePhrase({
                 name: "permissionResult",
@@ -68,49 +74,6 @@ export default class TestModule extends Module {
         permCommand.registerPhrase(permNotFoundPhrase);
         this.registerCommand(permCommand);
 
-        const prefixPhrase = new MessagePhrase({
-                name: "response",
-            }, "Prefix updated to `{prefix}`", {
-                description: "New prefix is `{prefix}`.",
-                timestamp: false,
-                title: "Prefix updated",
-            }, {
-                prefix: "New prefix",
-            });
-        const prefixCommand = new SimpleCommand({ description: "Change prefix", name: "prefix", author: this },
-            [new StringArgument({ description: "New prefix", name: "prefix" }, false)] as const, async (context) => {
-                await this.bot.commands.prefixConfigEntry!.guildSet(context.message.guild, context.arguments[0]);
-                await context.respond(prefixPhrase, { prefix: context.arguments[0] });
-            });
-        prefixCommand.registerPhrase(prefixPhrase);
-        this.registerCommand(prefixCommand);
-
-        const languagePhrase = new MessagePhrase({
-                name: "response",
-            }, "Language changed to `{language}`", {
-                description: "New language: `{language}`.",
-                timestamp: false,
-                title: "Language changed",
-            }, {
-                language: "New language",
-            });
-        const invalidLanguagePhrase = new SimplePhrase({
-                name: "invalidLanguage",
-            }, "The argument is not a valid language");
-        const languageCommand = new SimpleCommand({ description: "Change language", name: "language", author: this },
-            [new StringArgument({ description: "New language", name: "language" }, false, false,
-            async (arg) => {
-                if (!this.bot.languages.languages.includes(arg)) {
-                    return invalidLanguagePhrase;
-                }
-            })] as const, async (context) => {
-                await this.bot.languages.languageConfigEntry!.guildSet(context.message.guild, context.arguments[0]);
-                await context.respond(languagePhrase, { language: context.arguments[0] });
-            });
-        languageCommand.registerPhrase(languagePhrase);
-        languageCommand.registerPhrase(invalidLanguagePhrase);
-        this.registerCommand(languageCommand);
-
         const embedPhrase = new MessagePhrase({
                 name: "response",
             }, "This is not an embed", {
@@ -144,7 +107,7 @@ export default class TestModule extends Module {
                 await context.respond(embedPhrase, { argument: context.arguments[0] });
             }, true);
         embedCommand.registerPhrase(embedPhrase);
-        this.registerCommand(embedCommand);
+        commandGroup.addSubcommand(embedCommand);
 
         const randomPhrase = new DynamicFieldMessagePhrase({
                 name: "response",
@@ -178,6 +141,6 @@ export default class TestModule extends Module {
                 await context.respond(randomPhrase, { n: n.toString(), max: max.toString() }, fields);
             }, true);
         randomCommand.registerPhrase(randomPhrase);
-        this.registerCommand(randomCommand);
+        commandGroup.addSubcommand(randomCommand);
     }
 }

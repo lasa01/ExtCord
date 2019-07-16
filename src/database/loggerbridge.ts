@@ -1,15 +1,15 @@
 import { Logger } from "typeorm";
-import { Logger as WinstonLogger } from "winston";
+import { logger as extcordLogger } from "../util/logger";
 
 export class LoggerBridge implements Logger {
-    private logger: WinstonLogger;
+    private logger: typeof extcordLogger;
 
-    constructor(logger: WinstonLogger) {
+    constructor(logger: typeof extcordLogger) {
         this.logger = logger;
     }
 
     public logQuery(query: string) {
-        this.logger.verbose(`Querying: ${query}`);
+        this.logger.debug(`Database querying: ${query}`);
     }
 
     public logQueryError(error: string) {
@@ -17,18 +17,18 @@ export class LoggerBridge implements Logger {
     }
 
     public logQuerySlow(time: number) {
-        this.logger.warn(`Sloq query: ${time}`);
+        this.logger.warn(`Database slow query: ${time}`);
     }
 
     public logSchemaBuild(message: string) {
-        this.logger.info(`Building schema: ${message}`);
+        this.logger.verbose(`Database building schema: ${message}`);
     }
 
     public logMigration(message: string) {
-        this.logger.info(`Migrating: ${message}`);
+        this.logger.verbose(`Database migrating: ${message}`);
     }
 
-    public log(level: string, message: any) {
+    public log(level: "info"|"warn", message: any) {
         this.logger.log(level, message);
     }
 }

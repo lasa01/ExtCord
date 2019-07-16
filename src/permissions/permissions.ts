@@ -14,15 +14,13 @@ import { PermissionGroup } from "./permissiongroup";
 
 export class Permissions {
     public database: Database;
-    public logger: Logger;
     private permissions: Map<string, Permission>;
     private phrases: Phrase[];
     private phraseGroup?: PhraseGroup;
     private configTemplate: Map<string, ConfigEntry>;
     private configEntry?: ConfigEntryGroup;
 
-    constructor(logger: Logger, database: Database) {
-        this.logger = logger;
+    constructor(database: Database) {
         this.database = database;
         this.permissions = new Map();
         this.phrases = [];
@@ -32,13 +30,13 @@ export class Permissions {
     }
 
     public register(permission: Permission) {
-        permission.register(this);
+        permission.registerPermissions(this);
         this.permissions.set(permission.name, permission);
         this.configTemplate.set(permission.name, permission.getConfigEntry());
     }
 
     public unregister(permission: Permission) {
-        permission.unregister();
+        permission.unregisterPermissions();
         this.permissions.delete(permission.name);
         this.configTemplate.delete(permission.name);
     }

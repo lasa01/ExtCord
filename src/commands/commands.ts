@@ -1,21 +1,23 @@
 import { Message } from "discord.js";
 import { EventEmitter } from "events";
-import { Logger } from "winston";
+import { readdir } from "fs-extra";
+import { resolve } from "path";
 
+import { Bot } from "../bot";
 import { Config } from "../config/config";
 import { ConfigEntryGroup } from "../config/entry/entrygroup";
 import { StringGuildConfigEntry } from "../config/entry/guild/stringguildentry";
 import { Database } from "../database/database";
-import { Languages } from "../language/languages";
-import { DynamicFieldMessagePhrase } from "../language/phrase/dynamicfieldmessagephrase";
+import { DynamicFieldMessagePhrase, TemplateStuffs } from "../language/phrase/dynamicfieldmessagephrase";
 import { MessagePhrase } from "../language/phrase/messagephrase";
 import { Phrase } from "../language/phrase/phrase";
 import { PhraseGroup } from "../language/phrase/phrasegroup";
-import { SimplePhrase } from "../language/phrase/simplephrase";
-import { TemplatePhrase } from "../language/phrase/templatephrase";
+import { ISimpleMap } from "../language/phrase/simplephrase";
+import { TemplateStuff } from "../language/phrase/templatephrase";
 import { Permission } from "../permissions/permission";
 import { PermissionGroup } from "../permissions/permissiongroup";
 import { Permissions } from "../permissions/permissions";
+import { logger } from "../util/logger";
 import { BuiltInArguments } from "./arguments/builtinarguments";
 import { Command } from "./command";
 import { CommandPhrases } from "./commandphrases";
@@ -39,8 +41,7 @@ export interface Commands {
 
 export class Commands extends EventEmitter {
     public prefixConfigEntry?: StringGuildConfigEntry;
-    public logger: Logger;
-    private languages: Languages;
+    private bot: Bot;
     private commands: Map<string, Command<any>>;
     private configEntry?: ConfigEntryGroup;
     private permissions: Permission[];
@@ -51,16 +52,16 @@ export class Commands extends EventEmitter {
     private phrasesGroup?: PhraseGroup;
     private phraseGroup?: PhraseGroup;
 
-    constructor(logger: Logger, languages: Languages) {
+    constructor(bot: Bot) {
         super();
-        this.logger = logger;
-        this.languages = languages;
+        this.bot = bot;
         this.commands = new Map();
         this.permissions = [];
         this.commandPhrases = [];
     }
 
     public async message(message: Message) {
+        const startTime = process.hrtime();
         if (!message.guild || message.author.bot) { return; } // For now
         const prefix = await this.prefixConfigEntry!.guildGet(message.guild);
         const mention = `<@${message.client.user.id}>`;
@@ -73,32 +74,38 @@ export class Commands extends EventEmitter {
             return;
         }
         const command = text.split(" ", 1)[0];
-        const language = await this.languages.getLanguage(message.guild);
-        const useEmbeds = await this.languages.useEmbedsConfigEntry!.guildGet(message.guild);
-        const useMentions = await this.languages.useMentionsConfigEntry!.guildGet(message.guild);
-        const respond = async <T extends { [key: string]: string }, U extends { [key: string]: string }>
-            (phrase: MessagePhrase<T> | DynamicFieldMessagePhrase<T, U>,
-             stuff?: { [P in keyof T]: T[P]|SimplePhrase|TemplatePhrase<T> },
-             fieldStuff?: Array<{ [P in keyof U]: U[P]|SimplePhrase|TemplatePhrase<U> }|undefined>) => {
-            if (useMentions) {
-                await message.reply(useEmbeds ? "" : phrase.format(language, stuff, fieldStuff),
-                useEmbeds ? { embed: phrase.formatEmbed(language, stuff, fieldStuff) } : undefined);
-            } else {
-                await message.channel.send(useEmbeds ? "" : phrase.format(language, stuff, fieldStuff),
-                useEmbeds ? { embed: phrase.formatEmbed(language, stuff, fieldStuff) } : undefined);
-            }
-        };
+        const language = await this.bot.languages.getLanguage(message.guild);
+        const useEmbeds = await this.bot.languages.useEmbedsConfigEntry!.guildGet(message.guild);
+        const useMentions = await this.bot.languages.useMentionsConfigEntry!.guildGet(message.guild);
+        const respond: LinkedResponse = async (phrase, stuff, fieldStuff) => {
+                let content: string;
+                let options;
+                if (useEmbeds) {
+                    content = "";
+                    options = {
+                        embed: phrase instanceof DynamicFieldMessagePhrase ?
+                            phrase.formatEmbed(language, stuff, fieldStuff) :
+                            phrase.formatEmbed(language, stuff),
+                    };
+                } else {
+                    content = phrase instanceof DynamicFieldMessagePhrase ?
+                        phrase.format(language, stuff, fieldStuff) : phrase.format(language, stuff);
+                    options = undefined;
+                }
+                if (useMentions) {
+                    await message.reply(content, options);
+                } else {
+                    await message.channel.send(content, options);
+                }
+            };
         if (!command || !this.commands.has(command)) {
             await respond(CommandPhrases.invalidCommand, { command });
             return;
         }
         const commandInstance = this.commands.get(command)!;
-        if (!await commandInstance.getPermission().checkFull(message.member)) {
-            await respond(CommandPhrases.noPermission, { command });
-            return;
-        }
         const passed = text.replace(command, "").trim();
         const context = {
+            bot: this.bot,
             command,
             language,
             message,
@@ -106,25 +113,23 @@ export class Commands extends EventEmitter {
             prefix,
             respond,
         };
-        this.logger.debug(`Executing command ${command}`);
+        const timeDiff = process.hrtime(startTime);
+        logger.debug(`Command preprocessing took ${timeDiff[0] * 1e9 + timeDiff[1]} nanoseconds`);
+        logger.debug(`Executing command ${command}`);
         this.emit("command", commandInstance, context);
         await commandInstance.command(context);
     }
 
     public register(command: Command<any>) {
         if (this.commands.has(command.name)) {
-            this.logger.warn(`Multiple commands with the same name detected, renaming "${command.name}"`);
-            if (this.commands.has(command.rename())) {
-                this.logger.error(`Naming conflict with "${command.name}", command ignored`);
-                return;
-            }
+            throw new Error(`A command is already registered by the name ${command.name}`);
         }
-        command.register(this);
+        this.registerPermission(command.getPermission());
         this.commands.set(command.name, command);
     }
 
     public unregister(command: Command<any>) {
-        command.unregister(this);
+        this.unregisterPermission(command.getPermission());
         this.commands.delete(command.name);
     }
 
@@ -179,7 +184,24 @@ export class Commands extends EventEmitter {
         this.phraseGroup = new PhraseGroup({
             name: "commands",
         }, [ this.argumentsGroup, this.commandPhraseGroup, this.phrasesGroup ]);
-        this.languages.register(this.phraseGroup);
+        this.bot.languages.register(this.phraseGroup);
+    }
+
+    public async registerCommands() {
+        const commands = await readdir(resolve(__dirname, "builtin"));
+        for (const filename of commands) {
+            const path = resolve(__dirname, "builtin", filename);
+            // Skip files that aren't javascript
+            if (!path.endsWith(".js")) { continue; }
+            const required = require(path);
+            for (const value of Object.values(required)) {
+                if (value instanceof Command) {
+                    logger.debug(`Found builtin command ${value.name} in file ${filename}`);
+                    this.register(value);
+                    this.registerPhrase(value.phraseGroup);
+                }
+            }
+        }
     }
 
     public getStatus() {
@@ -188,14 +210,16 @@ export class Commands extends EventEmitter {
 }
 
 export interface ICommandContext {
+    bot: Bot;
     prefix: string;
     message: Message;
     command: string;
     passed: string;
     language: string;
-    respond: <T extends { [key: string]: string }, U extends { [key: string]: string }>
-        (phrase: MessagePhrase<T> | DynamicFieldMessagePhrase<T, U>,
-         stuff?: { [P in keyof T]: T[P]|SimplePhrase|TemplatePhrase<T> },
-         fieldStuff?: Array<{ [P in keyof U]: U[P]|TemplatePhrase<U> }|undefined>)
-        => Promise<void>;
+    respond: LinkedResponse;
 }
+
+export type LinkedResponse = <T extends ISimpleMap, U extends ISimpleMap, V extends ISimpleMap>(
+    phrase: MessagePhrase<T> | DynamicFieldMessagePhrase<T, U>,
+    stuff: TemplateStuff<T, V>, fieldStuff?: TemplateStuffs<U, V>,
+) => Promise<void>;

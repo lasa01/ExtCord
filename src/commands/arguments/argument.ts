@@ -1,9 +1,6 @@
-import { MessagePhrase } from "../../language/phrase/messagephrase";
 import { PhraseGroup } from "../../language/phrase/phrasegroup";
 import { SimplePhrase } from "../../language/phrase/simplephrase";
-import { TemplatePhrase } from "../../language/phrase/templatephrase";
-import { Command } from "../command";
-import { CommandPhrases } from "../commandphrases";
+import { Command, LinkedErrorResponse } from "../command";
 import { ICommandContext } from "../commands";
 
 export abstract class Argument<T, U extends boolean> {
@@ -44,10 +41,7 @@ export abstract class Argument<T, U extends boolean> {
         return this.phraseGroup;
     }
 
-    public abstract async check(data: string, context: ICommandContext): Promise<
-            TemplatePhrase<typeof CommandPhrases.invalidArgument extends MessagePhrase<infer V> ? V : never>|
-            SimplePhrase|undefined
-        >;
+    public abstract async check(data: string, context: ICommandContext, error: LinkedErrorResponse): Promise<boolean>;
 
     public abstract parse(data: string, context: ICommandContext): T;
 }

@@ -17,6 +17,9 @@ export class ConfigEntryGroup extends ConfigEntry {
     }
 
     public addEntry(entry: ConfigEntry) {
+        if (this.entries.has(entry.name)) {
+            throw new Error(`The entry ${entry.name} is already registered`);
+        }
         entry.setParent(this);
         entry.setLoadStage(this.loadStage);
         this.entries.set(entry.name, entry);

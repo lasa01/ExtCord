@@ -9,11 +9,13 @@ import { BooleanConfigEntity } from "./database/booleanconfigentity";
 export class BooleanGuildConfigEntry extends BooleanConfigEntry {
     private database: Database;
     private repo?: Repository<BooleanConfigEntity>;
+    private cache: Map<string, BooleanConfigEntity>;
 
     constructor(info: IEntryInfo, database: Database, defaultValue?: boolean) {
         info.loadStage = 1;
         super(info, defaultValue);
         this.database = database;
+        this.cache = new Map();
     }
 
     public async guildGet(guild: Guild): Promise<boolean> {
@@ -33,6 +35,9 @@ export class BooleanGuildConfigEntry extends BooleanConfigEntry {
     }
 
     private async guildGetEntity(guild: Guild) {
+        if (this.cache.has(guild.id)) {
+            return this.cache.get(guild.id)!;
+        }
         await this.ensureRepo();
         let entity = await this.repo!.findOne({ where: {
             guildId: guild.id,
@@ -45,7 +50,9 @@ export class BooleanGuildConfigEntry extends BooleanConfigEntry {
                 name: this.fullName,
                 value: this.get(),
             });
+            await this.repo!.save(entity);
         }
+        this.cache.set(guild.id, entity);
         return entity;
     }
 }

@@ -1,10 +1,10 @@
 import format = require("string-format");
 
 import { IPhraseInfo } from "./phrase";
-import { SimplePhrase } from "./simplephrase";
+import { ISimpleMap, SimplePhrase } from "./simplephrase";
 
-export class TemplatePhrase<T extends { [key: string]: string }> extends SimplePhrase {
-    constructor(info: IPhraseInfo, defaults: { [key: string]: string; } | string, templateDescription: T) {
+export class TemplatePhrase<T extends ISimpleMap> extends SimplePhrase {
+    constructor(info: IPhraseInfo, defaults: ISimpleMap | string, templateDescription: T) {
         let description = (info.description ? info.description + "\n" : "") + "Available substitutes:";
         for (const [key, value] of Object.entries(templateDescription)) {
             description += `\n{${key}}: ${value}`;
@@ -13,16 +13,23 @@ export class TemplatePhrase<T extends { [key: string]: string }> extends SimpleP
         super(info, defaults);
     }
 
-    public format(language: string, stuff?: { [P in keyof T]: T[P]|SimplePhrase|TemplatePhrase<T> }) {
+    public format<F extends ISimpleMap>(language: string, stuff?: TemplateStuff<T, F>) {
+        const processedStuff: { [key: string]: string } = {};
         if (stuff) {
             for (const [key, thing] of Object.entries(stuff)) {
-                if (thing instanceof SimplePhrase && thing !== this) {
-                    stuff[key as keyof T] = thing instanceof TemplatePhrase ?
-                        thing.format(language, stuff)  as T[keyof T] :
-                        thing.get(language) as T[keyof T];
+                if (thing instanceof SimplePhrase) {
+                    processedStuff[key] = thing.get(language);
+                } else if (Array.isArray(thing)) {
+                    processedStuff[key] = thing[0].format(language, thing[1]);
+                } else {
+                    processedStuff[key] = thing;
                 }
             }
         }
-        return format(this.templates[language], stuff || {});
+        return format(this.templates[language], processedStuff);
     }
 }
+
+export type TemplateStuff<T extends ISimpleMap, U extends ISimpleMap> = {
+    [P in keyof T]: T[P]|SimplePhrase|[TemplatePhrase<U>, U]
+};

@@ -12,7 +12,7 @@ export class PermissionGroup extends Permission {
                 configs.push(child.getConfigEntry());
             }
         }
-        super(info, false, new ConfigEntryGroup({
+        super(info, new ConfigEntryGroup({
             description: info.description,
             name: info.name,
         }, configs));
@@ -26,6 +26,9 @@ export class PermissionGroup extends Permission {
     }
 
     public addPermission(permission: Permission) {
+        if (this.children.has(permission.name)) {
+            throw new Error(`The permission ${permission.name} is already registered`);
+        }
         (this.getConfigEntry() as ConfigEntryGroup).addEntry(permission.getConfigEntry());
         permission.registerParent(this);
         this.children.set(permission.name, permission);
@@ -46,15 +49,16 @@ export class PermissionGroup extends Permission {
         }
     }
 
-    public register(permissions: Permissions) {
-        super.register(permissions);
+    public registerPermissions(permissions: Permissions) {
+        super.registerPermissions(permissions);
         for (const [, child] of this.children) {
             child.registerPermissions(permissions);
+            child.updateFullName();
         }
     }
 
-    public unregister() {
-        super.unregister();
+    public unregisterPermissions() {
+        super.unregisterPermissions();
         for (const [, child] of this.children) {
             child.unregisterPermissions();
         }

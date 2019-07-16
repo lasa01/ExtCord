@@ -10,17 +10,9 @@ import { StringConfigEntry } from "./config/entry/stringentry";
 import { Database } from "./database/database";
 import { MemberPermissionEntity } from "./permissions/database/memberpermissionentity";
 import { Permissions } from "./permissions/permissions";
+import { logger } from "./util/logger";
 
-/**
- * @ignore
- */
-const log = createLogger({
-    format: format.cli(),
-    level: "silly",
-    transports: [
-        new transports.Console(),
-    ],
-});
+logger.initialize(3);
 
 /**
  * @ignore
@@ -37,7 +29,7 @@ const tests: {
  */
 async function testConfig() {
     // Test config
-    const config = new Config(log, "configtest.hjson");
+    const config = new Config("configtest.hjson");
 
     const entries = [
         new StringConfigEntry({ name: "early", description: "This is an early one", loadStage: 0 }, "snail"),
@@ -56,10 +48,10 @@ async function testConfig() {
     }
 
     while (config.hasNext()) {
-        log.info(`Loaded stage: ${(await config.loadNext()).toString()}`);
+        logger.info(`Loaded stage: ${(await config.loadNext()).toString()}`);
         for (const entry of entries) {
             const lines = entry.print().split("\n");
-            lines.forEach((line) => log.info("    " + line));
+            lines.forEach((line) => logger.info("    " + line));
         }
     }
 }
@@ -69,9 +61,9 @@ async function testConfig() {
  */
 async function testDatabase() {
     // Test database
-    const database = new Database(log);
+    const database = new Database();
     Config.registerDatabase(database);
-    const permissions = new Permissions(log, database);
+    const permissions = new Permissions(database);
 
     await database.connect({
         database: "bottest.sqlite",
@@ -82,12 +74,12 @@ async function testDatabase() {
     const uRepo = database.repos.user!;
     const mRepo = database.repos.member!;
 
-    log.info("Clearing repos");
+    logger.info("Clearing repos");
     await mRepo.clear();
     await gRepo.clear();
     await uRepo.clear();
 
-    log.info("Creating a guild and an user");
+    logger.info("Creating a guild and an user");
     const guild = await gRepo.create({
         id: "testg",
         name: "guild",
@@ -99,22 +91,22 @@ async function testDatabase() {
         username: "user",
     });
 
-    log.info("saving");
+    logger.info("saving");
     await gRepo.save(guild);
     await uRepo.save(user);
 
-    log.info("Creating a member");
+    logger.info("Creating a member");
     const member = mRepo.create({
         nickname: "member",
     });
     member.guild = guild;
     member.user = user;
 
-    log.info("Saving member");
+    logger.info("Saving member");
     await mRepo.save(member);
 
     const pRepo = database.connection!.getRepository(MemberPermissionEntity);
-    log.info("Testing permissions");
+    logger.info("Testing permissions");
     const perm = pRepo.create({
         member,
         name: "test",
@@ -126,7 +118,7 @@ async function testDatabase() {
         permission: false,
     });
 
-    log.info("Saving permissions");
+    logger.info("Saving permissions");
     await pRepo.save([perm, perm2]);
 }
 
@@ -139,23 +131,23 @@ const readline = createInterface({
 });
 
 readline.question(`Select tests: (${[...Object.keys(tests), "all"].join(", ")}): `, async (answer) => {
-    log.info("Performing tests");
+    logger.info("Performing tests");
     if (answer === "all") {
         for (const test of Object.values(tests)) {
             try {
                 await test();
             } catch (e) {
-                log.error(`Test failed: ${e}`);
+                logger.error(`Test failed: ${e}`);
             }
         }
     } else if (tests[answer]) {
         try {
             await tests[answer]();
         } catch (e) {
-            log.error(`Test failed: ${e}`);
+            logger.error(`Test failed: ${e}`);
         }
     } else {
-        log.error("Test not found");
+        logger.error("Test not found");
     }
     readline.close();
 });

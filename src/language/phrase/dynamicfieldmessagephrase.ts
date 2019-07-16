@@ -3,21 +3,21 @@ import format = require("string-format");
 import { DEFAULT_LANGUAGE } from "../languages";
 import { IBaseEmbed, IEmbedField, ILocalizedBaseEmbed, MessagePhrase } from "./messagephrase";
 import { IPhraseInfo } from "./phrase";
-import { SimplePhrase } from "./simplephrase";
-import { TemplatePhrase } from "./templatephrase";
+import { ISimpleMap, SimplePhrase } from "./simplephrase";
+import { TemplateStuff } from "./templatephrase";
 
-export class DynamicFieldMessagePhrase<T extends { [key: string]: string; },
-    U extends { [key: string]: string; }> extends MessagePhrase<T> {
+export class DynamicFieldMessagePhrase<T extends ISimpleMap, U extends ISimpleMap> extends MessagePhrase<T> {
     protected defaultsField: ILocalizedEmbedField;
     protected templatesField: ILocalizedEmbedField;
-    protected defaultsFieldText: { [key: string]: string };
-    protected templatesFieldText: { [key: string]: string };
+    protected defaultsFieldText: ISimpleMap;
+    protected templatesFieldText: ISimpleMap;
     private fieldDescription: string;
 
-    constructor(info: IPhraseInfo, defaultsText: { [key: string]: string } | string,
-                defaultsEmbed: ILocalizedBaseEmbed | IBaseEmbed, defaultsFieldText: { [key: string]: string } | string,
-                defaultsField: ILocalizedEmbedField | IEmbedField,
-                templateDescription: T, fieldTemplateDescription: U ) {
+    constructor(
+            info: IPhraseInfo, defaultsText: ISimpleMap | string, defaultsEmbed: ILocalizedBaseEmbed | IBaseEmbed,
+            defaultsFieldText: ISimpleMap | string, defaultsField: ILocalizedEmbedField | IEmbedField,
+            templateDescription: T, fieldTemplateDescription: U,
+        ) {
         super(info, defaultsText, defaultsEmbed, templateDescription);
         if (typeof defaultsFieldText === "string") {
             defaultsFieldText = {
@@ -41,8 +41,13 @@ export class DynamicFieldMessagePhrase<T extends { [key: string]: string; },
 
     public parse(language: string, data: any): [any, string?] {
         const [parsed, comment] = super.parse(language, data);
+        if (typeof parsed.textDynamicFields !== "string") {
+            parsed.textDynamicFields = this.defaultsFieldText[language] || this.defaultsFieldText[DEFAULT_LANGUAGE];
+        } else {
+            this.templatesFieldText[language] = parsed.textDynamicFields;
+        }
         if (typeof parsed.embed.dynamicFields !== "object") {
-            parsed.embed.dynamicFields = this.defaultsField[language];
+            parsed.embed.dynamicFields = this.defaultsField[language] || this.defaultsField[DEFAULT_LANGUAGE];
         } else {
             if (!this.templatesField[language]) {
                 this.templatesField[language] = {
@@ -52,17 +57,20 @@ export class DynamicFieldMessagePhrase<T extends { [key: string]: string; },
                 };
             }
             if (typeof parsed.embed.dynamicFields.name !== "string") {
-                parsed.embed.dynamicFields.name = this.defaultsField[language].name;
+                parsed.embed.dynamicFields.name =
+                    this.defaultsField[language].name || this.defaultsField[DEFAULT_LANGUAGE].name;
             } else {
                 this.templatesField[language].name = parsed.embed.dynamicFields.name;
             }
             if (typeof parsed.embed.dynamicFields.value !== "string") {
-                parsed.embed.dynamicFields.value = this.defaultsField[language].value;
+                parsed.embed.dynamicFields.value =
+                    this.defaultsField[language].value || this.defaultsField[DEFAULT_LANGUAGE].value;
             } else {
                 this.templatesField[language].value = parsed.embed.dynamicFields.value;
             }
             if (typeof parsed.embed.dynamicFields.inline !== "boolean") {
-                parsed.embed.dynamicFields.inline = this.defaultsField[language].inline;
+                parsed.embed.dynamicFields.inline =
+                    this.defaultsField[language].inline || this.defaultsField[DEFAULT_LANGUAGE].inline;
             } else {
                 this.templatesField[language].inline = parsed.embed.dynamicFields.inline;
             }
@@ -75,20 +83,24 @@ export class DynamicFieldMessagePhrase<T extends { [key: string]: string; },
         return [parsed, comment];
     }
 
-    public format(language: string, stuff?: { [P in keyof T]: T[P]|SimplePhrase|TemplatePhrase<T> },
-                  fieldStuff?: Array<{ [P in keyof U]: U[P]|SimplePhrase|TemplatePhrase<U> }|undefined>) {
+    public format<F extends ISimpleMap>(
+        language: string, stuff?: TemplateStuff<T, F>, fieldStuff?: TemplateStuffs<U, F>,
+    ) {
         let text = super.format(language, stuff);
         if (fieldStuff) {
             for (const fieldThing of fieldStuff) {
                 if (fieldThing) {
+                    const formattedFieldThing: { [key: string]: string } = {};
                     for (const [key, thing] of Object.entries(fieldThing)) {
-                        if (thing instanceof SimplePhrase && thing !== this) {
-                            fieldThing[key as keyof U] = thing instanceof TemplatePhrase ?
-                            thing.format(language, fieldThing)  as U[keyof U] :
-                            thing.get(language) as U[keyof U];
+                        if (thing instanceof SimplePhrase) {
+                            formattedFieldThing[key] = thing.get(language);
+                        } else if (Array.isArray(thing)) {
+                            formattedFieldThing[key] = thing[0].format(language, thing[1]);
+                        } else {
+                            formattedFieldThing[key] = thing;
                         }
                     }
-                    text += "/n" + format(this.templatesFieldText[language], fieldThing);
+                    text += "/n" + format(this.templatesFieldText[language], formattedFieldThing);
                 } else {
                     text += "/n";
                 }
@@ -97,22 +109,26 @@ export class DynamicFieldMessagePhrase<T extends { [key: string]: string; },
         return text;
     }
 
-    public formatEmbed(language: string, stuff?: { [P in keyof T]: T[P]|SimplePhrase|TemplatePhrase<T> },
-                       fieldStuff?: Array<{ [P in keyof U]: U[P]|SimplePhrase|TemplatePhrase<U> }|undefined>) {
+    public formatEmbed<F extends ISimpleMap>(
+        language: string, stuff?: TemplateStuff<T, F>, fieldStuff?: TemplateStuffs<U, F>,
+    ) {
         const embed = super.formatEmbed(language, stuff);
         if (fieldStuff) {
             const template = this.templatesField[language];
             for (const fieldThing of fieldStuff) {
                 if (fieldThing) {
+                    const formattedFieldThing: { [key: string]: string } = {};
                     for (const [key, thing] of Object.entries(fieldThing)) {
-                        if (thing instanceof SimplePhrase && thing !== this) {
-                            fieldThing[key as keyof U] = thing instanceof TemplatePhrase ?
-                            thing.format(language, fieldThing)  as U[keyof U] :
-                            thing.get(language) as U[keyof U];
+                        if (thing instanceof SimplePhrase) {
+                            formattedFieldThing[key] = thing.get(language);
+                        } else if (Array.isArray(thing)) {
+                            formattedFieldThing[key] = thing[0].format(language, thing[1]);
+                        } else {
+                            formattedFieldThing[key] = thing;
                         }
                     }
-                    embed.addField(format(template.name, fieldThing), format(template.value, fieldThing),
-                        template.inline);
+                    embed.addField(format(template.name, formattedFieldThing),
+                        format(template.value, formattedFieldThing), template.inline);
                 } else {
                     embed.addBlankField();
                 }
@@ -122,6 +138,8 @@ export class DynamicFieldMessagePhrase<T extends { [key: string]: string; },
     }
 }
 
-interface ILocalizedEmbedField {
+export type TemplateStuffs<T extends ISimpleMap, U extends ISimpleMap> = Array<TemplateStuff<T, U>|undefined>;
+
+export interface ILocalizedEmbedField {
     [key: string]: IEmbedField;
 }

@@ -9,11 +9,13 @@ import { StringConfigEntity } from "./database/stringconfigentity";
 export class StringGuildConfigEntry extends StringConfigEntry {
     private database: Database;
     private repo?: Repository<StringConfigEntity>;
+    private cache: Map<string, StringConfigEntity>;
 
     constructor(info: IEntryInfo, database: Database, defaultValue?: string) {
         info.loadStage = 1;
         super(info, defaultValue);
         this.database = database;
+        this.cache = new Map();
     }
 
     public async guildGet(guild: Guild): Promise<string> {
@@ -33,6 +35,9 @@ export class StringGuildConfigEntry extends StringConfigEntry {
     }
 
     private async guildGetEntity(guild: Guild) {
+        if (this.cache.has(guild.id)) {
+            return this.cache.get(guild.id)!;
+        }
         await this.ensureRepo();
         let entity = await this.repo!.findOne({ where: {
             guildId: guild.id,
@@ -45,7 +50,9 @@ export class StringGuildConfigEntry extends StringConfigEntry {
                 name: this.fullName,
                 value: this.get(),
             });
+            await this.repo!.save(entity);
         }
+        this.cache.set(guild.id, entity);
         return entity;
     }
 }

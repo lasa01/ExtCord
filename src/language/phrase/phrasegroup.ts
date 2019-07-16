@@ -19,6 +19,9 @@ export class PhraseGroup extends Phrase {
     }
 
     public addPhrase(phrase: Phrase) {
+        if (this.phrases.has(phrase.name)) {
+            throw new Error(`The phrase ${phrase.name} is already registered`);
+        }
         this.phrases.set(phrase.name, phrase);
         for (const language of phrase.languages) {
             if (!this.languages.includes(language)) {

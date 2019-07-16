@@ -9,11 +9,13 @@ import { NumberConfigEntity } from "./database/numberconfigentity";
 export class NumberGuildConfigEntry extends NumberConfigEntry {
     private database: Database;
     private repo?: Repository<NumberConfigEntity>;
+    private cache: Map<string, NumberConfigEntity>;
 
     constructor(info: IEntryInfo, database: Database, defaultValue?: number) {
         info.loadStage = 1;
         super(info, defaultValue);
         this.database = database;
+        this.cache = new Map();
     }
 
     public async guildGet(guild: Guild): Promise<number> {
@@ -33,6 +35,9 @@ export class NumberGuildConfigEntry extends NumberConfigEntry {
     }
 
     private async guildGetEntity(guild: Guild) {
+        if (this.cache.has(guild.id)) {
+            return this.cache.get(guild.id)!;
+        }
         await this.ensureRepo();
         let entity = await this.repo!.findOne({ where: {
             guildId: guild.id,
@@ -45,7 +50,9 @@ export class NumberGuildConfigEntry extends NumberConfigEntry {
                 name: this.fullName,
                 value: this.get(),
             });
+            await this.repo!.save(entity);
         }
+        this.cache.set(guild.id, entity);
         return entity;
     }
 }

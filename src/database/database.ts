@@ -3,10 +3,10 @@ import "reflect-metadata";
 import { EventEmitter } from "events";
 
 import { Connection, ConnectionOptions, createConnection } from "typeorm";
-import { Logger } from "winston";
 
 import { Config } from "../config/config";
 import { ObjectConfigEntry } from "../config/entry/objectentry";
+import { logger } from "../util/logger";
 import { GuildEntity } from "./entity/guildentity";
 import { MemberEntity } from "./entity/memberentity";
 import { RoleEntity } from "./entity/roleentity";
@@ -43,22 +43,20 @@ export class Database extends EventEmitter {
         role?: RoleRepository,
     };
     public connection?: Connection;
-    private logger: Logger;
     private entities: Array<new () => any>;
 
-    constructor(logger: Logger) {
+    constructor() {
         super();
-        this.logger = logger;
         this.entities = [GuildEntity, MemberEntity, UserEntity, RoleEntity];
         this.repos = {};
     }
 
     public async connect(options?: ConnectionOptions) {
         options = options || this.configEntry!.get() as ConnectionOptions;
-        this.logger.info("Connecting to database");
+        logger.verbose("Connecting to database");
         this.connection = await createConnection(Object.assign(options, {
             entities: this.entities,
-            logger: new LoggerBridge(this.logger),
+            logger: new LoggerBridge(logger),
             logging: true,
             synchronize: true,
         }));
@@ -72,12 +70,12 @@ export class Database extends EventEmitter {
     public async stop() {
         if (this.connection) {
             await this.connection.close();
-            this.logger.info("Database disconnected");
+            logger.verbose("Database disconnected");
         }
     }
 
     public registerEntity(model: new () => any) {
-        this.logger.debug(`Registering database entity ${model.name}`);
+        logger.debug(`Registering database entity ${model.name}`);
         this.entities.push(model);
     }
 

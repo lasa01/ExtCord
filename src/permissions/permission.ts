@@ -1,12 +1,14 @@
 import { GuildMember, Role } from "discord.js";
-import { Repository } from "typeorm";
-import { Logger } from "winston";
+import { In, Repository } from "typeorm";
 
 import { BooleanConfigEntry } from "../config/entry/booleanentry";
 import { ConfigEntry } from "../config/entry/entry";
+import { RoleEntity } from "../database/entity/roleentity";
+import { RoleRepository } from "../database/repo/rolerepo";
 import { Phrase } from "../language/phrase/phrase";
 import { PhraseGroup } from "../language/phrase/phrasegroup";
 import { SimplePhrase } from "../language/phrase/simplephrase";
+import { logger } from "../util/logger";
 import { MemberPermissionEntity } from "./database/memberpermissionentity";
 import { RolePermissionEntity } from "./database/rolepermissionentity";
 import { Permissions } from "./permissions";
@@ -20,14 +22,15 @@ export class Permission {
     private subPhrases: Phrase[];
     private subPhraseGroup?: PhraseGroup;
     private phrases: Phrase[];
-    private logger?: Logger;
     private permissions?: Permissions;
-    private memberRepo?: Repository<MemberPermissionEntity>;
-    private roleRepo?: Repository<RolePermissionEntity>;
+    private memberPermissionRepo?: Repository<MemberPermissionEntity>;
+    private rolePermissionRepo?: Repository<RolePermissionEntity>;
+    private roleRepo?: RoleRepository;
     private defaultEntry: ConfigEntry;
     private parent?: Permission;
+    private fullCache: Map<string, boolean|undefined>;
 
-    constructor(info: IPermissionInfo, defaultPermission: boolean, defaultEntry?: ConfigEntry) {
+    constructor(info: IPermissionInfo, defaultPermission: boolean|ConfigEntry) {
         this.name = info.name;
         this.description = info.description;
         if (this.description) {
@@ -37,7 +40,7 @@ export class Permission {
         }
         this.subPhrases = [];
         this.fullName = info.name;
-        this.defaultEntry = defaultEntry || new BooleanConfigEntry({
+        this.defaultEntry = defaultPermission instanceof ConfigEntry ? defaultPermission : new BooleanConfigEntry({
             description: info.description,
             name: info.name,
         }, defaultPermission);
@@ -55,19 +58,11 @@ export class Permission {
         this.phraseGroup = new PhraseGroup({
             name: this.name,
         }, this.phrases);
-    }
-
-    public register(permissions: Permissions) {
-        this.registerPermissions(permissions);
-    }
-
-    public unregister() {
-        this.unregisterPermissions();
+        this.fullCache = new Map();
     }
 
     public registerPermissions(permissions: Permissions) {
         this.permissions = permissions;
-        this.logger = permissions.logger;
     }
 
     public unregisterPermissions() {
@@ -104,30 +99,38 @@ export class Permission {
         if (result !== undefined) {
             return result;
         }
-        this.logger!.debug(`Returning default for permission ${this.fullName} for member ${member.id}`);
+        logger.debug(`Returning default for permission ${this.fullName} for member ${member.id}`);
         return this.getDefault();
     }
 
     public async checkFullNoDefault(member: GuildMember): Promise<boolean|undefined> {
-        this.logger!.debug(`Checking for permission ${this.fullName} for member ${member.id}`);
+        const uid = + member.guild.id + member.user.id;
+        if (this.fullCache.has(uid)) {
+            return this.fullCache.get(uid);
+        }
+        logger.debug(`Checking for permission ${this.fullName} for member ${member.id}`);
         this.ensureRepo();
         let result = await this.checkMember(member);
         if (result !== undefined) {
-            this.logger!.debug(`Found member-specific entry for permission ${this.fullName} for member ${member.id}`);
+            logger.debug(`Found member-specific entry for permission ${this.fullName} for member ${member.id}`);
+            this.fullCache.set(uid, result);
             return result;
         }
         result = await this.checkRoles(member);
         if (result !== undefined) {
-            this.logger!.debug(`Found role-specific entry for permission ${this.fullName} for member ${member.id}`);
+            logger.debug(`Found role-specific entry for permission ${this.fullName} for member ${member.id}`);
+            this.fullCache.set(uid, result);
             return result;
         }
         if (this.parent) {
-            this.logger!.debug(`Checking parent permission for permission ${this.fullName} for member ${member.id}`);
+            logger.debug(`Checking parent permission for permission ${this.fullName} for member ${member.id}`);
             result = await this.parent.checkFullNoDefault(member);
             if (result !== undefined) {
+                this.fullCache.set(uid, result);
                 return result;
             }
         }
+        this.fullCache.set(uid, result);
     }
 
     public async checkRole(role: Role): Promise<boolean> {
@@ -135,20 +138,20 @@ export class Permission {
         if (result !== undefined) {
             return result;
         }
-        this.logger!.debug(`Returning default for permission ${this.fullName} for role ${role.id}`);
+        logger.debug(`Returning default for permission ${this.fullName} for role ${role.id}`);
         return this.getDefault();
     }
 
     public async checkRoleNoDefault(role: Role): Promise<boolean|undefined> {
-        this.logger!.debug(`Checking for permission ${this.fullName} for role ${role.id}`);
+        logger.debug(`Checking for permission ${this.fullName} for role ${role.id}`);
         this.ensureRepo();
-        let result = await this.checkRolePart(role);
+        let result = await this.checkRolePart(await this.roleRepo!.getEntity(role));
         if (result !== undefined) {
-            this.logger!.debug(`Found role-specific entry for permission ${this.fullName} for role ${role.id}`);
+            logger.debug(`Found role-specific entry for permission ${this.fullName} for role ${role.id}`);
             return result;
         }
         if (this.parent) {
-            this.logger!.debug(`Checking parent permission for permission ${this.fullName} for role ${role.id}`);
+            logger.debug(`Checking parent permission for permission ${this.fullName} for role ${role.id}`);
             result = await this.parent.checkRoleNoDefault(role);
             if (result !== undefined) {
                 return result;
@@ -158,7 +161,7 @@ export class Permission {
 
     private async checkMember(member: GuildMember): Promise<boolean|undefined> {
         const memberEntity = await this.permissions!.database.repos.member!.getEntity(member);
-        const permission = await this.memberRepo!.findOne({
+        const permission = await this.memberPermissionRepo!.findOne({
             member: memberEntity,
             name: this.fullName,
         });
@@ -168,18 +171,27 @@ export class Permission {
     }
 
     private async checkRoles(member: GuildMember): Promise<boolean|undefined> {
-        // Roles sorted by position, TODO optimize speed (get all from database and check positions after?)
-        for (const role of Array.from(member.roles.values()).sort(Role.comparePositions)) {
+        const roles = (await this.roleRepo!.find({ where: {
+                guildId: member.guild.id,
+                roleId: In(member.roles.map((role) => role.id)),
+            }}))
+            .sort((a, b) => {
+                const dA = member.roles.get(a.roleId)!;
+                const dB = member.roles.get(b.roleId)!;
+                return Role.comparePositions(dA, dB);
+            });
+        for (const role of roles) {
             const permission = await this.checkRolePart(role);
             if (permission !== undefined) { return permission; }
         }
     }
 
-    private async checkRolePart(role: Role) {
-        const roleEntity = await this.roleRepo!.findOne({where: {
+    private async checkRolePart(role: RoleEntity) {
+        const roleEntity = await this.rolePermissionRepo!.findOne({ where: {
             guildId: role.guild.id,
+            name: this.fullName,
             roleId: role.id,
-        }});
+        } });
         if (roleEntity) {
             return roleEntity.permission;
         }
@@ -189,14 +201,15 @@ export class Permission {
         if (this.defaultEntry instanceof BooleanConfigEntry) {
             return this.defaultEntry.get();
         } else {
-            return false;
+            return true;
         }
     }
 
     private ensureRepo() {
-        if (this.memberRepo && this.roleRepo) { return; }
-        this.memberRepo = this.permissions!.database.connection!.getRepository(MemberPermissionEntity);
-        this.roleRepo = this.permissions!.database.connection!.getRepository(RolePermissionEntity);
+        if (this.memberPermissionRepo && this.rolePermissionRepo && this.roleRepo) { return; }
+        this.memberPermissionRepo = this.permissions!.database.connection!.getRepository(MemberPermissionEntity);
+        this.rolePermissionRepo = this.permissions!.database.connection!.getRepository(RolePermissionEntity);
+        this.roleRepo = this.permissions!.database.repos.role;
     }
 }
 

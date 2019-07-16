@@ -1,3 +1,4 @@
+import { LinkedErrorResponse } from "../command";
 import { CommandPhrases } from "../commandphrases";
 import { ICommandContext } from "../commands";
 import { Argument, IArgumentInfo } from "./argument";
@@ -12,17 +13,18 @@ export class IntArgument<T extends boolean> extends Argument<number, T> {
         this.max = max;
     }
 
-    public async check(data: string, context: ICommandContext) {
+    public async check(data: string, context: ICommandContext, error: LinkedErrorResponse) {
         const int = parseInt(data, 10);
         if (isNaN(int)) {
-            return CommandPhrases.invalidIntegerArgument;
+            return error(CommandPhrases.invalidIntegerArgument, {});
         }
         if (this.min > int) {
-            return CommandPhrases.tooSmallArgument;
+            return error(CommandPhrases.tooSmallArgument, { min: this.min.toString() });
         }
         if (this.max < int) {
-            return CommandPhrases.tooBigArgument;
+            return error(CommandPhrases.tooBigArgument, { max: this.max.toString() });
         }
+        return true;
     }
 
     public parse(data: string): number {

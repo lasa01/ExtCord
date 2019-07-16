@@ -13,5 +13,5 @@ export class RolePermissionEntity {
     public permission!: boolean;
 
     @ManyToOne((type) => RoleEntity)
-    public member!: RoleEntity;
+    public role!: RoleEntity;
 }

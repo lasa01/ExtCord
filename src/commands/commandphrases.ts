@@ -1,74 +1,170 @@
 import { MessagePhrase } from "../language/phrase/messagephrase";
-import { SimplePhrase } from "../language/phrase/simplephrase";
+import { TemplatePhrase } from "../language/phrase/templatephrase";
 
 export const CommandPhrases = {
-    executionError: new MessagePhrase({
-        name: "executionError",
-    }, "Execution failed due to an unknown error.\n```{error}```", {
-        description: "Encountered an unknown error.\n```{error}```",
-        timestamp: false,
-        title: "Command execution failed",
-    }, {
-        error: "The error that occured",
-    }),
-    invalidArgument: new MessagePhrase({
-        name: "invalidArgument",
-    }, "Argument `{argument}` is invalid.\n{reason}", {
-        description: "Argument `{argument}` is invalid.\n{reason}",
-        timestamp: false,
-        title: "Invalid argument",
-    }, {
-        argument: "The invalid argument",
-        reason: "Why the argument is invalid",
-    }),
-    invalidCommand: new MessagePhrase({
-        name: "invalidCommand",
-    }, "Command {command} not found", {
-        description: "Command `{command}` doesn't exist.",
-        timestamp: false,
-        title: "Command not found",
-    }, {
-        command: "The called command",
-    }),
-    invalidIntegerArgument: new SimplePhrase({
-        name: "invalidIntegerArgument",
-    }, "The argument is not a valid integer."),
-    invalidNumberArgument: new SimplePhrase({
-        name: "invalidNumberArgument",
-    }, "The argument is not a valid number."),
-    noPermission: new MessagePhrase({
-        name: "noPermission",
-    }, "You lack permissions to execute the command `{command}`", {
-        description: "You lack the permissions required for the command `{command}`.",
-        timestamp: false,
-        title: "Insufficient permissions",
-    }, {
-        command: "The called command",
-    }),
-    tooBigArgument: new SimplePhrase({
-        name: "tooSmallArgument",
-    }, "The supplied number is too big."),
-    tooFewArguments: new MessagePhrase({
-        name: "tooFewArguments",
-    }, "Too few arguments supplied: {supplied} supplied, {required} required", {
-        description: "The command requires {required} arguments, instead of {supplied}.",
-        timestamp: false,
-        title: "Too few arguments",
-    }, {
-        required: "The amount of required arguments",
-        supplied: "The amount of supplied arguments",
-    }),
-    tooManyArguments: new MessagePhrase({
-        name: "tooManyArguments",
-    }, "Too many arguments supplied: {supplied} supplied, {required} required", {
-        description: "The command requires {required} arguments, instead of {supplied}.",
-        timestamp: false,
-        title: "Too many arguments",
-    }, {
-        required: "The amount of required arguments",
-        supplied: "The amount of supplied arguments",
-    }),
-    tooSmallArgument: new SimplePhrase({
-        name: "tooSmallArgument",
-    }, "The supplied number is too small."),
+    availableSubcommands: new MessagePhrase(
+        {
+            description: "This is shown when a command group is called without a subcommand",
+            name: "availableSubcommands",
+        },
+        "The following subcommands are available: `{subcommands}`.",
+        {
+            description: "The following subcommands are available: `{subcommands}`.",
+            timestamp: false,
+            title: "Available subcommands",
+        },
+        {
+            subcommands: "A list of available subcommands",
+        },
+    ),
+    executionError: new MessagePhrase(
+        {
+            description: "This is shown when an unexpected error occurs while executing a command",
+            name: "executionError",
+        },
+        "The execution of the command failed because of an unexpected error.\n```{error}```",
+        {
+            description: "The execution of the command failed.\n```{error}```",
+            timestamp: false,
+            title: "An unexpected error occured",
+        },
+        {
+            error: "The error that occured",
+        },
+    ),
+    invalidArgument: new MessagePhrase(
+        {
+            description: "This is shown when an invalid argument is supplied to a command",
+            name: "invalidArgument",
+        },
+        "The argument supplied for {argument} (`{supplied}`) is invalid.\n{reason}",
+        {
+            description: "The argument supplied for {argument} (`{supplied}`) is invalid.\n{reason}",
+            timestamp: false,
+            title: "Argument parsing failed",
+        },
+        {
+            argument: "The name of the invalid argument",
+            reason: "Why the argument is invalid",
+            supplied: "The argument that was supplied",
+        },
+    ),
+    invalidCommand: new MessagePhrase(
+        {
+            description: "This is shown when an invalid command is called",
+            name: "invalidCommand",
+        },
+        "The command you are trying to call (`{command}`) doesn't exist.",
+        {
+            description: "The command you are trying to call (`{command}`) doesn't exist.",
+            timestamp: false,
+            title: "Invalid command",
+        },
+        {
+            command: "The command that was called",
+        },
+    ),
+    invalidIntegerArgument: new TemplatePhrase(
+        {
+            description: "This is shown when a supplied integer argument is not an integer",
+            name: "invalidIntegerArgument",
+        },
+        "`{argument}` is not a valid integer.",
+        {
+            argument: "The supplied argument",
+        },
+    ),
+    invalidNumberArgument: new TemplatePhrase(
+        {
+            description: "This is shown when a supplied float argument is not a valid float",
+            name: "invalidNumberArgument",
+        },
+        "`{argument}` is not a valid number.",
+        {
+            argument: "The supplied argument",
+        },
+    ),
+    invalidSubcommand: new MessagePhrase(
+        {
+            description: "This is shown when an invalid subcommand is called",
+            name: "invalidSubcommand",
+        },
+        "The subcommand you are trying to call (`{subcommand}`) doesn't exist.",
+        {
+            description: "The subcommand you are trying to call (`{subcommand}`) doesn't exist.",
+            timestamp: false,
+            title: "Invalid subcommand",
+        },
+        {
+            subcommand: "The subcommand that is called",
+        },
+    ),
+    noPermission: new MessagePhrase(
+        {
+            description: "This is shown when an user is trying to do something they're not allowed to",
+            name: "noPermission",
+        },
+        "You are not allowed to do that.\nYou don't have the required permission `{permission}.",
+        {
+            description: "You are not allowed to do that.\nYou don't have the required permission `{permission}.`",
+            timestamp: false,
+            title: "Insufficient permissions",
+        },
+        {
+            permission: "The permission required to do the thing",
+        },
+    ),
+    tooBigArgument: new TemplatePhrase(
+        {
+            description: "This is shown when a supplied argument is too big.",
+            name: "tooBigArgument",
+        },
+        "`{argument}` is too big. It should be no more than {max}.",
+        {
+            argument: "The supplied argument",
+            max: "The maximum of the argument",
+        },
+    ),
+    tooFewArguments: new MessagePhrase(
+        {
+            description: "This is shown when a command is supplied with too few arguments",
+            name: "tooFewArguments",
+        },
+        "Too few arguments. You supplied only {supplied} arguments, while the command requires {required}.",
+        {
+            description: "You supplied only {supplied} arguments, while the command requires {required}.",
+            timestamp: false,
+            title: "Too few arguments",
+        },
+        {
+            required: "The amount of required arguments",
+            supplied: "The amount of supplied arguments",
+        },
+    ),
+    tooManyArguments: new MessagePhrase(
+        {
+            description: "This is shown when a command is supplied with too many arguments",
+            name: "tooManyArguments",
+        },
+        "Too many arguments. You supplied {supplied} arguments, while the command requires only {required}.",
+        {
+            description: "You supplied {supplied} arguments, while the command requires only {required}.",
+            timestamp: false,
+            title: "Too many arguments",
+        },
+        {
+            required: "The amount of required arguments",
+            supplied: "The amount of supplied arguments",
+        },
+    ),
+    tooSmallArgument: new TemplatePhrase(
+        {
+            description: "This is shown when a supplied argument is too small.",
+            name: "tooSmallArgument",
+        },
+        "`{argument}` is too small. It should be at least {min}.",
+        {
+            min: "The minimum of the argument",
+        },
+    ),
 };

@@ -1,3 +1,4 @@
+import { LinkedErrorResponse } from "../command";
 import { CommandPhrases } from "../commandphrases";
 import { ICommandContext } from "../commands";
 import { Argument, IArgumentInfo } from "./argument";
@@ -12,17 +13,18 @@ export class FloatArgument<T extends boolean> extends Argument<number, T> {
         this.max = max;
     }
 
-    public async check(data: string, context: ICommandContext) {
+    public async check(data: string, context: ICommandContext, error: LinkedErrorResponse) {
         const float = parseFloat(data);
         if (isNaN(float)) {
-            return CommandPhrases.invalidNumberArgument;
+            return error(CommandPhrases.invalidNumberArgument, {});
         }
         if (this.min > float) {
-            return CommandPhrases.tooSmallArgument;
+            return error(CommandPhrases.tooSmallArgument, { min: this.min.toString() });
         }
         if (this.max < float) {
-            return CommandPhrases.tooBigArgument;
+            return error(CommandPhrases.tooBigArgument, { max: this.max.toString() });
         }
+        return true;
     }
 
     public parse(data: string, context: ICommandContext): number {

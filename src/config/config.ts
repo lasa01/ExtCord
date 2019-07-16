@@ -1,8 +1,8 @@
 import { EventEmitter } from "events";
 import { readFile, writeFile } from "fs-extra";
-import { Logger } from "winston";
 
 import { Database } from "../database/database";
+import { logger } from "../util/logger";
 import { Serializer } from "../util/serializer";
 import { ConfigEntry } from "./entry/entry";
 import { BooleanConfigEntity } from "./entry/guild/database/booleanconfigentity";
@@ -33,22 +33,20 @@ export class Config extends EventEmitter {
         database.registerEntity(StringConfigEntity);
     }
 
-    private logger: Logger;
     private configFile: string;
     private entries: Map<string, ConfigEntry>;
     private stages: Map<number, ConfigEntry[]>;
     private orderedStages?: number[];
 
-    constructor(logger: Logger, configFile: string) {
+    constructor(configFile: string) {
         super();
-        this.logger = logger;
         this.configFile = configFile;
         this.entries = new Map();
         this.stages = new Map();
     }
 
     public register(entry: ConfigEntry) {
-        this.logger.debug(`Registering config entry ${entry.name}`);
+        logger.debug(`Registering config entry ${entry.name}`);
         this.entries.set(entry.name, entry);
         const stage = this.stages.get(entry.loadStage) || [];
         stage.push(entry);
@@ -86,13 +84,13 @@ export class Config extends EventEmitter {
 
     public async load(stage: number, filename?: string) {
         filename = filename || this.configFile;
-        this.logger.info(`Loading config stage ${stage}`);
+        logger.verbose(`Loading config stage ${stage}`);
         const entries = this.stages.get(stage);
         if (!entries) {
-            this.logger.warn("Trying to load a config stage that doesn't exist, skipping...");
+            logger.warn("Trying to load a config stage that doesn't exist, skipping...");
             return;
         }
-        this.logger.debug(`Stage has ${entries.length} entries`);
+        logger.debug(`Stage has ${entries.length} entries`);
         let content: string;
         let parsed: { [key: string]: any };
         try {

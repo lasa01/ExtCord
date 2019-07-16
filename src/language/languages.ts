@@ -2,7 +2,6 @@ import { Guild } from "discord.js";
 import { EventEmitter } from "events";
 import { ensureDir, readdir, readFile, writeFile } from "fs-extra";
 import { resolve } from "path";
-import { Logger } from "winston";
 
 import { Config } from "../config/config";
 import { ConfigEntryGroup } from "../config/entry/entrygroup";
@@ -10,8 +9,10 @@ import { BooleanGuildConfigEntry } from "../config/entry/guild/booleanguildentry
 import { StringGuildConfigEntry } from "../config/entry/guild/stringguildentry";
 import { StringConfigEntry } from "../config/entry/stringentry";
 import { Database } from "../database/database";
+import { logger } from "../util/logger";
 import { Serializer } from "../util/serializer";
 import { Phrase } from "./phrase/phrase";
+import { ISimpleMap } from "./phrase/simplephrase";
 
 export const DEFAULT_LANGUAGE = "en";
 
@@ -33,8 +34,8 @@ export interface Languages {
 }
 
 export class Languages extends EventEmitter {
-    public logger: Logger;
     public languages: string[];
+    public languageNames: ISimpleMap;
     public languageConfigEntry?: StringGuildConfigEntry;
     public useEmbedsConfigEntry?: BooleanGuildConfigEntry;
     public useMentionsConfigEntry?: BooleanGuildConfigEntry;
@@ -44,21 +45,16 @@ export class Languages extends EventEmitter {
     private configEntry?: ConfigEntryGroup;
     private defaultLoaded: boolean;
 
-    constructor(logger: Logger) {
+    constructor() {
         super();
-        this.logger = logger;
         this.languages = [];
+        this.languageNames = {};
         this.phrases = new Map();
         this.defaultLoaded = false;
     }
 
     public register(phrase: Phrase) {
         this.phrases.set(phrase.name, phrase);
-        for (const language of phrase.languages) {
-            if (!this.languages.includes(language)) {
-                this.languages.push(language);
-            }
-        }
     }
 
     public unregister(phrase: Phrase) {
@@ -67,7 +63,7 @@ export class Languages extends EventEmitter {
 
     public async loadAll(directory?: string) {
         directory = directory || this.languageDirConfigEntry!.get();
-        this.logger.info("Loading all languages");
+        logger.verbose("Loading all languages");
         await ensureDir(directory);
         // Filter out wrong extensions
         const dirContent = (await readdir(directory)).filter((file) => file.endsWith(Serializer.extension));
@@ -86,7 +82,7 @@ export class Languages extends EventEmitter {
     }
 
     public async writeLoadDefault(directory: string) {
-        this.logger.info("Writing default language file");
+        logger.verbose("Writing default language file");
         let content = Serializer.stringify({
             id: this.languageConfigEntry!.get(),
             name: this.languageNameConfigEntry!.get(),
@@ -100,7 +96,7 @@ export class Languages extends EventEmitter {
         try {
             content = await readFile(path, "utf8");
         } catch (err) {
-            this.logger.error(`An error occured while reading language ${path}: ${err}`);
+            logger.error(`An error occured while reading language ${path}: ${err}`);
             return;
         }
         const newContent = await this.loadText(content);
@@ -114,19 +110,21 @@ export class Languages extends EventEmitter {
         try {
             parsed = Serializer.parse(content);
         } catch {
-            this.logger.error("An error occured while loading a language");
+            logger.error("An error occured while loading a language");
             return content;
         }
         const id: string = parsed.id;
         const name: string = parsed.name;
         if (!name || !id) {
-            this.logger.error("A language file is missing required information");
+            logger.error("A language is missing required information");
             return content;
         }
         if (id === DEFAULT_LANGUAGE) {
             this.defaultLoaded = true;
-        } else if (!this.languages.includes(id)) {
+        }
+        if (!this.languages.includes(id)) {
             this.languages.push(id);
+            this.languageNames[id] = name;
         }
         for (const [, phrase] of this.phrases) {
             const [data, comment] = phrase.parse(id, parsed[phrase.name]);
@@ -174,7 +172,7 @@ export class Languages extends EventEmitter {
             if (this.languages.includes(language)) {
                 return language;
             } else {
-                this.logger.warn(`Guild ${guild.id} has an invalid language, resetting`);
+                logger.warn(`Guild ${guild.id} has an invalid language, resetting`);
                 await this.languageConfigEntry.guildSet(guild, DEFAULT_LANGUAGE);
                 return DEFAULT_LANGUAGE;
             }

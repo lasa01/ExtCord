@@ -1,8 +1,12 @@
 import { StringArgument } from "./stringargument";
 
 export const BuiltInArguments = {
-    subCommand: new StringArgument({
+    subcommand: new StringArgument({
             description: "the subcommand to call",
             name: "subcommand",
-        }, false),
+        }, true),
+    subcommandArguments: new StringArgument({
+            description: "arguments for the subcommand",
+            name: "arguments",
+    }, true, true),
 };
