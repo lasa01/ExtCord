@@ -90,7 +90,7 @@ const languageSetCommand = new SimpleCommand(
             async (data, context, error) => {
                 if (!context.bot.languages.languages.includes(data)) {
                     return error(languageInvalidPhrase, {
-                        cmd: "language list", // TODO get localized cmd
+                        cmd: languageListCommand.getUsageName(context.language),
                         language: data,
                     });
                 }
@@ -119,7 +119,7 @@ const languageShowCommand = new SimpleCommand(
     true,
 );
 
-const languageListCommand = new SimpleCommand(
+const languageListCommand: SimpleCommand<[]> = new SimpleCommand(
     {
         author: "extcord",
         description: "List the available language",
@@ -130,7 +130,7 @@ const languageListCommand = new SimpleCommand(
         languageListPhrase,
         { n: context.bot.languages.languages.length.toString() },
         context.bot.languages.languages.map((lang) => ({
-            cmd: `language set ${lang}`, // TODO get localized cmd
+            cmd: languageSetCommand.getUsageName(context.language) + " " + lang,
             name: context.bot.languages.languageNames[lang],
         })),
     ),

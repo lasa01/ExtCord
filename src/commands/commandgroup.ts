@@ -29,6 +29,7 @@ export class CommandGroup
                 this.children.set(child.name, child);
                 this.registerSubPhrase(child.phraseGroup);
                 (this.defaultPermission as PermissionGroup).addPermission(child.getPermission());
+                child.registerParent(this);
             }
         }
         if (defaultSubcommand) {
@@ -48,6 +49,7 @@ export class CommandGroup
         this.children.set(subcommand.name, subcommand);
         this.registerSubPhrase(subcommand.phraseGroup);
         (this.defaultPermission as PermissionGroup).addPermission(subcommand.getPermission());
+        subcommand.registerParent(this);
     }
 
     public removeSubcommand(subcommand: Command<any>) {
@@ -55,6 +57,7 @@ export class CommandGroup
             this.children.delete(subcommand.name);
             this.unregisterSubPhrase(subcommand.phraseGroup);
             (this.defaultPermission as PermissionGroup).removePermission(subcommand.getPermission());
+            subcommand.unregisterParent();
         }
     }
 
@@ -80,9 +83,11 @@ export class CommandGroup
                 passed: context.arguments[1] || "",
             });
         } else {
-            await context.respond(CommandPhrases.availableSubcommands, {
-                subcommands:  Array.from(this.children.keys()).join(", "),
-            });
+            await context.respond(CommandPhrases.commandGroupUsage, {},
+                Array.from(this.children.values()).map(
+                    (sub) => ({ description: sub.localizedDescription, usage: sub.getShortUsage(context.language)}),
+                ),
+            );
         }
     }
 }

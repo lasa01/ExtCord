@@ -1,20 +1,64 @@
+import { DynamicFieldMessagePhrase } from "../language/phrase/dynamicfieldmessagephrase";
 import { MessagePhrase } from "../language/phrase/messagephrase";
+import { SimplePhrase } from "../language/phrase/simplephrase";
 import { TemplatePhrase } from "../language/phrase/templatephrase";
 
 export const CommandPhrases = {
-    availableSubcommands: new MessagePhrase(
+    argumentUsage: new TemplatePhrase(
         {
-            description: "This is shown when a command group is called without a subcommand",
-            name: "availableSubcommands",
+            description: "The template for argument usage instructions",
+            name: "argumentUsage",
         },
-        "The following subcommands are available: `{subcommands}`.",
+        "`{argument}`: {description}",
         {
-            description: "The following subcommands are available: `{subcommands}`.",
+            argument: "The name of the argument",
+            description: "The description of the argument",
+        },
+    ),
+    commandGroupUsage: new DynamicFieldMessagePhrase(
+        {
+            description: "The template for command group usage instructions",
+            name: "commandGroupUsage",
+        },
+        "Available subcommands:",
+        {
             timestamp: false,
             title: "Available subcommands",
         },
+        "{description}: {usage}",
         {
-            subcommands: "A list of available subcommands",
+            inline: true,
+            name: "{description}",
+            value: "{usage}",
+        },
+        {},
+        {
+            description: "The description of the subcommand",
+            usage: "The (short) usage for the subcommand",
+        },
+    ),
+    commandUsage: new TemplatePhrase(
+        {
+            description: "The template for command usage instructions",
+            name: "commandUsage",
+        },
+        "{description}\n`{command} {arguments}`\n{argumentsUsage}",
+        {
+            arguments: "List of the command's argument names",
+            argumentsUsage: "The usage instructions of each argument",
+            command: "The name of the command",
+            description: "The description of the command",
+        },
+    ),
+    commandUsageShort: new TemplatePhrase(
+        {
+            description: "The template for short command usage instructions",
+            name: "commandUsageShort",
+        },
+        "`{command} {arguments}`",
+        {
+            arguments: "List of the command's argument names",
+            command: "The name of the command",
         },
     ),
     executionError: new MessagePhrase(
@@ -37,14 +81,22 @@ export const CommandPhrases = {
             description: "This is shown when an invalid argument is supplied to a command",
             name: "invalidArgument",
         },
-        "The argument supplied for {argument} (`{supplied}`) is invalid.\n{reason}",
+        "The argument supplied for {argument} (`{supplied}`) is invalid.\n" +
+        "{reason}\nUsage: {commandUsage}\n{argumentUsage}",
         {
-            description: "The argument supplied for {argument} (`{supplied}`) is invalid.\n{reason}",
+            description: "The argument supplied for {argument} (`{supplied}`) is invalid:\n{reason}",
+            fields: [{
+                inline: false,
+                name: "Usage",
+                value: "{commandUsage}\n{argumentUsage}",
+            }],
             timestamp: false,
             title: "Argument parsing failed",
         },
         {
             argument: "The name of the invalid argument",
+            argumentUsage: "The usage instructions of the invalid argument",
+            commandUsage: "The (short) usage instructions of the command",
             reason: "Why the argument is invalid",
             supplied: "The argument that was supplied",
         },
@@ -54,9 +106,9 @@ export const CommandPhrases = {
             description: "This is shown when an invalid command is called",
             name: "invalidCommand",
         },
-        "The command you are trying to call (`{command}`) doesn't exist.",
+        "The command `{command}` doesn't exist.",
         {
-            description: "The command you are trying to call (`{command}`) doesn't exist.",
+            description: "The command `{command}` doesn't exist.",
             timestamp: false,
             title: "Invalid command",
         },
@@ -64,34 +116,28 @@ export const CommandPhrases = {
             command: "The command that was called",
         },
     ),
-    invalidIntegerArgument: new TemplatePhrase(
+    invalidIntegerArgument: new SimplePhrase(
         {
             description: "This is shown when a supplied integer argument is not an integer",
             name: "invalidIntegerArgument",
         },
-        "`{argument}` is not a valid integer.",
-        {
-            argument: "The supplied argument",
-        },
+        "The argument is not a valid integer.",
     ),
-    invalidNumberArgument: new TemplatePhrase(
+    invalidNumberArgument: new SimplePhrase(
         {
             description: "This is shown when a supplied float argument is not a valid float",
             name: "invalidNumberArgument",
         },
-        "`{argument}` is not a valid number.",
-        {
-            argument: "The supplied argument",
-        },
+        "The argument is not a valid number.",
     ),
     invalidSubcommand: new MessagePhrase(
         {
             description: "This is shown when an invalid subcommand is called",
             name: "invalidSubcommand",
         },
-        "The subcommand you are trying to call (`{subcommand}`) doesn't exist.",
+        "The subcommand `{subcommand}` doesn't exist.",
         {
-            description: "The subcommand you are trying to call (`{subcommand}`) doesn't exist.",
+            description: "The subcommand `{subcommand}` doesn't exist.",
             timestamp: false,
             title: "Invalid subcommand",
         },
@@ -119,9 +165,8 @@ export const CommandPhrases = {
             description: "This is shown when a supplied argument is too big.",
             name: "tooBigArgument",
         },
-        "`{argument}` is too big. It should be no more than {max}.",
+        "The argument is too big. It should be no more than {max}.",
         {
-            argument: "The supplied argument",
             max: "The maximum of the argument",
         },
     ),
@@ -130,13 +175,16 @@ export const CommandPhrases = {
             description: "This is shown when a command is supplied with too few arguments",
             name: "tooFewArguments",
         },
-        "Too few arguments. You supplied only {supplied} arguments, while the command requires {required}.",
+        "Too few arguments. You supplied only {supplied} arguments, while the command requires {required}.\n" +
+        "Usage: {commandUsage}",
         {
-            description: "You supplied only {supplied} arguments, while the command requires {required}.",
+            description: "You supplied only {supplied} arguments, while the command requires {required}.\n" +
+            "Usage: {commandUsage}",
             timestamp: false,
             title: "Too few arguments",
         },
         {
+            commandUsage: "The (short) usage instructions of the command",
             required: "The amount of required arguments",
             supplied: "The amount of supplied arguments",
         },
@@ -146,13 +194,16 @@ export const CommandPhrases = {
             description: "This is shown when a command is supplied with too many arguments",
             name: "tooManyArguments",
         },
-        "Too many arguments. You supplied {supplied} arguments, while the command requires only {required}.",
+        "Too many arguments. You supplied {supplied} arguments, while the command requires only {required}.\n" +
+        "Usage: {commandUsage}",
         {
-            description: "You supplied {supplied} arguments, while the command requires only {required}.",
+            description: "You supplied {supplied} arguments, while the command requires only {required}.\n" +
+            "Usage: {commandUsage}",
             timestamp: false,
             title: "Too many arguments",
         },
         {
+            commandUsage: "The (short) usage instructions of the command",
             required: "The amount of required arguments",
             supplied: "The amount of supplied arguments",
         },
@@ -162,7 +213,7 @@ export const CommandPhrases = {
             description: "This is shown when a supplied argument is too small.",
             name: "tooSmallArgument",
         },
-        "`{argument}` is too small. It should be at least {min}.",
+        "The argument is too small. It should be at least {min}.",
         {
             min: "The minimum of the argument",
         },

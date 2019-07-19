@@ -1,7 +1,7 @@
 import { Phrase } from "../language/phrase/phrase";
 import { PhraseGroup } from "../language/phrase/phrasegroup";
 import { ISimpleMap, SimplePhrase } from "../language/phrase/simplephrase";
-import { TemplatePhrase, TemplateStuff } from "../language/phrase/templatephrase";
+import { TemplatePhrase } from "../language/phrase/templatephrase";
 import { Module } from "../modules/module";
 import { Permission } from "../permissions/permission";
 import { logger } from "../util/logger";
@@ -18,11 +18,14 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
     public author: string;
     public arguments: T;
     public minArguments: number;
+    public parent?: Command<any>;
     public phraseGroup: PhraseGroup;
     public combineIndex?: number;
     protected defaultPermission: Permission;
     protected argPhraseGroup: PhraseGroup;
     protected customPhraseGroup: PhraseGroup;
+    private usageCache: Map<string, string>;
+    private shortUsageCache: Map<string, string>;
 
     constructor(info: ICommandInfo, args: T, permission: boolean|Permission = false) {
         this.name = info.name;
@@ -65,10 +68,20 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
         this.defaultPermission = permission instanceof Permission ? permission : new Permission({
             name: info.name,
         }, permission);
+        this.usageCache = new Map();
+        this.shortUsageCache = new Map();
     }
 
-    get maxArguments() {
+    public get maxArguments() {
         return this.arguments.length;
+    }
+
+    public registerParent(parent: Command<any>) {
+        this.parent = parent;
+    }
+
+    public unregisterParent() {
+        this.parent = undefined;
     }
 
     public registerPhrase(phrase: Phrase) {
@@ -97,6 +110,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
         const maxArgs = this.arguments.length;
         if (rawArguments.length < this.minArguments) {
             await context.respond(CommandPhrases.tooFewArguments, {
+                commandUsage: this.getShortUsage(context.language),
                 required: (this.minArguments === maxArgs) ? maxArgs.toString() : `${this.minArguments} - ${maxArgs}`,
                 supplied: rawArguments.length.toString(),
             });
@@ -107,6 +121,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
             // This allows one argument to optionally have spaces
             if (this.combineIndex === undefined) {
                 await context.respond(CommandPhrases.tooManyArguments, {
+                    commandUsage: this.getShortUsage(context.language),
                     required: (this.minArguments === maxArgs) ?
                         maxArgs.toString() : `${this.minArguments} - ${maxArgs}`,
                     supplied: rawArguments.length.toString(),
@@ -118,12 +133,10 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
         let rawIndex = 0;
         let rawArgument: string;
         let argument: Argument<any, boolean>;
-        const errorResponseFn: LinkedErrorResponse = async (phrase, stuff) => {
-            await context.respond(CommandPhrases.invalidArgument, {
-                argument: argument.name,
-                reason: [phrase, stuff],
-                supplied: rawArgument,
-            });
+        let errorStuff: LinkedErrorArgs<ISimpleMap>|SimplePhrase|undefined;
+        const errorResponseFn: ILinkedErrorResponse =
+        <U extends ISimpleMap>(phrase: TemplatePhrase<U>|SimplePhrase, stuff?: U): true => {
+            errorStuff = stuff ? [phrase as TemplatePhrase<U>, stuff] : phrase;
             return true;
         };
         for (const index of this.arguments.keys()) {
@@ -143,7 +156,13 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
             } else if (argument.optional) {
                 parsed.push(undefined);
             } else {
-                return;
+                return context.respond(CommandPhrases.invalidArgument, {
+                    argument: argument.name,
+                    argumentUsage: argument.getUsage(context.language),
+                    commandUsage: this.getShortUsage(context.language),
+                    reason: errorStuff || "",
+                    supplied: rawArgument,
+                });
             }
         }
         let timeDiff = process.hrtime(startTime);
@@ -162,6 +181,37 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
     }
 
     public abstract async execute(context: IExecutionContext<T>): Promise<void>;
+
+    public getUsageName(language: string): string {
+        const name = this.localizedName.get(language);
+        return this.parent ? (this.parent.getUsageName(language) + " " + name) : name;
+    }
+
+    public getUsage(language: string): string {
+        if (this.usageCache.has(language)) {
+            return this.usageCache.get(language)!;
+        }
+        const usage = CommandPhrases.commandUsage.format(language, {
+            arguments: this.arguments.map((arg) => arg.getUsageName(language)).join(" "),
+            argumentsUsage: this.arguments.map((arg) => arg.getUsage(language)).join("\n"),
+            command: this.getUsageName(language),
+            description: this.localizedDescription,
+        });
+        this.usageCache.set(language, usage);
+        return usage;
+    }
+
+    public getShortUsage(language: string): string {
+        if (this.shortUsageCache.has(language)) {
+            return this.shortUsageCache.get(language)!;
+        }
+        const usage = CommandPhrases.commandUsageShort.format(language, {
+            arguments: this.arguments.map((arg) => arg.getUsageName(language)).join(" "),
+            command: this.getUsageName(language),
+        });
+        this.shortUsageCache.set(language, usage);
+        return usage;
+    }
 }
 
 export interface IExecutionContext<T extends ReadonlyArray<Argument<any, boolean>>> extends ICommandContext {
@@ -181,6 +231,9 @@ type ArgumentsParseReturns<T extends ReadonlyArray<Argument<any, boolean>>> = {
         : never
 };
 
-export type LinkedErrorResponse = <T extends ISimpleMap>(
-    phrase: TemplatePhrase<T>, stuff: T,
-) => Promise<true>;
+export interface ILinkedErrorResponse {
+    <T extends ISimpleMap>(phrase: TemplatePhrase<T>, stuff: T): true;
+    (phrase: SimplePhrase): true;
+}
+
+export type LinkedErrorArgs<T extends ISimpleMap> = [TemplatePhrase<T>, T];

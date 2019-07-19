@@ -1,6 +1,7 @@
 import { PhraseGroup } from "../../language/phrase/phrasegroup";
 import { SimplePhrase } from "../../language/phrase/simplephrase";
-import { Command, LinkedErrorResponse } from "../command";
+import { Command, ILinkedErrorResponse } from "../command";
+import { CommandPhrases } from "../commandphrases";
 import { ICommandContext } from "../commands";
 
 export abstract class Argument<T, U extends boolean> {
@@ -12,6 +13,7 @@ export abstract class Argument<T, U extends boolean> {
     public allowCombining: boolean;
     private phraseGroup: PhraseGroup;
     private registered: boolean;
+    private usageCache: Map<string, string>;
 
     constructor(info: IArgumentInfo, optional: U, allowCombining = false) {
         this.name = info.name;
@@ -28,6 +30,7 @@ export abstract class Argument<T, U extends boolean> {
         this.allowCombining = allowCombining;
         this.optional = optional;
         this.registered = false;
+        this.usageCache = new Map();
     }
 
     public register(command: Command<any>) {
@@ -41,7 +44,24 @@ export abstract class Argument<T, U extends boolean> {
         return this.phraseGroup;
     }
 
-    public abstract async check(data: string, context: ICommandContext, error: LinkedErrorResponse): Promise<boolean>;
+    public getUsageName(language: string): string {
+        const name = this.localizedName.get(language);
+        return this.optional ? `(${name})` : `[${name}]`;
+    }
+
+    public getUsage(language: string): string {
+        if (this.usageCache.has(language)) {
+            return this.usageCache.get(language)!;
+        }
+        const usage = CommandPhrases.argumentUsage.format(language, {
+            argument: this.getUsageName(language),
+            description: this.localizedDescription,
+        });
+        this.usageCache.set(language, usage);
+        return usage;
+    }
+
+    public abstract async check(data: string, context: ICommandContext, error: ILinkedErrorResponse): Promise<boolean>;
 
     public abstract parse(data: string, context: ICommandContext): T;
 }
