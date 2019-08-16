@@ -1,9 +1,9 @@
-import { DynamicFieldMessagePhrase } from "../../language/phrase/dynamicfieldmessagephrase";
-import { MessagePhrase } from "../../language/phrase/messagephrase";
-import { TemplatePhrase } from "../../language/phrase/templatephrase";
-import { StringArgument } from "../arguments/stringargument";
-import { CommandGroup } from "../commandgroup";
-import { SimpleCommand } from "../simplecommand";
+import { DynamicFieldMessagePhrase } from "../../language/phrase/DynamicFieldMessagePhrase";
+import { MessagePhrase } from "../../language/phrase/MessagePhrase";
+import { TemplatePhrase } from "../../language/phrase/TemplatePhrase";
+import { StringArgument } from "../arguments/StringArgument";
+import { CommandGroup } from "../CommandGroup";
+import { SimpleCommand } from "../SimpleCommand";
 
 const languageInvalidPhrase = new TemplatePhrase(
     {

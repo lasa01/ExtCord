@@ -1,14 +1,14 @@
 import { createInterface } from "readline";
 
-import { Config } from "./config/config";
-import { ConfigEntryGroup } from "./config/entry/entrygroup";
-import { NumberConfigEntry } from "./config/entry/numberentry";
-import { StringConfigEntry } from "./config/entry/stringentry";
+import { Config } from "./config/Config";
+import { ConfigEntryGroup } from "./config/entry/ConfigEntryGroup";
+import { NumberConfigEntry } from "./config/entry/NumberConfigEntry";
+import { StringConfigEntry } from "./config/entry/StringConfigEntry";
 
-import { Database } from "./database/database";
-import { MemberPermissionEntity } from "./permissions/database/memberpermissionentity";
-import { Permissions } from "./permissions/permissions";
-import { Logger } from "./util/logger";
+import { Database } from "./database/Database";
+import { MemberPermissionEntity } from "./permissions/database/MemberPermissionEntity";
+import { Permissions } from "./permissions/Permissions";
+import { Logger } from "./util/Logger";
 
 Logger.initialize(3);
 

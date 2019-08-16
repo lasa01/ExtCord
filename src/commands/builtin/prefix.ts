@@ -1,7 +1,7 @@
-import { MessagePhrase } from "../../language/phrase/messagephrase";
-import { StringArgument } from "../arguments/stringargument";
-import { CommandGroup } from "../commandgroup";
-import { SimpleCommand } from "../simplecommand";
+import { MessagePhrase } from "../../language/phrase/MessagePhrase";
+import { StringArgument } from "../arguments/StringArgument";
+import { CommandGroup } from "../CommandGroup";
+import { SimpleCommand } from "../SimpleCommand";
 
 const prefixSetPhrase = new MessagePhrase(
     {
