@@ -41,9 +41,9 @@ export abstract class Module {
     }
 
     public load() {
-        this.bot.config.register(this.configEntryGroup);
-        this.bot.permissions.register(this.permissionGroup);
-        this.bot.languages.register(this.phraseGroup);
+        this.bot.config.registerEntry(this.configEntryGroup);
+        this.bot.permissions.registerPermission(this.permissionGroup);
+        this.bot.languages.registerPhrase(this.phraseGroup);
     }
 
     public async unload() {
@@ -59,52 +59,52 @@ export abstract class Module {
         for (const phrase of this.phrases) {
             this.unregisterPhrase(phrase);
         }
-        this.bot.config.unregister(this.configEntryGroup);
-        this.bot.permissions.unregister(this.permissionGroup);
-        this.bot.languages.unregister(this.phraseGroup);
+        this.bot.config.unregisterEntry(this.configEntryGroup);
+        this.bot.permissions.unregisterPermission(this.permissionGroup);
+        this.bot.languages.unregisterPhrase(this.phraseGroup);
     }
 
     protected registerConfigEntry(entry: ConfigEntry) {
-        this.configEntryGroup.addEntry(entry);
+        this.configEntryGroup.addEntries(entry);
         this.configEntries.push(entry);
     }
 
     protected unregisterConfigEntry(entry: ConfigEntry) {
-        this.configEntryGroup.addEntry(entry);
+        this.configEntryGroup.addEntries(entry);
         this.configEntries.splice(this.configEntries.indexOf(entry), 1);
     }
 
     protected registerCommand(command: Command<any>) {
-        this.bot.commands.register(command);
-        this.commandsPhraseGroup.addPhrase(command.phraseGroup);
+        this.bot.commands.registerCommand(command);
+        this.commandsPhraseGroup.addPhrases(command.phraseGroup);
         this.commands.push(command);
     }
 
     protected unregisterCommand(command: Command<any>) {
-        this.bot.commands.unregister(command);
-        this.commandsPhraseGroup.removePhrase(command.phraseGroup);
+        this.bot.commands.unregisterCommand(command);
+        this.commandsPhraseGroup.removePhrases(command.phraseGroup);
         this.commands.splice(this.commands.indexOf(command), 1);
     }
 
     protected registerPermission(permission: Permission) {
-        this.permissionGroup.addPermission(permission);
-        this.permissionsPhraseGroup.addPhrase(permission.phraseGroup);
+        this.permissionGroup.addPermissions(permission);
+        this.permissionsPhraseGroup.addPhrases(permission.phraseGroup);
         this.permissions.push(permission);
     }
 
     protected unregisterPermission(permission: Permission) {
-        this.permissionGroup.removePermission(permission);
-        this.permissionsPhraseGroup.removePhrase(permission.phraseGroup);
+        this.permissionGroup.removePermissions(permission);
+        this.permissionsPhraseGroup.removePhrases(permission.phraseGroup);
         this.permissions.splice(this.permissions.indexOf(permission), 1);
     }
 
     protected registerPhrase(phrase: Phrase) {
-        this.phraseGroup.addPhrase(phrase);
+        this.phraseGroup.addPhrases(phrase);
         this.phrases.push(phrase);
     }
 
     protected unregisterPhrase(phrase: Phrase) {
-        this.phraseGroup.removePhrase(phrase);
+        this.phraseGroup.removePhrases(phrase);
         this.phrases.splice(this.phrases.indexOf(phrase), 1);
     }
 }

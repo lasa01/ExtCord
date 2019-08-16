@@ -13,7 +13,7 @@ import { Database } from "./database/database";
 import { Languages } from "./language/languages";
 import { Modules } from "./modules/modules";
 import { Permissions } from "./permissions/permissions";
-import { logger } from "./util/logger";
+import { Logger } from "./util/logger";
 
 // Event definitions
 // tslint:disable-next-line:interface-name
@@ -102,8 +102,8 @@ export class Bot extends EventEmitter {
             description: "Discord client configuration",
             name: "client",
         }, Object.values(this.configEntries.client));
-        this.config.register(this.configEntries.loggerGroup);
-        this.config.register(this.configEntries.clientGroup);
+        this.config.registerEntry(this.configEntries.loggerGroup);
+        this.config.registerEntry(this.configEntries.clientGroup);
         this.database = new Database();
         this.database.registerConfig(this.config);
         Config.registerDatabase(this.database);
@@ -111,25 +111,25 @@ export class Bot extends EventEmitter {
         this.languages = new Languages();
         this.languages.registerConfig(this.config, this.database);
         this.commands = new Commands(this);
-        this.commands.registerConfig(this.config, this.database);
+        this.commands.registerConfig();
         this.modules = new Modules(this);
-        this.modules.registerConfig(this.config);
+        this.modules.registerConfig();
     }
 
     public async run() {
-        logger.debug(`Processor architecture: ${process.arch}`);
-        logger.debug(`Command line: ${process.argv}`);
-        logger.debug(`Working directory: ${process.cwd()}`);
-        logger.debug(`Platform: ${process.platform}`);
-        logger.debug(`Node.js version: ${process.version}`);
-        logger.verbose("Loading config");
+        Logger.debug(`Processor architecture: ${process.arch}`);
+        Logger.debug(`Command line: ${process.argv}`);
+        Logger.debug(`Working directory: ${process.cwd()}`);
+        Logger.debug(`Platform: ${process.platform}`);
+        Logger.debug(`Node.js version: ${process.version}`);
+        Logger.verbose("Loading config");
         while (this.config.hasNext()) {
             const stage = await this.config.loadNext();
             if (stage === 0) {
-                logger.debug("Reconfiguring logger");
-                logger.get().configure({
-                    level: logger.get().level === "info" ?
-                        this.configEntries.logger.loglevel.get() : logger.get().level,
+                Logger.debug("Reconfiguring logger");
+                Logger.get().configure({
+                    level: Logger.get().level === "info" ?
+                        this.configEntries.logger.loglevel.get() : Logger.get().level,
                     transports: [
                         new transports.Console(),
                         new transports.File( { filename: this.configEntries.logger.file.get() } ),
@@ -137,14 +137,14 @@ export class Bot extends EventEmitter {
                 });
                 await this.commands.registerCommands();
                 await this.modules.loadAll();
-                this.commands.registerPermissions(this.permissions);
+                this.commands.registerPermissions();
                 this.commands.registerLanguages();
                 this.permissions.registerConfig(this.config);
                 this.permissions.registerLanguages(this.languages);
                 await this.languages.loadAll();
-                logger.debug(this.permissions.getStatus());
-                logger.debug(this.commands.getStatus());
-                logger.debug(this.languages.getStatus());
+                Logger.debug(this.permissions.getStatus());
+                Logger.debug(this.commands.getStatus());
+                Logger.debug(this.languages.getStatus());
             } else if (stage === 1) {
                 await this.database.connect();
                 this.client = new Client({
@@ -152,7 +152,7 @@ export class Bot extends EventEmitter {
                     messageCacheMaxSize: this.configEntries.client.messageCacheMaxSize.get(),
                     messageSweepInterval: this.configEntries.client.messageCacheSweepInterval.get(),
                 });
-                logger.info("Connecting to Discord");
+                Logger.info("Connecting to Discord");
                 await this.client.login(this.configEntries.client.token.get());
                 this.emit("ready");
                 this.client.on("message", async (message) => {
@@ -181,12 +181,12 @@ export class Bot extends EventEmitter {
     }
 
     public async stop() {
-        logger.info("Bot stopping");
+        Logger.info("Bot stopping");
         this.emit("stop");
         await this.database.stop();
         if (this.client) {
             await this.client.destroy();
-            logger.verbose("Client disconnected");
+            Logger.verbose("Client disconnected");
         }
         if (this.readline) {
             this.readline.close();

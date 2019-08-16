@@ -59,6 +59,8 @@
   "typedocOptions": {
     "out": "../docs",
     "mode": "file",
-    "name": "ExtCord"
+    "name": "ExtCord",
+    "excludeNotExported": true,
+    "exclude": "commands/builtin/*",
   }
 }

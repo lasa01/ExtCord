@@ -16,19 +16,23 @@ export class ConfigEntryGroup extends ConfigEntry {
         }
     }
 
-    public addEntry(entry: ConfigEntry) {
-        if (this.entries.has(entry.name)) {
-            throw new Error(`The entry ${entry.name} is already registered`);
+    public addEntries(...entries: ConfigEntry[]) {
+        for (const entry of entries) {
+            if (this.entries.has(entry.name)) {
+                throw new Error(`The entry ${entry.name} is already registered`);
+            }
+            entry.setParent(this);
+            entry.setLoadStage(this.loadStage);
+            this.entries.set(entry.name, entry);
         }
-        entry.setParent(this);
-        entry.setLoadStage(this.loadStage);
-        this.entries.set(entry.name, entry);
     }
 
-    public removeEntry(entry: ConfigEntry) {
-        if (this.entries.has(entry.name)) {
-            entry.removeParent();
-            this.entries.delete(entry.name);
+    public removeEntries(...entries: ConfigEntry[]) {
+        for (const entry of entries) {
+            if (this.entries.has(entry.name)) {
+                entry.removeParent();
+                this.entries.delete(entry.name);
+            }
         }
     }
 

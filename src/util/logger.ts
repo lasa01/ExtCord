@@ -13,7 +13,7 @@ export type LogLevel = "error"|"warn"|"info"|"verbose"|"debug"|"silly";
 
 let loggerInstance: WinstonLogger|undefined;
 
-export const logger = {
+export const Logger = {
     get() {
         if (loggerInstance) {
             return loggerInstance;
@@ -39,10 +39,10 @@ export const logger = {
             throw new Error("Logger is not initialized");
         }
     },
-    debug: (message: string) => logger.log("debug", message),
-    error: (message: string) => logger.log("error", message),
-    info: (message: string) => logger.log("info", message),
-    silly: (message: string) => logger.log("silly", message),
-    verbose: (message: string) => logger.log("verbose", message),
-    warn: (message: string) => logger.log("warn", message),
+    debug: (message: string) => Logger.log("debug", message),
+    error: (message: string) => Logger.log("error", message),
+    info: (message: string) => Logger.log("info", message),
+    silly: (message: string) => Logger.log("silly", message),
+    verbose: (message: string) => Logger.log("verbose", message),
+    warn: (message: string) => Logger.log("warn", message),
 };

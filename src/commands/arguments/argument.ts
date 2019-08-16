@@ -33,9 +33,9 @@ export abstract class Argument<T, U extends boolean> {
         this.usageCache = new Map();
     }
 
-    public register(command: Command<any>) {
+    public registerSelf(command: Command<any>) {
         if (!this.registered) {
-            command.registerArgPhrase(this.phraseGroup);
+            command.addArgPhrases(this.phraseGroup);
             this.registered = true;
         }
     }

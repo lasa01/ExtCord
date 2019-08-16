@@ -145,10 +145,5 @@ export const languageCommand = new CommandGroup(
     },
 );
 
-languageCommand.addSubcommand(languageSetCommand);
-languageCommand.addSubcommand(languageShowCommand);
-languageCommand.addSubcommand(languageListCommand);
-languageCommand.registerPhrase(languageInvalidPhrase);
-languageCommand.registerPhrase(languageSetPhrase);
-languageCommand.registerPhrase(languageShowPhrase);
-languageCommand.registerPhrase(languageListPhrase);
+languageCommand.addSubcommands(languageSetCommand, languageShowCommand, languageListCommand);
+languageCommand.addPhrases(languageInvalidPhrase, languageSetPhrase, languageShowPhrase, languageListPhrase);

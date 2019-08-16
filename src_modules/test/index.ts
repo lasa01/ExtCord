@@ -31,8 +31,8 @@ export default class TestModule extends Module {
             async (context) => {
                 await context.respond(testPhrase, { input: context.arguments[0] });
             }, true);
-        testCommand.registerPhrase(testPhrase);
-        commandGroup.addSubcommand(testCommand);
+        testCommand.addPhrases(testPhrase);
+        commandGroup.addSubcommands(testCommand);
 
         const permResultPhrase = new MessagePhrase({
                 name: "permissionResult",
@@ -70,8 +70,7 @@ export default class TestModule extends Module {
                     await context.respond(permResultPhrase, { permission: context.arguments[0], result: resultText });
                 }
             }, true);
-        permCommand.registerPhrase(permResultPhrase);
-        permCommand.registerPhrase(permNotFoundPhrase);
+        permCommand.addPhrases(permResultPhrase, permNotFoundPhrase);
         this.registerCommand(permCommand);
 
         const embedPhrase = new MessagePhrase({
@@ -106,8 +105,8 @@ export default class TestModule extends Module {
             async (context) => {
                 await context.respond(embedPhrase, { argument: context.arguments[0] });
             }, true);
-        embedCommand.registerPhrase(embedPhrase);
-        commandGroup.addSubcommand(embedCommand);
+        embedCommand.addPhrases(embedPhrase);
+        commandGroup.addSubcommands(embedCommand);
 
         const randomPhrase = new DynamicFieldMessagePhrase({
                 name: "response",
@@ -140,7 +139,7 @@ export default class TestModule extends Module {
                 }
                 await context.respond(randomPhrase, { n: n.toString(), max: max.toString() }, fields);
             }, true);
-        randomCommand.registerPhrase(randomPhrase);
-        commandGroup.addSubcommand(randomCommand);
+        randomCommand.addPhrases(randomPhrase);
+        commandGroup.addSubcommands(randomCommand);
     }
 }

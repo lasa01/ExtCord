@@ -7,13 +7,13 @@ const setComments = (object: any) => {
             Object.defineProperty(object, o + "__commentBefore__", { enumerable: false, writable: true});
             Object.defineProperty(object, o + "__commentAfter__", { enumerable: false, writable: true});
             const commentsBefore = (object.__COMMENTS__.c[o][0] as string).split("\n");
-            const commentsBeforeFixed = [];
+            const commentsBeforeFixed: string[] = [];
             for (const comment of commentsBefore) {
                 commentsBeforeFixed.push(comment.trim());
             }
             object[o + "__commentBefore__"] = commentsBeforeFixed.join("\n");
             const commentsAfter = (object.__COMMENTS__.c[o][1] as string).split("\n");
-            const commentsAfterFixed = [];
+            const commentsAfterFixed: string[] = [];
             for (const comment of commentsAfter) {
                 commentsAfterFixed.push(comment.trim());
             }

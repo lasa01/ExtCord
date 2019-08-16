@@ -4,10 +4,8 @@ import { readdir } from "fs-extra";
 import { resolve } from "path";
 
 import { Bot } from "../bot";
-import { Config } from "../config/config";
 import { ConfigEntryGroup } from "../config/entry/entrygroup";
 import { StringGuildConfigEntry } from "../config/entry/guild/stringguildentry";
-import { Database } from "../database/database";
 import { DynamicFieldMessagePhrase, TemplateStuffs } from "../language/phrase/dynamicfieldmessagephrase";
 import { MessagePhrase } from "../language/phrase/messagephrase";
 import { Phrase } from "../language/phrase/phrase";
@@ -16,8 +14,7 @@ import { ISimpleMap } from "../language/phrase/simplephrase";
 import { TemplateStuff } from "../language/phrase/templatephrase";
 import { Permission } from "../permissions/permission";
 import { PermissionGroup } from "../permissions/permissiongroup";
-import { Permissions } from "../permissions/permissions";
-import { logger } from "../util/logger";
+import { Logger } from "../util/logger";
 import { BuiltInArguments } from "./arguments/builtinarguments";
 import { Command } from "./command";
 import { CommandPhrases } from "./commandphrases";
@@ -114,13 +111,13 @@ export class Commands extends EventEmitter {
             respond,
         };
         const timeDiff = process.hrtime(startTime);
-        logger.debug(`Command preprocessing took ${timeDiff[0] * 1e9 + timeDiff[1]} nanoseconds`);
-        logger.debug(`Executing command ${command}`);
+        Logger.debug(`Command preprocessing took ${timeDiff[0] * 1e9 + timeDiff[1]} nanoseconds`);
+        Logger.debug(`Executing command ${command}`);
         this.emit("command", commandInstance, context);
         await commandInstance.command(context);
     }
 
-    public register(command: Command<any>) {
+    public registerCommand(command: Command<any>) {
         if (this.commands.has(command.name)) {
             throw new Error(`A command is already registered by the name ${command.name}`);
         }
@@ -128,7 +125,7 @@ export class Commands extends EventEmitter {
         this.commands.set(command.name, command);
     }
 
-    public unregister(command: Command<any>) {
+    public unregisterCommand(command: Command<any>) {
         this.unregisterPermission(command.getPermission());
         this.commands.delete(command.name);
     }
@@ -149,23 +146,23 @@ export class Commands extends EventEmitter {
         this.commandPhrases.splice(this.commandPhrases.indexOf(phrase), 1);
     }
 
-    public registerConfig(config: Config, database: Database) {
+    public registerConfig() {
         this.prefixConfigEntry = new StringGuildConfigEntry({
             description: "The prefix for commands",
             name: "prefix",
-        }, database, "!");
+        }, this.bot.database, "!");
         this.configEntry = new ConfigEntryGroup({
             name: "commands",
         }, [ this.prefixConfigEntry ]);
-        config.register(this.configEntry);
+        this.bot.config.registerEntry(this.configEntry);
     }
 
-    public registerPermissions(permissions: Permissions) {
+    public registerPermissions() {
         this.permission = new PermissionGroup({
             description: "Permissions for command execution",
             name: "commands",
         }, this.permissions);
-        permissions.register(this.permission);
+        this.bot.permissions.registerPermission(this.permission);
     }
 
     public registerLanguages() {
@@ -184,7 +181,7 @@ export class Commands extends EventEmitter {
         this.phraseGroup = new PhraseGroup({
             name: "commands",
         }, [ this.argumentsGroup, this.commandPhraseGroup, this.phrasesGroup ]);
-        this.bot.languages.register(this.phraseGroup);
+        this.bot.languages.registerPhrase(this.phraseGroup);
     }
 
     public async registerCommands() {
@@ -196,8 +193,8 @@ export class Commands extends EventEmitter {
             const required = require(path);
             for (const value of Object.values(required)) {
                 if (value instanceof Command) {
-                    logger.debug(`Found builtin command ${value.name} in file ${filename}`);
-                    this.register(value);
+                    Logger.debug(`Found builtin command ${value.name} in file ${filename}`);
+                    this.registerCommand(value);
                     this.registerPhrase(value.phraseGroup);
                 }
             }

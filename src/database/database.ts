@@ -6,7 +6,7 @@ import { Connection, ConnectionOptions, createConnection } from "typeorm";
 
 import { Config } from "../config/config";
 import { ObjectConfigEntry } from "../config/entry/objectentry";
-import { logger } from "../util/logger";
+import { Logger } from "../util/logger";
 import { GuildEntity } from "./entity/guildentity";
 import { MemberEntity } from "./entity/memberentity";
 import { RoleEntity } from "./entity/roleentity";
@@ -53,10 +53,10 @@ export class Database extends EventEmitter {
 
     public async connect(options?: ConnectionOptions) {
         options = options || this.configEntry!.get() as ConnectionOptions;
-        logger.verbose("Connecting to database");
+        Logger.verbose("Connecting to database");
         this.connection = await createConnection(Object.assign(options, {
             entities: this.entities,
-            logger: new LoggerBridge(logger),
+            logger: new LoggerBridge(Logger),
             logging: true,
             synchronize: true,
         }));
@@ -70,23 +70,27 @@ export class Database extends EventEmitter {
     public async stop() {
         if (this.connection) {
             await this.connection.close();
-            logger.verbose("Database disconnected");
+            Logger.verbose("Database disconnected");
         }
     }
 
     public registerEntity(model: new () => any) {
-        logger.debug(`Registering database entity ${model.name}`);
+        Logger.debug(`Registering database entity ${model.name}`);
         this.entities.push(model);
+    }
+
+    public unregisterEntity(model: new () => any) {
+        this.entities.splice(this.entities.indexOf(model), 1);
     }
 
     public registerConfig(config: Config) {
         this.configEntry = new ObjectConfigEntry({
-            description: "Database configuration for TypeORM",
+            description: "Database connection configuration for TypeORM\nSee https://typeorm.io/#/connection-options",
             name: "database",
         }, {
             database: "bot.sqlite",
             type: "sqlite",
         });
-        config.register(this.configEntry);
+        config.registerEntry(this.configEntry);
     }
 }

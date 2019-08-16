@@ -1,10 +1,10 @@
 import { Logger } from "typeorm";
-import { logger as extcordLogger } from "../util/logger";
+import { Logger as ExtcordLogger } from "../util/logger";
 
 export class LoggerBridge implements Logger {
-    private logger: typeof extcordLogger;
+    private logger: typeof ExtcordLogger;
 
-    constructor(logger: typeof extcordLogger) {
+    constructor(logger: typeof ExtcordLogger) {
         this.logger = logger;
     }
 

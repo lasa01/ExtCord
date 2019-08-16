@@ -25,20 +25,24 @@ export class PermissionGroup extends Permission {
         }
     }
 
-    public addPermission(permission: Permission) {
-        if (this.children.has(permission.name)) {
-            throw new Error(`The permission ${permission.name} is already registered`);
+    public addPermissions(...permissions: Permission[]) {
+        for (const permission of permissions) {
+            if (this.children.has(permission.name)) {
+                throw new Error(`The permission ${permission.name} is already registered`);
+            }
+            (this.getConfigEntry() as ConfigEntryGroup).addEntries(permission.getConfigEntry());
+            permission.registerParent(this);
+            this.children.set(permission.name, permission);
         }
-        (this.getConfigEntry() as ConfigEntryGroup).addEntry(permission.getConfigEntry());
-        permission.registerParent(this);
-        this.children.set(permission.name, permission);
     }
 
-    public removePermission(permission: Permission) {
-        if (this.children.has(permission.name)) {
-            (this.getConfigEntry() as ConfigEntryGroup).removeEntry(permission.getConfigEntry());
-            permission.unregisterParent(this);
-            this.children.delete(permission.name);
+    public removePermissions(...permissions: Permission[]) {
+        for (const permission of permissions) {
+            if (this.children.has(permission.name)) {
+                (this.getConfigEntry() as ConfigEntryGroup).removeEntries(permission.getConfigEntry());
+                permission.unregisterParent(this);
+                this.children.delete(permission.name);
+            }
         }
     }
 
@@ -49,18 +53,18 @@ export class PermissionGroup extends Permission {
         }
     }
 
-    public registerPermissions(permissions: Permissions) {
-        super.registerPermissions(permissions);
+    public registerSelf(permissions: Permissions) {
+        super.registerSelf(permissions);
         for (const [, child] of this.children) {
-            child.registerPermissions(permissions);
+            child.registerSelf(permissions);
             child.updateFullName();
         }
     }
 
-    public unregisterPermissions() {
-        super.unregisterPermissions();
+    public unregisterSelf() {
+        super.unregisterSelf();
         for (const [, child] of this.children) {
-            child.unregisterPermissions();
+            child.unregisterSelf();
         }
     }
 }

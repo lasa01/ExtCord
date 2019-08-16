@@ -77,7 +77,5 @@ export const prefixCommand = new CommandGroup(
     },
 );
 
-prefixCommand.addSubcommand(prefixSetCommand);
-prefixCommand.addSubcommand(prefixShowCommand);
-prefixCommand.registerPhrase(prefixSetPhrase);
-prefixCommand.registerPhrase(prefixShowPhrase);
+prefixCommand.addSubcommands(prefixSetCommand, prefixShowCommand);
+prefixCommand.addPhrases(prefixSetPhrase, prefixShowPhrase);

@@ -9,7 +9,7 @@ import { BooleanGuildConfigEntry } from "../config/entry/guild/booleanguildentry
 import { StringGuildConfigEntry } from "../config/entry/guild/stringguildentry";
 import { StringConfigEntry } from "../config/entry/stringentry";
 import { Database } from "../database/database";
-import { logger } from "../util/logger";
+import { Logger } from "../util/logger";
 import { Serializer } from "../util/serializer";
 import { Phrase } from "./phrase/phrase";
 import { ISimpleMap } from "./phrase/simplephrase";
@@ -53,17 +53,17 @@ export class Languages extends EventEmitter {
         this.defaultLoaded = false;
     }
 
-    public register(phrase: Phrase) {
+    public registerPhrase(phrase: Phrase) {
         this.phrases.set(phrase.name, phrase);
     }
 
-    public unregister(phrase: Phrase) {
+    public unregisterPhrase(phrase: Phrase) {
         this.phrases.delete(phrase.name);
     }
 
     public async loadAll(directory?: string) {
         directory = directory || this.languageDirConfigEntry!.get();
-        logger.verbose("Loading all languages");
+        Logger.verbose("Loading all languages");
         await ensureDir(directory);
         // Filter out wrong extensions
         const dirContent = (await readdir(directory)).filter((file) => file.endsWith(Serializer.extension));
@@ -82,7 +82,7 @@ export class Languages extends EventEmitter {
     }
 
     public async writeLoadDefault(directory: string) {
-        logger.verbose("Writing default language file");
+        Logger.verbose("Writing default language file");
         let content = Serializer.stringify({
             id: this.languageConfigEntry!.get(),
             name: this.languageNameConfigEntry!.get(),
@@ -96,7 +96,7 @@ export class Languages extends EventEmitter {
         try {
             content = await readFile(path, "utf8");
         } catch (err) {
-            logger.error(`An error occured while reading language ${path}: ${err}`);
+            Logger.error(`An error occured while reading language ${path}: ${err}`);
             return;
         }
         const newContent = await this.loadText(content);
@@ -110,13 +110,13 @@ export class Languages extends EventEmitter {
         try {
             parsed = Serializer.parse(content);
         } catch {
-            logger.error("An error occured while loading a language");
+            Logger.error("An error occured while loading a language");
             return content;
         }
         const id: string = parsed.id;
         const name: string = parsed.name;
         if (!name || !id) {
-            logger.error("A language is missing required information");
+            Logger.error("A language is missing required information");
             return content;
         }
         if (id === DEFAULT_LANGUAGE) {
@@ -163,7 +163,7 @@ export class Languages extends EventEmitter {
             name: "languages",
         }, [this.languageConfigEntry, this.useEmbedsConfigEntry,
             this.useMentionsConfigEntry, this.languageDirConfigEntry]);
-        config.register(this.configEntry);
+        config.registerEntry(this.configEntry);
     }
 
     public async getLanguage(guild: Guild) {
@@ -172,7 +172,7 @@ export class Languages extends EventEmitter {
             if (this.languages.includes(language)) {
                 return language;
             } else {
-                logger.warn(`Guild ${guild.id} has an invalid language, resetting`);
+                Logger.warn(`Guild ${guild.id} has an invalid language, resetting`);
                 await this.languageConfigEntry.guildSet(guild, DEFAULT_LANGUAGE);
                 return DEFAULT_LANGUAGE;
             }

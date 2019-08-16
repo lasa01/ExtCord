@@ -2,7 +2,7 @@ import { EventEmitter } from "events";
 import { readFile, writeFile } from "fs-extra";
 
 import { Database } from "../database/database";
-import { logger } from "../util/logger";
+import { Logger } from "../util/logger";
 import { Serializer } from "../util/serializer";
 import { ConfigEntry } from "./entry/entry";
 import { BooleanConfigEntity } from "./entry/guild/database/booleanconfigentity";
@@ -45,8 +45,8 @@ export class Config extends EventEmitter {
         this.stages = new Map();
     }
 
-    public register(entry: ConfigEntry) {
-        logger.debug(`Registering config entry ${entry.name}`);
+    public registerEntry(entry: ConfigEntry) {
+        Logger.debug(`Registering config entry ${entry.name}`);
         this.entries.set(entry.name, entry);
         const stage = this.stages.get(entry.loadStage) || [];
         stage.push(entry);
@@ -54,7 +54,7 @@ export class Config extends EventEmitter {
         entry.updateFullName();
     }
 
-    public unregister(entry: ConfigEntry) {
+    public unregisterEntry(entry: ConfigEntry) {
         this.entries.delete(entry.name);
         const stage = this.stages.get(entry.loadStage)!;
         stage.splice(stage.indexOf(entry));
@@ -84,13 +84,13 @@ export class Config extends EventEmitter {
 
     public async load(stage: number, filename?: string) {
         filename = filename || this.configFile;
-        logger.verbose(`Loading config stage ${stage}`);
+        Logger.verbose(`Loading config stage ${stage}`);
         const entries = this.stages.get(stage);
         if (!entries) {
-            logger.warn("Trying to load a config stage that doesn't exist, skipping...");
+            Logger.warn("Trying to load a config stage that doesn't exist, skipping...");
             return;
         }
-        logger.debug(`Stage has ${entries.length} entries`);
+        Logger.debug(`Stage has ${entries.length} entries`);
         let content: string;
         let parsed: { [key: string]: any };
         try {

@@ -21,16 +21,11 @@ export class CommandGroup
         this.subPhraseGroup = new PhraseGroup({
             name: "subcommands",
         });
-        this.phraseGroup.removePhrase(this.argPhraseGroup);
-        this.phraseGroup.addPhrase(this.subPhraseGroup);
+        this.phraseGroup.removePhrases(this.argPhraseGroup);
+        this.phraseGroup.addPhrases(this.subPhraseGroup);
         this.defaultSubcommand = defaultSubcommand;
         if (children) {
-            for (const child of children) {
-                this.children.set(child.name, child);
-                this.registerSubPhrase(child.phraseGroup);
-                (this.defaultPermission as PermissionGroup).addPermission(child.getPermission());
-                child.registerParent(this);
-            }
+            this.addSubcommands(...children);
         }
         if (defaultSubcommand) {
             if (!this.children.has(defaultSubcommand)) {
@@ -42,31 +37,35 @@ export class CommandGroup
         }
     }
 
-    public addSubcommand(subcommand: Command<any>) {
-        if (this.children.has(subcommand.name)) {
-            throw new Error(`The subcommand ${subcommand.name} is already registered`);
-        }
-        this.children.set(subcommand.name, subcommand);
-        this.registerSubPhrase(subcommand.phraseGroup);
-        (this.defaultPermission as PermissionGroup).addPermission(subcommand.getPermission());
-        subcommand.registerParent(this);
-    }
-
-    public removeSubcommand(subcommand: Command<any>) {
-        if (this.children.has(subcommand.name)) {
-            this.children.delete(subcommand.name);
-            this.unregisterSubPhrase(subcommand.phraseGroup);
-            (this.defaultPermission as PermissionGroup).removePermission(subcommand.getPermission());
-            subcommand.unregisterParent();
+    public addSubcommands(...subcommands: Array<Command<any>>) {
+        for (const subcommand of subcommands) {
+            if (this.children.has(subcommand.name)) {
+                throw new Error(`The subcommand ${subcommand.name} is already registered`);
+            }
+            this.children.set(subcommand.name, subcommand);
+            this.addSubPhrases(subcommand.phraseGroup);
+            (this.defaultPermission as PermissionGroup).addPermissions(subcommand.getPermission());
+            subcommand.registerParent(this);
         }
     }
 
-    public registerSubPhrase(phrase: Phrase) {
-        this.subPhraseGroup.addPhrase(phrase);
+    public removeSubcommands(...subcommands: Array<Command<any>>) {
+        for (const subcommand of subcommands) {
+            if (this.children.has(subcommand.name)) {
+                this.children.delete(subcommand.name);
+                this.removeSubPhrases(subcommand.phraseGroup);
+                (this.defaultPermission as PermissionGroup).removePermissions(subcommand.getPermission());
+                subcommand.unregisterParent();
+            }
+        }
     }
 
-    public unregisterSubPhrase(phrase: Phrase) {
-        this.subPhraseGroup.removePhrase(phrase);
+    public addSubPhrases(...phrases: Phrase[]) {
+        this.subPhraseGroup.addPhrases(...phrases);
+    }
+
+    public removeSubPhrases(...phrases: Phrase[]) {
+        this.subPhraseGroup.removePhrases(...phrases);
     }
 
     public async execute(

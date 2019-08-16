@@ -4,7 +4,7 @@ import { ISimpleMap, SimplePhrase } from "../language/phrase/simplephrase";
 import { TemplatePhrase } from "../language/phrase/templatephrase";
 import { Module } from "../modules/module";
 import { Permission } from "../permissions/permission";
-import { logger } from "../util/logger";
+import { Logger } from "../util/logger";
 import { Argument } from "./arguments/argument";
 import { CommandPhrases } from "./commandphrases";
 import { ICommandContext } from "./commands";
@@ -63,7 +63,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
                 }
                 this.combineIndex = index;
             }
-            argument.register(this);
+            argument.registerSelf(this);
         }
         this.defaultPermission = permission instanceof Permission ? permission : new Permission({
             name: info.name,
@@ -84,12 +84,20 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
         this.parent = undefined;
     }
 
-    public registerPhrase(phrase: Phrase) {
-        this.customPhraseGroup.addPhrase(phrase);
+    public addPhrases(...phrases: Phrase[]) {
+        this.customPhraseGroup.addPhrases(...phrases);
     }
 
-    public registerArgPhrase(phrase: Phrase) {
-        this.argPhraseGroup.addPhrase(phrase);
+    public removePhrases(...phrases: Phrase[]) {
+        this.customPhraseGroup.removePhrases(...phrases);
+    }
+
+    public addArgPhrases(...phrases: Phrase[]) {
+        this.argPhraseGroup.addPhrases(...phrases);
+    }
+
+    public removeArgPhrases(...phrases: Phrase[]) {
+        this.argPhraseGroup.removePhrases(...phrases);
     }
 
     public getPermission() {
@@ -98,7 +106,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
 
     public async command(context: ICommandContext): Promise<void> {
         let startTime = process.hrtime();
-        logger.debug(`Command: ${context.command}`);
+        Logger.debug(`Command: ${context.command}`);
         if (!await this.getPermission().checkFull(context.message.member)) {
             await context.respond(CommandPhrases.noPermission, { permission: this.defaultPermission.fullName });
             return;
@@ -106,7 +114,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
         // Set to an empty array if the string is empty,
         // since the split function would return an array with an empty string, and we don't want that
         const rawArguments = context.passed === "" ? [] : context.passed.split(" ");
-        logger.debug(`Arguments: ${rawArguments.join(", ")}`);
+        Logger.debug(`Arguments: ${rawArguments.join(", ")}`);
         const maxArgs = this.arguments.length;
         if (rawArguments.length < this.minArguments) {
             await context.respond(CommandPhrases.tooFewArguments, {
@@ -166,7 +174,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
             }
         }
         let timeDiff = process.hrtime(startTime);
-        logger.debug(`Argument parsing took ${timeDiff[0] * 1e9 + timeDiff[1]} nanoseconds`);
+        Logger.debug(`Argument parsing took ${timeDiff[0] * 1e9 + timeDiff[1]} nanoseconds`);
         startTime = process.hrtime();
         try {
             await this.execute({
@@ -177,7 +185,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
             return;
         }
         timeDiff = process.hrtime(startTime);
-        logger.debug(`Command execution took ${timeDiff[0] * 1e9 + timeDiff[1]} nanoseconds`);
+        Logger.debug(`Command execution took ${timeDiff[0] * 1e9 + timeDiff[1]} nanoseconds`);
     }
 
     public abstract async execute(context: IExecutionContext<T>): Promise<void>;

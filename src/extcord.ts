@@ -2,7 +2,7 @@ import Yargs = require("yargs");
 
 import { Bot } from "./bot";
 import { Configure } from "./configure";
-import { logger } from "./util/logger";
+import { Logger } from "./util/logger";
 import { Serializer } from "./util/serializer";
 
 /**
@@ -15,12 +15,12 @@ const args = Yargs.usage("Usage: $0 <command> [options]")
             describe: "config file to use",
         }),
         (argv) => {
-            logger.initialize(argv.verbose as number);
+            Logger.initialize(argv.verbose as number);
             const bot = new Bot(argv.configFile);
             bot.run().then(() => {
-                logger.info("Bot running");
+                Logger.info("Bot running");
             }).catch((err) => {
-                logger.error(err.stack || err);
+                Logger.error(err.stack || err);
                 bot.stop();
             });
             if (argv.interactive) {

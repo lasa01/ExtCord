@@ -8,7 +8,7 @@ import { RoleRepository } from "../database/repo/rolerepo";
 import { Phrase } from "../language/phrase/phrase";
 import { PhraseGroup } from "../language/phrase/phrasegroup";
 import { SimplePhrase } from "../language/phrase/simplephrase";
-import { logger } from "../util/logger";
+import { Logger } from "../util/logger";
 import { MemberPermissionEntity } from "./database/memberpermissionentity";
 import { RolePermissionEntity } from "./database/rolepermissionentity";
 import { Permissions } from "./permissions";
@@ -49,7 +49,7 @@ export class Permission {
         } else {
             this.phrases = [];
         }
-        if (this.subPhrases.length !== 0) {
+        if (this.subPhrases.length !== 0) { // TODO: length is always 0, fix
             this.subPhraseGroup = new PhraseGroup({
                 name: "phrases",
             }, this.subPhrases);
@@ -61,11 +61,11 @@ export class Permission {
         this.fullCache = new Map();
     }
 
-    public registerPermissions(permissions: Permissions) {
+    public registerSelf(permissions: Permissions) {
         this.permissions = permissions;
     }
 
-    public unregisterPermissions() {
+    public unregisterSelf() {
         this.permissions = undefined;
     }
 
@@ -99,7 +99,7 @@ export class Permission {
         if (result !== undefined) {
             return result;
         }
-        logger.debug(`Returning default for permission ${this.fullName} for member ${member.id}`);
+        Logger.debug(`Returning default for permission ${this.fullName} for member ${member.id}`);
         return this.getDefault();
     }
 
@@ -108,22 +108,22 @@ export class Permission {
         if (this.fullCache.has(uid)) {
             return this.fullCache.get(uid);
         }
-        logger.debug(`Checking for permission ${this.fullName} for member ${member.id}`);
+        Logger.debug(`Checking for permission ${this.fullName} for member ${member.id}`);
         this.ensureRepo();
         let result = await this.checkMember(member);
         if (result !== undefined) {
-            logger.debug(`Found member-specific entry for permission ${this.fullName} for member ${member.id}`);
+            Logger.debug(`Found member-specific entry for permission ${this.fullName} for member ${member.id}`);
             this.fullCache.set(uid, result);
             return result;
         }
         result = await this.checkRoles(member);
         if (result !== undefined) {
-            logger.debug(`Found role-specific entry for permission ${this.fullName} for member ${member.id}`);
+            Logger.debug(`Found role-specific entry for permission ${this.fullName} for member ${member.id}`);
             this.fullCache.set(uid, result);
             return result;
         }
         if (this.parent) {
-            logger.debug(`Checking parent permission for permission ${this.fullName} for member ${member.id}`);
+            Logger.debug(`Checking parent permission for permission ${this.fullName} for member ${member.id}`);
             result = await this.parent.checkFullNoDefault(member);
             if (result !== undefined) {
                 this.fullCache.set(uid, result);
@@ -138,20 +138,20 @@ export class Permission {
         if (result !== undefined) {
             return result;
         }
-        logger.debug(`Returning default for permission ${this.fullName} for role ${role.id}`);
+        Logger.debug(`Returning default for permission ${this.fullName} for role ${role.id}`);
         return this.getDefault();
     }
 
     public async checkRoleNoDefault(role: Role): Promise<boolean|undefined> {
-        logger.debug(`Checking for permission ${this.fullName} for role ${role.id}`);
+        Logger.debug(`Checking for permission ${this.fullName} for role ${role.id}`);
         this.ensureRepo();
         let result = await this.checkRolePart(await this.roleRepo!.getEntity(role));
         if (result !== undefined) {
-            logger.debug(`Found role-specific entry for permission ${this.fullName} for role ${role.id}`);
+            Logger.debug(`Found role-specific entry for permission ${this.fullName} for role ${role.id}`);
             return result;
         }
         if (this.parent) {
-            logger.debug(`Checking parent permission for permission ${this.fullName} for role ${role.id}`);
+            Logger.debug(`Checking parent permission for permission ${this.fullName} for role ${role.id}`);
             result = await this.parent.checkRoleNoDefault(role);
             if (result !== undefined) {
                 return result;

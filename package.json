@@ -52,7 +52,7 @@
     "@types/string-format": "^2.0.0",
     "@types/yargs": "^12.0.12",
     "tslint": "^5.18.0",
-    "typedoc": "^0.14.2",
+    "typedoc": "^0.15.0",
     "typescript": "^3.5.2"
   }
 }

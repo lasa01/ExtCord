@@ -29,14 +29,14 @@ export class Permissions {
         database.registerEntity(RolePermissionEntity);
     }
 
-    public register(permission: Permission) {
-        permission.registerPermissions(this);
+    public registerPermission(permission: Permission) {
+        permission.registerSelf(this);
         this.permissions.set(permission.name, permission);
         this.configTemplate.set(permission.name, permission.getConfigEntry());
     }
 
-    public unregister(permission: Permission) {
-        permission.unregisterPermissions();
+    public unregisterPermission(permission: Permission) {
+        permission.unregisterSelf();
         this.permissions.delete(permission.name);
         this.configTemplate.delete(permission.name);
     }
@@ -54,7 +54,7 @@ export class Permissions {
             description: "Default permissions for everyone",
             name: "permissions",
         }, Array.from(this.configTemplate.values()));
-        config.register(this.configEntry);
+        config.registerEntry(this.configEntry);
     }
 
     public registerLanguages(languages: Languages) {
@@ -62,7 +62,7 @@ export class Permissions {
             description: "Built-in permissions",
             name: "permissions",
         }, this.phrases);
-        languages.register(this.phraseGroup);
+        languages.registerPhrase(this.phraseGroup);
     }
 
     public get(name: string) {
