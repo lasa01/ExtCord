@@ -1,7 +1,7 @@
 {
-    "extends": "../src/tsconfig.json",
+    "extends": "../tsconfig.json",
     "compilerOptions": {
-        "outDir": "../modules",
+      "outDir": "../modules",
     },
     "references": [
       {"path": "../src"}
