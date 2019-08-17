@@ -53,7 +53,7 @@ const getComments = (object: any, level = 1) => {
             let comment: string|undefined;
             // Check that every line of comment begins with a correct character
             for (let line of lines as string[]) {
-                line = line || "";
+                line = line.trim() || "";
                 if (!regex.test(line)) {
                     line = "# " + line;
                 }
@@ -108,7 +108,7 @@ const getComments = (object: any, level = 1) => {
 export const Serializer = {
     extension : ".hjson",
     parse(text: string) {
-        const data =  Hjson.parse(text, { keepWsc: true });
+        const data = Hjson.parse(text, { keepWsc: true });
         setComments(data);
         return data;
     },
