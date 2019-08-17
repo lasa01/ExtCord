@@ -174,7 +174,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
             }
         }
         let timeDiff = process.hrtime(startTime);
-        Logger.debug(`Argument parsing took ${timeDiff[0] * 1e9 + timeDiff[1]} nanoseconds`);
+        Logger.debug(`Argument parsing took ${((timeDiff[0] * 1e9 + timeDiff[1]) / 1000000).toFixed(3)} ms`);
         startTime = process.hrtime();
         try {
             await this.execute({
@@ -185,7 +185,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
             return;
         }
         timeDiff = process.hrtime(startTime);
-        Logger.debug(`Command execution took ${timeDiff[0] * 1e9 + timeDiff[1]} nanoseconds`);
+        Logger.debug(`Command execution took ${((timeDiff[0] * 1e9 + timeDiff[1]) / 1000000).toFixed(3)} ms`);
     }
 
     public abstract async execute(context: IExecutionContext<T>): Promise<void>;

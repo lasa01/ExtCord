@@ -111,7 +111,7 @@ export class Commands extends EventEmitter {
             respond,
         };
         const timeDiff = process.hrtime(startTime);
-        Logger.debug(`Command preprocessing took ${timeDiff[0] * 1e9 + timeDiff[1]} nanoseconds`);
+        Logger.debug(`Command preprocessing took ${((timeDiff[0] * 1e9 + timeDiff[1]) / 1000000).toFixed(3)} ms`);
         Logger.debug(`Executing command ${command}`);
         this.emit("command", commandInstance, context);
         await commandInstance.command(context);
