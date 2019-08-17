@@ -103,9 +103,9 @@ export class Config extends EventEmitter {
         for (const entry of entries) {
             const [data, comment] = entry.parse(parsed[entry.name]);
             parsed[entry.name] = data;
-            if (!parsed[entry.name + "__commentBefore__"] && comment) {
-                Object.defineProperty(parsed, entry.name + "__commentBefore__", { enumerable: false, writable: true });
-                parsed[entry.name + "__commentBefore__"] = comment;
+            if (!parsed[entry.name + "__comment__"] && comment) {
+                Object.defineProperty(parsed, entry.name + "__comment__", { enumerable: false, writable: true });
+                parsed[entry.name + "__comment__"] = comment;
             }
             entry.emit("loaded");
         }

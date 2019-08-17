@@ -4,20 +4,13 @@ const regex = /^#|^\/\//;
 const setComments = (object: any) => {
     if (object.__COMMENTS__) {
         for (const o of object.__COMMENTS__.o) {
-            Object.defineProperty(object, o + "__commentBefore__", { enumerable: false, writable: true});
-            Object.defineProperty(object, o + "__commentAfter__", { enumerable: false, writable: true});
+            Object.defineProperty(object, o + "__comment__", { enumerable: false, writable: true});
             const commentsBefore = (object.__COMMENTS__.c[o][0] as string).split("\n");
             const commentsBeforeFixed: string[] = [];
             for (const comment of commentsBefore) {
                 commentsBeforeFixed.push(comment.trim());
             }
-            object[o + "__commentBefore__"] = commentsBeforeFixed.join("\n");
-            const commentsAfter = (object.__COMMENTS__.c[o][1] as string).split("\n");
-            const commentsAfterFixed: string[] = [];
-            for (const comment of commentsAfter) {
-                commentsAfterFixed.push(comment.trim());
-            }
-            object[o + "__commentAfter__"] = commentsAfterFixed.join("\n");
+            object[o + "__comment__"] = commentsBeforeFixed.join("\n");
         }
         object.__COMMENTS__ = undefined;
     }
@@ -48,8 +41,8 @@ const getComments = (object: any, level = 1) => {
     for (const [name, value] of Object.entries(object)) {
         if (!object.__COMMENTS__.o.includes(name)) { object.__COMMENTS__.o.push(name); }
         if (!object.__COMMENTS__.c[name]) { object.__COMMENTS__.c[name] = ["", ""]; }
-        if (object[name + "__commentBefore__"]) {
-            const lines = object[name + "__commentBefore__"].split("\n");
+        if (object[name + "__comment__"]) {
+            const lines = object[name + "__comment__"].split("\n");
             let comment: string|undefined;
             // Check that every line of comment begins with a correct character
             for (let line of lines as string[]) {
@@ -64,23 +57,6 @@ const getComments = (object: any, level = 1) => {
                 }
             }
             object.__COMMENTS__.c[name][0] = comment;
-        }
-        if (object[name + "__commentAfter__"]) {
-            const lines = object[name + "__commentAfter__"].split("\n");
-            let comment: string|undefined;
-            // Check that every line of comment begins with a correct character
-            for (let line of lines as string[]) {
-                line = line.trim() || "";
-                if (!regex.test(line)) {
-                    line = "# " + line;
-                }
-                if (comment === undefined) {
-                    comment = "  ".repeat(level) + line;
-                } else {
-                    comment += "\n" + "  ".repeat(level) + line;
-                }
-            }
-            object.__COMMENTS__.c[name][1] = comment;
         }
         if (Array.isArray(value)) {
             if (!(value as any).__COMMENTS__) {

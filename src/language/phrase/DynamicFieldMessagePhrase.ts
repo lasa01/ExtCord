@@ -75,10 +75,10 @@ export class DynamicFieldMessagePhrase<T extends ISimpleMap, U extends ISimpleMa
                 this.templatesField[language].inline = parsed.embed.dynamicFields.inline;
             }
         }
-        if (!parsed.embed.dynamicFields__commentBefore__ ||
-            typeof parsed.embed.dynamicFields__commentBefore__ !== "string") {
-            Object.defineProperty(parsed.embed, "dynamicFields__commentBefore__", { enumerable: false, writable: true});
-            parsed.embed.dynamicFields__commentBefore__ = this.fieldDescription;
+        if (!parsed.embed.dynamicFields__comment__ ||
+            typeof parsed.embed.dynamicFields__comment__ !== "string") {
+            Object.defineProperty(parsed.embed, "dynamicFields__comment__", { enumerable: false, writable: true});
+            parsed.embed.dynamicFields__comment__ = this.fieldDescription;
         }
         return [parsed, comment];
     }

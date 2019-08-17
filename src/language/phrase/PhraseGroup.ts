@@ -47,9 +47,9 @@ export class PhraseGroup extends Phrase {
         for (const [name, phrase] of this.phrases) {
             const [parsed, comment] = phrase.parse(language, data[name]);
             data[name] = parsed;
-            if (!data[name + "__commentBefore__"]) {
-                Object.defineProperty(data, name + "__commentBefore__", { enumerable: false, writable: true});
-                data[name + "__commentBefore__"] = comment;
+            if (!data[name + "__comment__"]) {
+                Object.defineProperty(data, name + "__comment__", { enumerable: false, writable: true});
+                data[name + "__comment__"] = comment;
             }
         }
         return [data, this.description];

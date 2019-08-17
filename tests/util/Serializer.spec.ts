@@ -44,32 +44,32 @@ describe("Serializer", () => {
             // not here
             value: 124,
         };
-        Object.defineProperty(obj, "deep__commentBefore__", {
+        Object.defineProperty(obj, "deep__comment__", {
             enumerable: false, value: "no start char", writable: true,
         });
-        Object.defineProperty(obj, "name__commentBefore__", {
+        Object.defineProperty(obj, "name__comment__", {
             enumerable: false, value: "# start char\n# and here", writable: true,
         });
-        Object.defineProperty(obj, "value__commentBefore__", {
+        Object.defineProperty(obj, "value__comment__", {
             enumerable: false, value: "# start char\nnot here", writable: true,
         });
-        Object.defineProperty(obj.deep, "deeper__commentBefore__", {
+        Object.defineProperty(obj.deep, "deeper__comment__", {
             enumerable: false, value: "# deep", writable: true,
         });
-        Object.defineProperty(obj.deep.deeper, "value__commentBefore__", {
+        Object.defineProperty(obj.deep.deeper, "value__comment__", {
             enumerable: false, value: "# deeper", writable: true,
         });
-        Object.defineProperty(obj.deep.deeper, "name__commentBefore__", {
+        Object.defineProperty(obj.deep.deeper, "name__comment__", {
             enumerable: false, value: "deeper no start char\nnor here", writable: true,
         });
 
         const expected = {
-            "deep.deeper.name__commentBefore__.": "# deeper no start char\n# nor here",
-            "deep.deeper.value__commentBefore__.": "# deeper",
-            "deep.deeper__commentBefore__": "# deep",
-            "deep__commentBefore__": "# no start char",
-            "name__commentBefore__": "# start char\n# and here",
-            "value__commentBefore__": "# start char\n# not here",
+            "deep.deeper.name__comment__.": "# deeper no start char\n# nor here",
+            "deep.deeper.value__comment__.": "# deeper",
+            "deep.deeper__comment__": "# deep",
+            "deep__comment__": "# no start char",
+            "name__comment__": "# start char\n# and here",
+            "value__comment__": "# start char\n# not here",
         };
 
         expect(Serializer.parse(Serializer.stringify(obj))).to.nested.include(expected).and.to.deep.equal(obj);
