@@ -1,4 +1,5 @@
 import { DEFAULT_LANGUAGE } from "../language/Languages";
+import { IListMap, ListPhrase } from "../language/phrase/ListPhrase";
 import { Phrase } from "../language/phrase/Phrase";
 import { PhraseGroup } from "../language/phrase/PhraseGroup";
 import { ISimpleMap, SimplePhrase } from "../language/phrase/SimplePhrase";
@@ -15,6 +16,8 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
     public localizedName: SimplePhrase;
     public description: string;
     public localizedDescription: SimplePhrase;
+    public aliases: string[];
+    public localizedAliases: ListPhrase;
     public from?: Module;
     public author: string;
     public arguments: T;
@@ -37,6 +40,10 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
         this.localizedDescription = new SimplePhrase({
             name: "description",
         }, info.description);
+        this.aliases = Array.isArray(info.aliases) ? info.aliases : info.aliases ? info.aliases[DEFAULT_LANGUAGE] : [];
+        this.localizedAliases = new ListPhrase({
+            name: "aliases",
+        }, info.aliases);
         if (info.author instanceof Module) {
             this.from = info.author;
             this.author = this.from.author;
@@ -49,9 +56,13 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
         this.customPhraseGroup = new PhraseGroup({
             name: "phrases",
         });
-        this.phraseGroup = new PhraseGroup({
-            name: this.name,
-        }, [ this.localizedDescription, this.localizedName, this.argPhraseGroup, this.customPhraseGroup ]);
+        this.phraseGroup = new PhraseGroup({ name: this.name }, [
+            this.localizedDescription,
+            this.localizedName,
+            this.localizedAliases,
+            this.argPhraseGroup,
+            this.customPhraseGroup,
+        ]);
         this.arguments = args;
         this.minArguments = 0;
         for (const [index, argument] of this.arguments.entries()) {
@@ -221,6 +232,14 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
         this.shortUsageCache.set(language, usage);
         return usage;
     }
+
+    public getAliases(language: string): { [key: string]: Command<any> } {
+        const aliases: { [key: string]: Command<any> } = {};
+        for (const alias of this.localizedAliases.get(language)) {
+            aliases[alias] = this;
+        }
+        return aliases;
+    }
 }
 
 export interface IExecutionContext<T extends ReadonlyArray<Argument<any, boolean>>> extends ICommandContext {
@@ -232,6 +251,7 @@ export interface ICommandInfo {
     name: string | ISimpleMap;
     description: string | ISimpleMap;
     author: string | Module;
+    aliases?: string[] | IListMap;
 }
 
 type ArgumentsParseReturns<T extends ReadonlyArray<Argument<any, boolean>>> = {

@@ -1,4 +1,5 @@
 import { ConfigEntryGroup } from "../config/entry/ConfigEntryGroup";
+import { DEFAULT_LANGUAGE } from "../language/Languages";
 import { IPermissionInfo, Permission } from "./Permission";
 import { Permissions } from "./Permissions";
 
@@ -13,7 +14,7 @@ export class PermissionGroup extends Permission {
             }
         }
         super(info, new ConfigEntryGroup({
-            description: info.description,
+            description: typeof info.description === "object" ? info.description[DEFAULT_LANGUAGE] : info.description,
             name: info.name,
         }, configs));
         this.children = new Map();

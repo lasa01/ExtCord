@@ -110,17 +110,19 @@ const languageSetCommand = new SimpleCommand(
 
 const languageShowCommand = new SimpleCommand(
     {
+        aliases: ["s"],
         author: "extcord",
         description: "Show the language",
         name: "show",
     },
-    [],
+    [] as const,
     async (context) => context.respond(languageShowPhrase, { language: context.language }),
     true,
 );
 
 const languageListCommand: SimpleCommand<[]> = new SimpleCommand(
     {
+        aliases: ["l"],
         author: "extcord",
         description: "List the available language",
         name: "list",
@@ -139,6 +141,7 @@ const languageListCommand: SimpleCommand<[]> = new SimpleCommand(
 
 export const languageCommand = new CommandGroup(
     {
+        aliases: ["lang"],
         author: "extcord",
         description: "show or update the language",
         name: "language",

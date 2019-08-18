@@ -1,4 +1,4 @@
-import { Message } from "discord.js";
+import { Guild, Message } from "discord.js";
 import { EventEmitter } from "events";
 import { readdir } from "fs-extra";
 import { resolve } from "path";
@@ -40,6 +40,8 @@ export class Commands extends EventEmitter {
     public prefixConfigEntry?: StringGuildConfigEntry;
     private bot: Bot;
     private commands: Map<string, Command<any>>;
+    private languageCommandsMap: Map<string, Map<string, Command<any>>>;
+    private guildCommandsMap: Map<string, Map<string, Command<any>>>;
     private configEntry?: ConfigEntryGroup;
     private permissions: Permission[];
     private permission?: Permission;
@@ -53,6 +55,8 @@ export class Commands extends EventEmitter {
         super();
         this.bot = bot;
         this.commands = new Map();
+        this.guildCommandsMap = new Map();
+        this.languageCommandsMap = new Map();
         this.permissions = [];
         this.commandPhrases = [];
     }
@@ -95,11 +99,11 @@ export class Commands extends EventEmitter {
                     await message.channel.send(content, options);
                 }
             };
-        if (!command || !this.commands.has(command)) {
+        const commandInstance = this.getCommandInstance(message.guild, language, command);
+        if (!commandInstance) {
             await respond(CommandPhrases.invalidCommand, { command });
             return;
         }
-        const commandInstance = this.commands.get(command)!;
         const passed = text.replace(command, "").trim();
         const context = {
             bot: this.bot,
@@ -115,6 +119,31 @@ export class Commands extends EventEmitter {
         Logger.debug(`Executing command ${command}`);
         this.emit("command", commandInstance, context);
         await commandInstance.command(context);
+    }
+
+    public getCommandInstance(guild: Guild, language: string, command: string) {
+        if (!this.guildCommandsMap.has(guild.id)) {
+            this.createGuildCommandsMap(guild, language);
+        }
+        return this.guildCommandsMap.get(guild.id)!.get(command);
+    }
+
+    public createGuildCommandsMap(guild: Guild, language: string) {
+        if (!this.languageCommandsMap.has(language)) {
+            this.createLanguageCommmandsMap(language);
+        }
+        this.guildCommandsMap.set(guild.id, new Map(this.languageCommandsMap.get(language)!));
+    }
+
+    public createLanguageCommmandsMap(language: string) {
+        const map: Map<string, Command<any>> = new Map();
+        for (const [, command] of this.commands) {
+            map.set(command.localizedName.get(language), command);
+            for (const [alias, aliasCommand] of Object.entries(command.getAliases(language))) {
+                map.set(alias, aliasCommand);
+            }
+        }
+        this.languageCommandsMap.set(language, map);
     }
 
     public registerCommand(command: Command<any>) {

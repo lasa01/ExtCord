@@ -1,3 +1,5 @@
+import { Guild } from "discord.js";
+import { DEFAULT_LANGUAGE } from "../language/Languages";
 import { Phrase } from "../language/phrase/Phrase";
 import { PhraseGroup } from "../language/phrase/PhraseGroup";
 import { PermissionGroup } from "../permissions/PermissionGroup";
@@ -10,12 +12,14 @@ export class CommandGroup
     public children: Map<string, Command<any>>;
     public defaultSubcommand?: string;
     protected subPhraseGroup: PhraseGroup;
+    private languageCommandsMap: Map<string, Map<string, Command<any>>>;
+    private guildCommandsMap: Map<string, Map<string, Command<any>>>;
 
     constructor(info: ICommandInfo, defaultSubcommand?: string, children?: ReadonlyArray<Command<any>>) {
         super(info, [ BuiltInArguments.subcommand, BuiltInArguments.subcommandArguments ],
             new PermissionGroup({
                 description: `Gives the permission for the command group ${info.name}`,
-                name: info.name,
+                name: typeof info.name === "string" ? info.name : info.name[DEFAULT_LANGUAGE],
             }));
         this.children = new Map();
         this.subPhraseGroup = new PhraseGroup({
@@ -35,6 +39,8 @@ export class CommandGroup
                 throw new Error(`The default subcommand has required arguments`);
             }
         }
+        this.languageCommandsMap = new Map();
+        this.guildCommandsMap = new Map();
     }
 
     public addSubcommands(...subcommands: Array<Command<any>>) {
@@ -72,11 +78,12 @@ export class CommandGroup
         context: IExecutionContext<[typeof BuiltInArguments.subcommand, typeof BuiltInArguments.subcommandArguments]>) {
         const subcommand = context.arguments[0] || this.defaultSubcommand;
         if (subcommand) {
-            if (!this.children.has(subcommand)) {
+            const subcommandInstance = this.getCommandInstance(context.message.guild, context.language, subcommand);
+            if (!subcommandInstance) {
                 await context.respond(CommandPhrases.invalidSubcommand, { subcommand });
                 return;
             }
-            await this.children.get(subcommand)!.command({
+            await subcommandInstance.command({
                 ...context,
                 command: context.command + " " + subcommand,
                 passed: context.arguments[1] || "",
@@ -88,5 +95,30 @@ export class CommandGroup
                 ),
             );
         }
+    }
+
+    public getCommandInstance(guild: Guild, language: string, command: string) {
+        if (!this.guildCommandsMap.has(guild.id)) {
+            this.createGuildCommandsMap(guild, language);
+        }
+        return this.guildCommandsMap.get(guild.id)!.get(command);
+    }
+
+    public createGuildCommandsMap(guild: Guild, language: string) {
+        if (!this.languageCommandsMap.has(language)) {
+            this.createLanguageCommmandsMap(language);
+        }
+        this.guildCommandsMap.set(guild.id, new Map(this.languageCommandsMap.get(language)!));
+    }
+
+    public createLanguageCommmandsMap(language: string) {
+        const map: Map<string, Command<any>> = new Map();
+        for (const [, command] of this.children) {
+            map.set(command.localizedName.get(language), command);
+            for (const [alias, aliasCommand] of Object.entries(command.getAliases(language))) {
+                map.set(alias, aliasCommand);
+            }
+        }
+        this.languageCommandsMap.set(language, map);
     }
 }
