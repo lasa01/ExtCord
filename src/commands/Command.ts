@@ -1,3 +1,4 @@
+import { DEFAULT_LANGUAGE } from "../language/Languages";
 import { Phrase } from "../language/phrase/Phrase";
 import { PhraseGroup } from "../language/phrase/PhraseGroup";
 import { ISimpleMap, SimplePhrase } from "../language/phrase/SimplePhrase";
@@ -28,14 +29,14 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
     private shortUsageCache: Map<string, string>;
 
     constructor(info: ICommandInfo, args: T, permission: boolean|Permission = false) {
-        this.name = info.name;
+        this.name = typeof info.name === "string" ? info.name : info.name[DEFAULT_LANGUAGE];
         this.localizedName = new SimplePhrase({
             name: "name",
-        }, this.name);
-        this.description = info.description;
+        }, info.name);
+        this.description = typeof info.description === "string" ? info.description : info.description[DEFAULT_LANGUAGE];
         this.localizedDescription = new SimplePhrase({
             name: "description",
-        }, this.description);
+        }, info.description);
         if (info.author instanceof Module) {
             this.from = info.author;
             this.author = this.from.author;
@@ -66,7 +67,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
             argument.registerSelf(this);
         }
         this.defaultPermission = permission instanceof Permission ? permission : new Permission({
-            name: info.name,
+            name: this.name,
         }, permission);
         this.usageCache = new Map();
         this.shortUsageCache = new Map();
@@ -228,8 +229,8 @@ export interface IExecutionContext<T extends ReadonlyArray<Argument<any, boolean
 }
 
 export interface ICommandInfo {
-    name: string;
-    description: string;
+    name: string | ISimpleMap;
+    description: string | ISimpleMap;
     author: string | Module;
 }
 

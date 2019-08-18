@@ -1,5 +1,6 @@
+import { DEFAULT_LANGUAGE } from "../../language/Languages";
 import { PhraseGroup } from "../../language/phrase/PhraseGroup";
-import { SimplePhrase } from "../../language/phrase/SimplePhrase";
+import { ISimpleMap, SimplePhrase } from "../../language/phrase/SimplePhrase";
 import { Command, ILinkedErrorResponse } from "../Command";
 import { CommandPhrases } from "../CommandPhrases";
 import { ICommandContext } from "../Commands";
@@ -16,14 +17,14 @@ export abstract class Argument<T, U extends boolean> {
     private usageCache: Map<string, string>;
 
     constructor(info: IArgumentInfo, optional: U, allowCombining = false) {
-        this.name = info.name;
+        this.name = typeof info.name === "string" ? info.name : info.name[DEFAULT_LANGUAGE];
         this.localizedName = new SimplePhrase({
             name: "name",
-        }, this.name);
-        this.description = info.description;
+        }, info.name);
+        this.description = typeof info.description === "string" ? info.description : info.description[DEFAULT_LANGUAGE];
         this.localizedDescription = new SimplePhrase({
             name: "description",
-        }, this.description);
+        }, info.description);
         this.phraseGroup = new PhraseGroup({
             name: this.name,
         }, [ this.localizedDescription, this.localizedName ]);
@@ -67,6 +68,6 @@ export abstract class Argument<T, U extends boolean> {
 }
 
 export interface IArgumentInfo {
-    name: string;
-    description: string;
+    name: string | ISimpleMap;
+    description: string | ISimpleMap;
 }

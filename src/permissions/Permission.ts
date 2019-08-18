@@ -5,9 +5,10 @@ import { BooleanConfigEntry } from "../config/entry/BooleanConfigEntry";
 import { ConfigEntry } from "../config/entry/ConfigEntry";
 import { RoleEntity } from "../database/entity/RoleEntity";
 import { RoleRepository } from "../database/repo/RoleRepository";
+import { DEFAULT_LANGUAGE } from "../language/Languages";
 import { Phrase } from "../language/phrase/Phrase";
 import { PhraseGroup } from "../language/phrase/PhraseGroup";
-import { SimplePhrase } from "../language/phrase/SimplePhrase";
+import { ISimpleMap, SimplePhrase } from "../language/phrase/SimplePhrase";
 import { Logger } from "../util/Logger";
 import { MemberPermissionEntity } from "./database/MemberPermissionEntity";
 import { RolePermissionEntity } from "./database/RolePermissionEntity";
@@ -32,16 +33,16 @@ export class Permission {
 
     constructor(info: IPermissionInfo, defaultPermission: boolean|ConfigEntry) {
         this.name = info.name;
-        this.description = info.description;
-        if (this.description) {
+        this.description = typeof info.description === "object" ? info.description[DEFAULT_LANGUAGE] : info.description;
+        if (info.description) {
             this.localizedDescription = new SimplePhrase({
                 name: "description",
-            }, this.description);
+            }, info.description);
         }
         this.subPhrases = [];
         this.fullName = info.name;
         this.defaultEntry = defaultPermission instanceof ConfigEntry ? defaultPermission : new BooleanConfigEntry({
-            description: info.description,
+            description: this.description,
             name: info.name,
         }, defaultPermission);
         if (this.localizedDescription) {
@@ -215,5 +216,5 @@ export class Permission {
 
 export interface IPermissionInfo {
     name: string;
-    description?: string;
+    description?: string | ISimpleMap;
 }
