@@ -25,7 +25,7 @@ export class SimplePhrase extends Phrase {
         return this.templates[language];
     }
 
-    public parse(language: string, data: object): [string, string?] {
+    public parse(language: string, data: any): [string, string?] {
         if (typeof data === "string") {
             this.templates[language] = data;
             return [data, this.description];
