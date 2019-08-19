@@ -3,6 +3,7 @@ import { EventEmitter } from "events";
 import { readdir } from "fs-extra";
 import { resolve } from "path";
 
+import { Repository } from "typeorm";
 import { Bot } from "../Bot";
 import { ConfigEntryGroup } from "../config/entry/ConfigEntryGroup";
 import { StringGuildConfigEntry } from "../config/entry/guild/StringGuildConfigEntry";
@@ -18,6 +19,7 @@ import { Logger } from "../util/Logger";
 import { BuiltInArguments } from "./arguments/BuiltinArguments";
 import { Command } from "./Command";
 import { CommandPhrases } from "./CommandPhrases";
+import { GuildAliasEntity } from "./database/GuildAliasEntity";
 
 // Event definitions
 // tslint:disable-next-line:interface-name
@@ -50,6 +52,7 @@ export class Commands extends EventEmitter {
     private argumentsGroup?: PhraseGroup;
     private phrasesGroup?: PhraseGroup;
     private phraseGroup?: PhraseGroup;
+    private aliasRepo?: Repository<GuildAliasEntity>;
 
     constructor(bot: Bot) {
         super();
@@ -99,7 +102,7 @@ export class Commands extends EventEmitter {
                     await message.channel.send(content, options);
                 }
             };
-        const commandInstance = this.getCommandInstance(message.guild, language, command);
+        const commandInstance = await this.getCommandInstance(message.guild, language, command);
         if (!commandInstance) {
             await respond(CommandPhrases.invalidCommand, { command });
             return;
@@ -121,18 +124,31 @@ export class Commands extends EventEmitter {
         await commandInstance.command(context);
     }
 
-    public getCommandInstance(guild: Guild, language: string, command: string) {
+    public async getCommandInstance(guild: Guild, language: string, command: string) {
         if (!this.guildCommandsMap.has(guild.id)) {
-            this.createGuildCommandsMap(guild, language);
+            await this.createGuildCommandsMap(guild, language);
         }
         return this.guildCommandsMap.get(guild.id)!.get(command);
     }
 
-    public createGuildCommandsMap(guild: Guild, language: string) {
+    public async createGuildCommandsMap(guild: Guild, language: string) {
         if (!this.languageCommandsMap.has(language)) {
             this.createLanguageCommmandsMap(language);
         }
-        this.guildCommandsMap.set(guild.id, new Map(this.languageCommandsMap.get(language)!));
+        const map = new Map(this.languageCommandsMap.get(language)!);
+        this.ensureRepo();
+        const aliases = await this.aliasRepo!.find({ where: {
+            guildId: guild.id,
+        } });
+        for (const alias of aliases) {
+            const command = this.commands.get(alias.command);
+            if (!command) {
+                Logger.warn(`Alias "${alias.alias}" in guild ${guild.id} refers to invalid command "${alias.command}"`);
+                continue;
+            }
+            map.set(alias.alias, command);
+        }
+        this.guildCommandsMap.set(guild.id, map);
     }
 
     public createLanguageCommmandsMap(language: string) {
@@ -144,6 +160,50 @@ export class Commands extends EventEmitter {
             }
         }
         this.languageCommandsMap.set(language, map);
+    }
+
+    public async setAlias(guild: Guild, language: string, alias: string, command: Command<any>) {
+        this.ensureRepo();
+        let entity = await this.aliasRepo!.findOne({
+            where: {
+                alias,
+                guildId: guild.id,
+            },
+        });
+        if (!entity) {
+            const guildEntity = await this.bot.database.repos.guild!.getEntity(guild);
+            entity = await this.aliasRepo!.create({
+                alias,
+                command: command.name,
+                guild: guildEntity,
+            });
+        } else {
+            entity.command = command.name;
+        }
+        await this.aliasRepo!.save(entity);
+        if (!this.guildCommandsMap.has(guild.id)) {
+            await this.createGuildCommandsMap(guild, language);
+        } else {
+            this.guildCommandsMap.get(guild.id)!.set(alias, command);
+        }
+    }
+
+    public async removeAlias(guild: Guild, language: string, alias: string) {
+        this.ensureRepo();
+        const entity = await this.aliasRepo!.findOne({
+            where: {
+                alias,
+                guildId: guild.id,
+            },
+        });
+        if (entity) {
+            await this.aliasRepo!.remove(entity);
+        }
+        if (!this.guildCommandsMap.has(guild.id)) {
+            await this.createGuildCommandsMap(guild, language);
+        } else {
+            this.guildCommandsMap.get(guild.id)!.delete(alias);
+        }
     }
 
     public registerCommand(command: Command<any>) {
@@ -213,6 +273,10 @@ export class Commands extends EventEmitter {
         this.bot.languages.registerPhrase(this.phraseGroup);
     }
 
+    public registerDatabase() {
+        this.bot.database.registerEntity(GuildAliasEntity);
+    }
+
     public async registerCommands() {
         const commands = await readdir(resolve(__dirname, "builtin"));
         for (const filename of commands) {
@@ -232,6 +296,12 @@ export class Commands extends EventEmitter {
 
     public getStatus() {
         return `${this.commands.size} commands loaded: ${Array.from(this.commands.keys()).join(", ")}`;
+    }
+
+    private ensureRepo() {
+        if (!this.aliasRepo) {
+            this.aliasRepo = this.bot.database.connection!.getRepository(GuildAliasEntity);
+        }
     }
 }
 
