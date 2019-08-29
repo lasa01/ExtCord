@@ -101,6 +101,20 @@ export const CommandPhrases = {
             supplied: "The argument that was supplied",
         },
     ),
+    invalidChannelArgument: new SimplePhrase(
+        {
+            description: "This is shown when a supplied argument is not a valid channel",
+            name: "invalidChannelArgument",
+        },
+        "The argument does not mention a channel.",
+    ),
+    invalidChannelMentionArgument: new SimplePhrase(
+        {
+            description: "This is shown when a supplied argument mentions an invalid channel",
+            name: "invalidChannelMentionArgument",
+        },
+        "The channel mentioned doesn't exist.",
+    ),
     invalidCommand: new MessagePhrase(
         {
             description: "This is shown when an invalid command is called",
@@ -123,12 +137,40 @@ export const CommandPhrases = {
         },
         "The argument is not a valid integer.",
     ),
+    invalidMemberArgument: new SimplePhrase(
+        {
+            description: "This is shown when a supplied argument is not a valid member",
+            name: "invalidMemberArgument",
+        },
+        "The argument does not mention a member.",
+    ),
+    invalidMemberMentionArgument: new SimplePhrase(
+        {
+            description: "This is shown when a supplied argument mentions an invalid member",
+            name: "invalidMemberMentionArgument",
+        },
+        "The member mentioned doesn't exist.",
+    ),
     invalidNumberArgument: new SimplePhrase(
         {
             description: "This is shown when a supplied float argument is not a valid float",
             name: "invalidNumberArgument",
         },
         "The argument is not a valid number.",
+    ),
+    invalidRoleArgument: new SimplePhrase(
+        {
+            description: "This is shown when a supplied argument is not a valid role",
+            name: "invalidRoleArgument",
+        },
+        "The argument does not mention a role.",
+    ),
+    invalidRoleMentionArgument: new SimplePhrase(
+        {
+            description: "This is shown when a supplied argument mentions an invalid role",
+            name: "invalidRoleMentionArgument",
+        },
+        "The role mentioned doesn't exist.",
     ),
     invalidSubcommand: new MessagePhrase(
         {
@@ -144,6 +186,27 @@ export const CommandPhrases = {
         {
             subcommand: "The subcommand that is called",
         },
+    ),
+    invalidTextChannelArgument: new SimplePhrase(
+        {
+            description: "This is shown when a supplied argument is not a text channel",
+            name: "invalidTextChannelArgument",
+        },
+        "The channel supplied is not a text channel.",
+    ),
+    invalidUserArgument: new SimplePhrase(
+        {
+            description: "This is shown when a supplied argument is not a valid user",
+            name: "invalidUserArgument",
+        },
+        "The argument does not mention an user.",
+    ),
+    invalidUserMentionArgument: new SimplePhrase(
+        {
+            description: "This is shown when a supplied argument mentions an invalid user",
+            name: "invalidUserMentionArgument",
+        },
+        "The user mentioned doesn't exist.",
     ),
     noPermission: new MessagePhrase(
         {
