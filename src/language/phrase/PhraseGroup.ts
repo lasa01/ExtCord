@@ -1,3 +1,4 @@
+import { Serializer } from "../../util/Serializer";
 import { IPhraseInfo, Phrase } from "./Phrase";
 
 export class PhraseGroup extends Phrase {
@@ -47,9 +48,8 @@ export class PhraseGroup extends Phrase {
         for (const [name, phrase] of this.phrases) {
             const [parsed, comment] = phrase.parse(language, data[name]);
             data[name] = parsed;
-            if (!data[name + "__comment__"]) {
-                Object.defineProperty(data, name + "__comment__", { enumerable: false, writable: true});
-                data[name + "__comment__"] = comment;
+            if (comment) {
+                Serializer.setComment(data, name, comment);
             }
         }
         return [data, this.description];

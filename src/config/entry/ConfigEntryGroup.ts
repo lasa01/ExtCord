@@ -1,3 +1,4 @@
+import { Serializer } from "../../util/Serializer";
 import { ConfigEntry, IEntryInfo } from "./ConfigEntry";
 
 export class ConfigEntryGroup extends ConfigEntry {
@@ -72,9 +73,8 @@ export class ConfigEntryGroup extends ConfigEntry {
         for (const [name, entry] of this.entries) {
             const [parsed, comment] = entry.parse(data[name]);
             data[name] = parsed;
-            if (!data[name + "__comment__"]) {
-                Object.defineProperty(data, name + "__comment__", { enumerable: false, writable: true});
-                data[name + "__comment__"] = comment;
+            if (comment) {
+                Serializer.setComment(data, name, comment);
             }
         }
         this.value = data;

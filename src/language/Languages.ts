@@ -129,9 +129,8 @@ export class Languages extends EventEmitter {
         for (const [, phrase] of this.phrases) {
             const [data, comment] = phrase.parse(id, parsed[phrase.name]);
             parsed[phrase.name] = data;
-            if (!parsed[phrase.name + "__comment__"] && comment) {
-                Object.defineProperty(parsed, phrase.name + "__comment__", { enumerable: false, writable: true});
-                parsed[phrase.name + "__comment__"] = comment;
+            if (comment) {
+                Serializer.setComment(parsed, phrase.name, comment);
             }
         }
         return Serializer.stringify(parsed);

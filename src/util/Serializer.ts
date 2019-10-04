@@ -92,4 +92,13 @@ export const Serializer = {
         getComments(data);
         return Hjson.stringify(data, { keepWsc: true });
     },
+    setComment(data: any, name: string, comment: string) {
+        if (!data[name + "__comment__"] && comment) {
+            this.forceComment(data, name, comment);
+        }
+    },
+    forceComment(data: any, name: string, comment: string) {
+        Object.defineProperty(data, name + "__comment__", { enumerable: false, writable: true });
+        data[name + "__comment__"] = comment;
+    },
 };
