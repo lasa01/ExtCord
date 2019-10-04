@@ -72,7 +72,7 @@ export class Languages extends EventEmitter {
             await this.writeLoadDefault(directory);
         }
         for (const filename of dirContent) {
-            const path = resolve(this.languageDirConfigEntry!.get(), filename);
+            const path = resolve(directory, filename);
             await this.loadFile(path);
         }
         if (!this.defaultLoaded) {
