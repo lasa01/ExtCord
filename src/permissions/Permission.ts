@@ -64,10 +64,12 @@ export class Permission {
 
     public registerSelf(permissions: Permissions) {
         this.permissions = permissions;
+        this.updateFullName();
     }
 
     public unregisterSelf() {
         this.permissions = undefined;
+        this.fullName = this.name;
     }
 
     public registerPhrase(phrase: Phrase) {
