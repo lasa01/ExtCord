@@ -106,6 +106,7 @@ const languageSetCommand = new SimpleCommand(
         await context.respond(languageSetPhrase, { language });
     },
     false,
+    ["admin"],
 );
 
 const languageShowCommand = new SimpleCommand(

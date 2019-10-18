@@ -70,8 +70,9 @@ modules
 # databases
 *.sqlite
 
-# language files
+# language, privilege files
 languages
+privileges
 
 # docs for now
 docs

@@ -1,4 +1,5 @@
 import { Guild } from "discord.js";
+import { Bot } from "../Bot";
 import { DEFAULT_LANGUAGE } from "../language/Languages";
 import { Phrase } from "../language/phrase/Phrase";
 import { PhraseGroup } from "../language/phrase/PhraseGroup";
@@ -41,6 +42,13 @@ export class CommandGroup
         }
         this.languageCommandsMap = new Map();
         this.guildCommandsMap = new Map();
+    }
+
+    public registerSelf(bot: Bot) {
+        super.registerSelf(bot);
+        for (const [, child] of this.children) {
+            child.registerSelf(bot);
+        }
     }
 
     public addSubcommands(...subcommands: Array<Command<any>>) {

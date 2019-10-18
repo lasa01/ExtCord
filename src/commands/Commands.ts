@@ -211,6 +211,7 @@ export class Commands extends EventEmitter {
             throw new Error(`A command is already registered by the name ${command.name}`);
         }
         this.registerPermission(command.getPermission());
+        command.registerSelf(this.bot);
         this.commands.set(command.name, command);
     }
 

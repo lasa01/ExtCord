@@ -1,3 +1,4 @@
+import { Bot } from "../Bot";
 import { DEFAULT_LANGUAGE } from "../language/Languages";
 import { IListMap, ListPhrase } from "../language/phrase/ListPhrase";
 import { Phrase } from "../language/phrase/Phrase";
@@ -6,6 +7,7 @@ import { ISimpleMap, SimplePhrase } from "../language/phrase/SimplePhrase";
 import { TemplatePhrase } from "../language/phrase/TemplatePhrase";
 import { Module } from "../modules/Module";
 import { Permission } from "../permissions/Permission";
+import { PermissionPrivilege } from "../permissions/PermissionPrivilege";
 import { Logger } from "../util/Logger";
 import { Argument } from "./arguments/Argument";
 import { CommandPhrases } from "./CommandPhrases";
@@ -28,10 +30,12 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
     protected defaultPermission: Permission;
     protected argPhraseGroup: PhraseGroup;
     protected customPhraseGroup: PhraseGroup;
+    private allowedPrivileges: string[];
     private usageCache: Map<string, string>;
     private shortUsageCache: Map<string, string>;
 
-    constructor(info: ICommandInfo, args: T, permission: boolean|Permission = false) {
+    constructor(info: ICommandInfo, args: T, permission: boolean|Permission = false,
+                allowed?: Array<string|PermissionPrivilege>) {
         this.name = typeof info.name === "string" ? info.name : info.name[DEFAULT_LANGUAGE];
         this.localizedName = new SimplePhrase({
             name: "name",
@@ -80,6 +84,17 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
         this.defaultPermission = permission instanceof Permission ? permission : new Permission({
             name: this.name,
         }, permission);
+        this.allowedPrivileges = [];
+        if (allowed) {
+            for (const privilege of allowed) {
+                if (typeof privilege === "string") {
+                    // Process privilege later
+                    this.allowedPrivileges.push(privilege);
+                } else {
+                    privilege.allowPermissions(this.defaultPermission);
+                }
+            }
+        }
         this.usageCache = new Map();
         this.shortUsageCache = new Map();
     }
@@ -94,6 +109,17 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
 
     public unregisterParent() {
         this.parent = undefined;
+    }
+
+    public registerSelf(bot: Bot) {
+        for (const name of this.allowedPrivileges) {
+            const privilege = bot.permissions.getPrivilege(name);
+            if (privilege) {
+                privilege.allowPermissions(this.defaultPermission);
+            } else {
+                Logger.warn(`Command specified a nonexistent privilege ${name}`);
+            }
+        }
     }
 
     public addPhrases(...phrases: Phrase[]) {

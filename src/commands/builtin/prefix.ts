@@ -67,6 +67,7 @@ const prefixSetCommand = new SimpleCommand(
         await context.respond(prefixSetPhrase, { prefix });
     },
     false,
+    ["admin"],
 );
 
 export const prefixCommand = new CommandGroup(

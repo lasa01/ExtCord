@@ -88,6 +88,7 @@ const aliasSetCommand = new SimpleCommand(
         await context.respond(aliasSetPhrase, { alias: context.arguments[0], command: context.arguments[1] });
     },
     false,
+    ["admin"],
 );
 
 const aliasRemoveCommand = new SimpleCommand(
@@ -111,6 +112,7 @@ const aliasRemoveCommand = new SimpleCommand(
         await context.respond(aliasRemovePhrase, { alias });
     },
     false,
+    ["admin"],
 );
 
 export const aliasCommand = new CommandGroup(
