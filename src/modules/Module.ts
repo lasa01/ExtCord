@@ -3,7 +3,7 @@ import { Command } from "../commands/Command";
 import { ConfigEntry } from "../config/entry/ConfigEntry";
 import { ConfigEntryGroup } from "../config/entry/ConfigEntryGroup";
 import { Phrase } from "../language/phrase/Phrase";
-import { PhraseGroup } from "../language/phrase/Phrasegroup";
+import { PhraseGroup } from "../language/phrase/PhraseGroup";
 import { Permission } from "../permissions/Permission";
 import { PermissionGroup } from "../permissions/PermissionGroup";
 
