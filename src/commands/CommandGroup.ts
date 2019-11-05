@@ -84,7 +84,7 @@ export class CommandGroup
 
     public async execute(
         context: IExecutionContext<[typeof BuiltInArguments.subcommand, typeof BuiltInArguments.subcommandArguments]>) {
-        const subcommand = context.arguments[0] || this.defaultSubcommand;
+        const subcommand = context.arguments[0] ?? this.defaultSubcommand;
         if (subcommand) {
             const subcommandInstance = this.getCommandInstance(context.message.guild, context.language, subcommand);
             if (!subcommandInstance) {
@@ -94,7 +94,7 @@ export class CommandGroup
             await subcommandInstance.command({
                 ...context,
                 command: context.command + " " + subcommand,
-                passed: context.arguments[1] || "",
+                passed: context.arguments[1] ?? "",
             });
         } else {
             await context.respond(CommandPhrases.commandGroupUsage, {},

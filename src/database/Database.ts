@@ -52,7 +52,7 @@ export class Database extends EventEmitter {
     }
 
     public async connect(options?: ConnectionOptions) {
-        options = options || this.configEntry!.get() as ConnectionOptions;
+        options = options ?? this.configEntry!.get() as ConnectionOptions;
         Logger.verbose("Connecting to database");
         this.connection = await createConnection(Object.assign(options, {
             entities: this.entities,

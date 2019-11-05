@@ -27,12 +27,12 @@ export class MessagePhrase<T extends ISimpleMap> extends TemplatePhrase<T> {
     public parse(language: string, data: any): [any, string?] {
         if (typeof data !== "object") {
             return [{
-                embed: this.defaultsEmbed[language] || this.defaultsEmbed[DEFAULT_LANGUAGE],
-                text: this.defaults[language] || this.defaults[DEFAULT_LANGUAGE],
+                embed: this.defaultsEmbed[language] ?? this.defaultsEmbed[DEFAULT_LANGUAGE],
+                text: this.defaults[language] ?? this.defaults[DEFAULT_LANGUAGE],
             }, this.description];
         }
         if (typeof data.text !== "string") {
-            data.text = this.defaults[language] || this.defaults[DEFAULT_LANGUAGE];
+            data.text = this.defaults[language] ?? this.defaults[DEFAULT_LANGUAGE];
         } else {
             this.templates[language] = data.text;
         }
@@ -42,44 +42,41 @@ export class MessagePhrase<T extends ISimpleMap> extends TemplatePhrase<T> {
             };
         }
         if (typeof data.embed !== "object") {
-            data.embed = this.defaultsEmbed[language] || this.defaultsEmbed[DEFAULT_LANGUAGE];
+            data.embed = this.defaultsEmbed[language] ?? this.defaultsEmbed[DEFAULT_LANGUAGE];
         } else {
             if (data.embed.title && typeof data.embed.title !== "string") {
-                data.embed.title = this.defaultsEmbed[language].title || this.defaultsEmbed[DEFAULT_LANGUAGE].title;
+                data.embed.title = this.defaultsEmbed[language].title ?? this.defaultsEmbed[DEFAULT_LANGUAGE].title;
             } else {
                 this.templatesEmbed[language].title = data.embed.title;
             }
             if (data.embed.url && typeof data.embed.url !== "string") {
-                data.embed.url = this.defaultsEmbed[language].url || this.defaultsEmbed[DEFAULT_LANGUAGE].url;
+                data.embed.url = this.defaultsEmbed[language].url ?? this.defaultsEmbed[DEFAULT_LANGUAGE].url;
             } else {
                 this.templatesEmbed[language].url = data.embed.url;
             }
             if (data.embed.author && typeof data.embed.author !== "object") {
-                data.embed.author = this.defaultsEmbed[language].author || this.defaultsEmbed[DEFAULT_LANGUAGE].author;
+                data.embed.author = this.defaultsEmbed[language].author ?? this.defaultsEmbed[DEFAULT_LANGUAGE].author;
             } else if (data.embed.author) {
-                if (!this.templatesEmbed[language].author) {
+                if (this.templatesEmbed[language].author === undefined) {
                     this.templatesEmbed[language].author = {
                         name: "",
                     };
                 }
                 if (typeof data.embed.author.name !== "string") {
-                    data.embed.author.name = this.defaultsEmbed[language].author ?
-                        this.defaultsEmbed[language].author!.name : this.defaultsEmbed[DEFAULT_LANGUAGE].author ?
-                        this.defaultsEmbed[DEFAULT_LANGUAGE].author!.name : undefined;
+                    data.embed.author.name = this.defaultsEmbed[language].author?.name ??
+                        this.defaultsEmbed[DEFAULT_LANGUAGE].author?.name;
                 } else {
                     this.templatesEmbed[language].author!.name = data.embed.author.name;
                 }
                 if (data.embed.author.iconUrl && typeof data.embed.author.iconUrl !== "string") {
-                    data.embed.author.iconUrl = this.defaultsEmbed[language].author ?
-                        this.defaultsEmbed[language].author!.iconUrl : this.defaultsEmbed[DEFAULT_LANGUAGE].author ?
-                        this.defaultsEmbed[DEFAULT_LANGUAGE].author!.iconUrl : undefined;
+                    data.embed.author.iconUrl = this.defaultsEmbed[language].author?.iconUrl ??
+                        this.defaultsEmbed[DEFAULT_LANGUAGE].author?.iconUrl;
                 } else {
                     this.templatesEmbed[language].author!.iconUrl = data.embed.author.iconUrl;
                 }
                 if (data.embed.author.url && typeof data.embed.author.url !== "string") {
-                    data.embed.author.url = this.defaultsEmbed[language].author ?
-                    this.defaultsEmbed[language].author!.url : this.defaultsEmbed[DEFAULT_LANGUAGE].author ?
-                    this.defaultsEmbed[DEFAULT_LANGUAGE].author!.url : undefined;
+                    data.embed.author.url = this.defaultsEmbed[language].author?.url ??
+                        this.defaultsEmbed[DEFAULT_LANGUAGE].author?.url;
                 } else {
                     this.templatesEmbed[language].author!.url = data.embed.author.url;
                 }
@@ -88,12 +85,12 @@ export class MessagePhrase<T extends ISimpleMap> extends TemplatePhrase<T> {
             }
             if (data.embed.description && typeof data.embed.description !== "string") {
                 data.embed.description =
-                    this.defaultsEmbed[language].description || this.defaultsEmbed[DEFAULT_LANGUAGE].description;
+                    this.defaultsEmbed[language].description ?? this.defaultsEmbed[DEFAULT_LANGUAGE].description;
             } else {
                 this.templatesEmbed[language].description = data.embed.description;
             }
             if (data.embed.fields && !Array.isArray(data.embed.fields)) {
-                data.embed.fields = this.defaultsEmbed[language].fields || this.defaultsEmbed[DEFAULT_LANGUAGE].fields;
+                data.embed.fields = this.defaultsEmbed[language].fields ?? this.defaultsEmbed[DEFAULT_LANGUAGE].fields;
             } else if (data.embed.fields) {
                 if (!this.templatesEmbed[language].fields) {
                     this.templatesEmbed[language].fields = [];
@@ -142,39 +139,37 @@ export class MessagePhrase<T extends ISimpleMap> extends TemplatePhrase<T> {
             }
             if (data.embed.thumbnailUrl && typeof data.embed.thumbnailUrl !== "string") {
                 data.embed.thumbnailUrl =
-                    this.defaultsEmbed[language].thumbnailUrl || this.defaultsEmbed[DEFAULT_LANGUAGE].thumbnailUrl;
+                    this.defaultsEmbed[language].thumbnailUrl ?? this.defaultsEmbed[DEFAULT_LANGUAGE].thumbnailUrl;
             } else {
                 this.templatesEmbed[language].thumbnailUrl = data.embed.thumbnailUrl;
             }
             if (data.embed.imageUrl && typeof data.embed.imageUrl !== "string") {
                 data.embed.imageUrl =
-                    this.defaultsEmbed[language].imageUrl || this.defaultsEmbed[DEFAULT_LANGUAGE].imageUrl;
+                    this.defaultsEmbed[language].imageUrl ?? this.defaultsEmbed[DEFAULT_LANGUAGE].imageUrl;
             } else {
                 this.templatesEmbed[language].imageUrl = data.embed.imageUrl;
             }
             if (data.embed.timestamp && typeof data.embed.timestamp !== "boolean") {
                 data.embed.timestamp =
-                    this.defaultsEmbed[language].timestamp || this.defaultsEmbed[DEFAULT_LANGUAGE].timestamp;
+                    this.defaultsEmbed[language].timestamp ?? this.defaultsEmbed[DEFAULT_LANGUAGE].timestamp;
             } else {
                 this.templatesEmbed[language].timestamp = data.embed.timestamp;
             }
             if (data.embed.footer && typeof data.embed.footer !== "object") {
-                data.embed.footer = this.defaultsEmbed[language].footer || this.defaultsEmbed[DEFAULT_LANGUAGE].footer;
+                data.embed.footer = this.defaultsEmbed[language].footer ?? this.defaultsEmbed[DEFAULT_LANGUAGE].footer;
             } else if (data.embed.footer) {
                 if (!this.templatesEmbed[language].footer) {
                     this.templatesEmbed[language].footer = {};
                 }
                 if (data.embed.footer.text && typeof data.embed.footer.text !== "string") {
-                    data.embed.footer.text = this.defaultsEmbed[language].footer ?
-                        this.defaultsEmbed[language].footer!.text : this.defaultsEmbed[DEFAULT_LANGUAGE].footer ?
-                        this.defaultsEmbed[DEFAULT_LANGUAGE].footer!.text : undefined;
+                    data.embed.footer.text = this.defaultsEmbed[language].footer?.text ??
+                        this.defaultsEmbed[DEFAULT_LANGUAGE].footer?.text;
                 } else {
                     this.templatesEmbed[language].footer!.text = data.embed.footer.text;
                 }
                 if (data.embed.footer.iconUrl && typeof data.embed.footer.iconUrl !== "string") {
-                    data.embed.footer.iconUrl = this.defaultsEmbed[language].footer ?
-                        this.defaultsEmbed[language].footer!.iconUrl : this.defaultsEmbed[DEFAULT_LANGUAGE].footer ?
-                        this.defaultsEmbed[DEFAULT_LANGUAGE].footer!.iconUrl : undefined;
+                    data.embed.footer.iconUrl = this.defaultsEmbed[language].footer?.iconUrl ??
+                        this.defaultsEmbed[DEFAULT_LANGUAGE].footer?.iconUrl;
                 } else {
                     this.templatesEmbed[language].footer!.iconUrl = data.embed.footer.iconUrl;
                 }

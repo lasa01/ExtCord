@@ -10,7 +10,7 @@ export class NumberConfigEntry extends ConfigEntry {
     }
 
     public get(): number {
-        return this.value || this.defaultValue || 0;
+        return this.value ?? this.defaultValue ?? 0;
     }
 
     public parse(data: any): [number, string?] {
@@ -18,7 +18,7 @@ export class NumberConfigEntry extends ConfigEntry {
             this.value = data;
             return [data, this.description];
         } else  {
-            return [this.defaultValue || 0, this.description];
+            return [this.defaultValue ?? 0, this.description];
         }
     }
 }

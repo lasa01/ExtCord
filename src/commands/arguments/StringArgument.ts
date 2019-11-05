@@ -8,7 +8,7 @@ export class StringArgument<T extends boolean> extends Argument<string, T> {
     constructor(info: IArgumentInfo, optional: T, allowSpaces = false,
                 check?: (data: string, context: ICommandContext, error: ILinkedErrorResponse) => Promise<boolean>) {
         super(info, optional, allowSpaces);
-        this.customCheck = check || (async () => false);
+        this.customCheck = check ?? (async () => false);
     }
 
     public async check(data: string, context: ICommandContext, error: ILinkedErrorResponse) {

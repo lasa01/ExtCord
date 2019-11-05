@@ -62,7 +62,7 @@ export class Languages extends EventEmitter {
     }
 
     public async loadAll(directory?: string) {
-        directory = directory || this.languageDirConfigEntry!.get();
+        directory = directory ?? this.languageDirConfigEntry!.get();
         Logger.verbose("Loading all languages");
         await ensureDir(directory);
         // Filter out wrong extensions

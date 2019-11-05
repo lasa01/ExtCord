@@ -59,7 +59,7 @@ export class Modules extends EventEmitter {
     }
 
     public async loadAll(moduleDir?: string) {
-        moduleDir = moduleDir || this.moduleDirConfigEntry!.get();
+        moduleDir = moduleDir ?? this.moduleDirConfigEntry!.get();
         Logger.verbose("Loading all modules");
         await ensureDir(moduleDir);
         const modules = await readdir(moduleDir);
@@ -88,7 +88,7 @@ export class Modules extends EventEmitter {
                 }
                 await this.loadModule(loaded);
             } catch (error) {
-                Logger.error(`Error loading module ${filename}: ${error.stack || error}`);
+                Logger.error(`Error loading module ${filename}: ${error.stack ?? error}`);
             }
         }
         this.emit("loaded");

@@ -26,7 +26,7 @@ export const Logger = {
             format: format.combine(format.timestamp({
                 format: "YYYY-MM-DD HH:mm:ss",
             }), format.printf((info) => `[${info.timestamp}] [${info.level}]: ${info.message}`)),
-            level: LogLevels[2 + verbose] || "silly",
+            level: LogLevels[2 + verbose] ?? "silly",
             transports: [
                 new transports.Console(),
             ],

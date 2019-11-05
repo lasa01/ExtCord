@@ -206,7 +206,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
                     argument: argument.name,
                     argumentUsage: argument.getUsage(context.language),
                     commandUsage: this.getShortUsage(context.language),
-                    reason: errorStuff || "",
+                    reason: errorStuff ?? "",
                     supplied: rawArgument,
                 });
             }
@@ -219,7 +219,9 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
                 ...context, arguments: parsed as unknown as ArgumentsParseReturns<T>, rawArguments,
             });
         } catch (err) {
-            await context.respond(CommandPhrases.executionError, { error: err.stack || err.toString() });
+            const error = err.stack ?? err.toString();
+            await context.respond(CommandPhrases.executionError, { error });
+            Logger.error(`An unexpected error occured executing command "${this.name}": ${error}`);
             return;
         }
         timeDiff = process.hrtime(startTime);

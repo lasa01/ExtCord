@@ -114,7 +114,7 @@ export class Permissions {
     }
 
     public async loadAllPrivileges(directory?: string) {
-        directory = directory || this.privilegeDirConfigEntry!.get();
+        directory = directory ?? this.privilegeDirConfigEntry!.get();
         Logger.verbose("Loading all privileges");
         await ensureDir(directory);
         const dirContent = (await readdir(directory)).filter((file) => file.endsWith(Serializer.extension));

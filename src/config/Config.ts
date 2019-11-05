@@ -48,7 +48,7 @@ export class Config extends EventEmitter {
     public registerEntry(entry: ConfigEntry) {
         Logger.debug(`Registering config entry ${entry.name}`);
         this.entries.set(entry.name, entry);
-        const stage = this.stages.get(entry.loadStage) || [];
+        const stage = this.stages.get(entry.loadStage) ?? [];
         stage.push(entry);
         if (!this.stages.has(entry.loadStage)) { this.stages.set(entry.loadStage, stage); }
         entry.updateFullName();
@@ -69,7 +69,7 @@ export class Config extends EventEmitter {
     }
 
     public async loadNext(filename?: string): Promise<number> {
-        filename = filename || this.configFile;
+        filename = filename ?? this.configFile;
         if (!this.orderedStages) {
             this.orderedStages = Array.from(this.stages.keys());
             this.orderedStages.sort((a, b) => a - b);
@@ -83,7 +83,7 @@ export class Config extends EventEmitter {
     }
 
     public async load(stage: number, filename?: string) {
-        filename = filename || this.configFile;
+        filename = filename ?? this.configFile;
         Logger.verbose(`Loading config stage ${stage}`);
         const entries = this.stages.get(stage);
         if (!entries) {

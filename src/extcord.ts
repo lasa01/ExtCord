@@ -22,7 +22,7 @@ Yargs.usage("Usage: $0 <command> [options]")
         bot.run().then(() => {
             Logger.info("Bot running");
         }).catch((err) => {
-            Logger.error(err.stack || err);
+            Logger.error(err.stack ?? err);
             bot.stop();
         });
         if (argv.interactive) {

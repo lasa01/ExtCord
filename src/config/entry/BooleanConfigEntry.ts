@@ -10,7 +10,7 @@ export class BooleanConfigEntry extends ConfigEntry {
     }
 
     public get(): boolean {
-        return this.value || this.defaultValue || false;
+        return this.value ?? this.defaultValue ?? false;
     }
 
     public parse(data: any): [boolean, string?] {
@@ -18,7 +18,7 @@ export class BooleanConfigEntry extends ConfigEntry {
             this.value = data;
             return [data, this.description];
         } else  {
-            return [this.defaultValue || false,  this.description];
+            return [this.defaultValue ?? false,  this.description];
         }
     }
 }

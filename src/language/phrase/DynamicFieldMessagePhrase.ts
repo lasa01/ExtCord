@@ -42,12 +42,12 @@ export class DynamicFieldMessagePhrase<T extends ISimpleMap, U extends ISimpleMa
     public parse(language: string, data: any): [any, string?] {
         const [parsed, comment] = super.parse(language, data);
         if (typeof parsed.textDynamicFields !== "string") {
-            parsed.textDynamicFields = this.defaultsFieldText[language] || this.defaultsFieldText[DEFAULT_LANGUAGE];
+            parsed.textDynamicFields = this.defaultsFieldText[language] ?? this.defaultsFieldText[DEFAULT_LANGUAGE];
         } else {
             this.templatesFieldText[language] = parsed.textDynamicFields;
         }
         if (typeof parsed.embed.dynamicFields !== "object") {
-            parsed.embed.dynamicFields = this.defaultsField[language] || this.defaultsField[DEFAULT_LANGUAGE];
+            parsed.embed.dynamicFields = this.defaultsField[language] ?? this.defaultsField[DEFAULT_LANGUAGE];
         } else {
             if (!this.templatesField[language]) {
                 this.templatesField[language] = {
@@ -58,19 +58,19 @@ export class DynamicFieldMessagePhrase<T extends ISimpleMap, U extends ISimpleMa
             }
             if (typeof parsed.embed.dynamicFields.name !== "string") {
                 parsed.embed.dynamicFields.name =
-                    this.defaultsField[language].name || this.defaultsField[DEFAULT_LANGUAGE].name;
+                    this.defaultsField[language].name ?? this.defaultsField[DEFAULT_LANGUAGE].name;
             } else {
                 this.templatesField[language].name = parsed.embed.dynamicFields.name;
             }
             if (typeof parsed.embed.dynamicFields.value !== "string") {
                 parsed.embed.dynamicFields.value =
-                    this.defaultsField[language].value || this.defaultsField[DEFAULT_LANGUAGE].value;
+                    this.defaultsField[language].value ?? this.defaultsField[DEFAULT_LANGUAGE].value;
             } else {
                 this.templatesField[language].value = parsed.embed.dynamicFields.value;
             }
             if (typeof parsed.embed.dynamicFields.inline !== "boolean") {
                 parsed.embed.dynamicFields.inline =
-                    this.defaultsField[language].inline || this.defaultsField[DEFAULT_LANGUAGE].inline;
+                    this.defaultsField[language].inline ?? this.defaultsField[DEFAULT_LANGUAGE].inline;
             } else {
                 this.templatesField[language].inline = parsed.embed.dynamicFields.inline;
             }

@@ -30,7 +30,7 @@ export class SimplePhrase extends Phrase {
             this.templates[language] = data;
             return [data, this.description];
         } else  {
-            return [this.defaults[language] || this.defaults[DEFAULT_LANGUAGE], this.description];
+            return [this.defaults[language] ?? this.defaults[DEFAULT_LANGUAGE], this.description];
         }
     }
 }
