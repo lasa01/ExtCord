@@ -46,7 +46,7 @@ const getComments = (object: any, level = 1) => {
             let comment: string|undefined;
             // Check that every line of comment begins with a correct character
             for (let line of lines as string[]) {
-                line = line.trim() || "";
+                line = line.trim();
                 if (!regex.test(line)) {
                     line = "# " + line;
                 }
