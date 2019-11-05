@@ -16,6 +16,7 @@ import { TemplateStuff } from "../language/phrase/TemplatePhrase";
 import { Permission } from "../permissions/Permission";
 import { PermissionGroup } from "../permissions/PermissionGroup";
 import { Logger } from "../util/Logger";
+import { ExtendedGuild, ExtendedMessage } from "../util/Types";
 import { BuiltInArguments } from "./arguments/BuiltinArguments";
 import { Command } from "./Command";
 import { CommandPhrases } from "./CommandPhrases";
@@ -40,6 +41,7 @@ export interface Commands {
 
 export class Commands extends EventEmitter {
     public prefixConfigEntry?: StringGuildConfigEntry;
+    public aliasRepo?: Repository<GuildAliasEntity>;
     private bot: Bot;
     private commands: Map<string, Command<any>>;
     private languageCommandsMap: Map<string, Map<string, Command<any>>>;
@@ -52,7 +54,6 @@ export class Commands extends EventEmitter {
     private argumentsGroup?: PhraseGroup;
     private phrasesGroup?: PhraseGroup;
     private phraseGroup?: PhraseGroup;
-    private aliasRepo?: Repository<GuildAliasEntity>;
 
     constructor(bot: Bot) {
         super();
@@ -64,10 +65,27 @@ export class Commands extends EventEmitter {
         this.commandPhrases = [];
     }
 
-    public async message(message: Message) {
+    public async message(discordMessage: Message) {
         const startTime = process.hrtime();
-        if (!message.guild || message.author.bot) { return; } // For now
+        if (!discordMessage.guild || discordMessage.author.bot) { return; } // For now
+        // TODO this somewhere else, will be needed elsewhere
+        const author = Object.assign(discordMessage.author, {
+            entity: await this.bot.database.repos.user!.getEntity(discordMessage.author),
+        });
+        const guild = Object.assign(discordMessage.guild, {
+            entity: await this.bot.database.repos.guild!.getEntity(discordMessage.guild),
+        });
+        const message: ExtendedMessage = Object.assign(discordMessage, {
+            author,
+            guild,
+            member: Object.assign(discordMessage.member, {
+                entity: await this.bot.database.repos.member!.getEntity(discordMessage.member),
+                guild,
+                user: author,
+            }),
+        });
         const prefix = await this.prefixConfigEntry!.guildGet(message.guild);
+        // TODO really doesn't need to be reassigned each call
         const mention = `<@${message.client.user.id}>`;
         let text;
         if (message.content.startsWith(prefix)) {
@@ -81,6 +99,7 @@ export class Commands extends EventEmitter {
         const language = await this.bot.languages.getLanguage(message.guild);
         const useEmbeds = await this.bot.languages.useEmbedsConfigEntry!.guildGet(message.guild);
         const useMentions = await this.bot.languages.useMentionsConfigEntry!.guildGet(message.guild);
+        // TODO maybe don't need a new function every time
         const respond: LinkedResponse = async (phrase, stuff, fieldStuff) => {
                 let content: string;
                 let options;
@@ -124,22 +143,22 @@ export class Commands extends EventEmitter {
         await commandInstance.command(context);
     }
 
-    public async getCommandInstance(guild: Guild, language: string, command: string) {
+    public async getCommandInstance(guild: ExtendedGuild, language: string, command: string) {
         if (!this.guildCommandsMap.has(guild.id)) {
             await this.createGuildCommandsMap(guild, language);
         }
         return this.guildCommandsMap.get(guild.id)!.get(command);
     }
 
-    public async createGuildCommandsMap(guild: Guild, language: string) {
+    public async createGuildCommandsMap(guild: ExtendedGuild, language: string) {
         if (!this.languageCommandsMap.has(language)) {
             this.createLanguageCommmandsMap(language);
         }
         const map = new Map(this.languageCommandsMap.get(language)!);
         this.ensureRepo();
-        const aliases = await this.aliasRepo!.find({ where: {
-            guildId: guild.id,
-        } });
+        const aliases = await this.aliasRepo.find({
+            guild: guild.entity,
+        });
         for (const alias of aliases) {
             const command = this.commands.get(alias.command);
             if (!command) {
@@ -162,25 +181,22 @@ export class Commands extends EventEmitter {
         this.languageCommandsMap.set(language, map);
     }
 
-    public async setAlias(guild: Guild, language: string, alias: string, command: Command<any>) {
+    public async setAlias(guild: ExtendedGuild, language: string, alias: string, command: Command<any>) {
         this.ensureRepo();
-        let entity = await this.aliasRepo!.findOne({
-            where: {
-                alias,
-                guildId: guild.id,
-            },
+        let entity = await this.aliasRepo.findOne({
+            alias,
+            guild: guild.entity,
         });
         if (!entity) {
-            const guildEntity = await this.bot.database.repos.guild!.getEntity(guild);
-            entity = await this.aliasRepo!.create({
+            entity = this.aliasRepo.create({
                 alias,
                 command: command.name,
-                guild: guildEntity,
+                guild: guild.entity,
             });
         } else {
             entity.command = command.name;
         }
-        await this.aliasRepo!.save(entity);
+        await this.aliasRepo.save(entity);
         if (!this.guildCommandsMap.has(guild.id)) {
             await this.createGuildCommandsMap(guild, language);
         } else {
@@ -188,16 +204,14 @@ export class Commands extends EventEmitter {
         }
     }
 
-    public async removeAlias(guild: Guild, language: string, alias: string) {
+    public async removeAlias(guild: ExtendedGuild, language: string, alias: string) {
         this.ensureRepo();
-        const entity = await this.aliasRepo!.findOne({
-            where: {
-                alias,
-                guildId: guild.id,
-            },
+        const entity = await this.aliasRepo.findOne({
+            alias,
+            guild: guild.entity,
         });
         if (entity) {
-            await this.aliasRepo!.remove(entity);
+            await this.aliasRepo.remove(entity);
         }
         if (!this.guildCommandsMap.has(guild.id)) {
             await this.createGuildCommandsMap(guild, language);
@@ -299,7 +313,7 @@ export class Commands extends EventEmitter {
         return `${this.commands.size} commands loaded: ${Array.from(this.commands.keys()).join(", ")}`;
     }
 
-    private ensureRepo() {
+    private ensureRepo(): asserts this is this & { aliasRepo: Repository<GuildAliasEntity> } {
         if (!this.aliasRepo) {
             this.aliasRepo = this.bot.database.connection!.getRepository(GuildAliasEntity);
         }
@@ -309,7 +323,7 @@ export class Commands extends EventEmitter {
 export interface ICommandContext {
     bot: Bot;
     prefix: string;
-    message: Message;
+    message: ExtendedMessage;
     command: string;
     passed: string;
     language: string;

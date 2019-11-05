@@ -1,4 +1,3 @@
-import { Guild } from "discord.js";
 import { EventEmitter } from "events";
 import { ensureDir, readdir, readFile, writeFile } from "fs-extra";
 import { resolve } from "path";
@@ -11,6 +10,7 @@ import { StringConfigEntry } from "../config/entry/StringConfigEntry";
 import { Database } from "../database/Database";
 import { Logger } from "../util/Logger";
 import { Serializer } from "../util/Serializer";
+import { ExtendedGuild } from "../util/Types";
 import { Phrase } from "./phrase/Phrase";
 import { ISimpleMap } from "./phrase/SimplePhrase";
 
@@ -165,7 +165,7 @@ export class Languages extends EventEmitter {
         config.registerEntry(this.configEntry);
     }
 
-    public async getLanguage(guild: Guild) {
+    public async getLanguage(guild: ExtendedGuild) {
         if (this.languageConfigEntry) {
             const language = await this.languageConfigEntry.guildGet(guild);
             if (this.languages.includes(language)) {

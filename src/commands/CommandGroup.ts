@@ -4,6 +4,7 @@ import { DEFAULT_LANGUAGE } from "../language/Languages";
 import { Phrase } from "../language/phrase/Phrase";
 import { PhraseGroup } from "../language/phrase/PhraseGroup";
 import { PermissionGroup } from "../permissions/PermissionGroup";
+import { ExtendedGuild } from "../util/Types";
 import { BuiltInArguments } from "./arguments/BuiltinArguments";
 import { Command, ICommandInfo, IExecutionContext } from "./Command";
 import { CommandPhrases } from "./CommandPhrases";
@@ -105,14 +106,14 @@ export class CommandGroup
         }
     }
 
-    public getCommandInstance(guild: Guild, language: string, command: string) {
+    public getCommandInstance(guild: ExtendedGuild, language: string, command: string) {
         if (!this.guildCommandsMap.has(guild.id)) {
             this.createGuildCommandsMap(guild, language);
         }
         return this.guildCommandsMap.get(guild.id)!.get(command);
     }
 
-    public createGuildCommandsMap(guild: Guild, language: string) {
+    public createGuildCommandsMap(guild: ExtendedGuild, language: string) {
         if (!this.languageCommandsMap.has(language)) {
             this.createLanguageCommmandsMap(language);
         }
