@@ -105,7 +105,6 @@ const languageSetCommand = new SimpleCommand(
         }
         await context.respond(languageSetPhrase, { language });
     },
-    false,
     ["admin"],
 );
 
@@ -118,7 +117,7 @@ const languageShowCommand = new SimpleCommand(
     },
     [] as const,
     async (context) => context.respond(languageShowPhrase, { language: context.language }),
-    true,
+    ["everyone"],
 );
 
 const languageListCommand: SimpleCommand<[]> = new SimpleCommand(
@@ -137,7 +136,7 @@ const languageListCommand: SimpleCommand<[]> = new SimpleCommand(
             name: context.bot.languages.languageNames[lang],
         })),
     ),
-    true,
+    ["everyone"],
 );
 
 export const languageCommand = new CommandGroup(
@@ -147,6 +146,8 @@ export const languageCommand = new CommandGroup(
         description: "show or update the language",
         name: "language",
     },
+    undefined, undefined,
+    ["everyone"],
 );
 
 languageCommand.addSubcommands(languageSetCommand, languageShowCommand, languageListCommand);

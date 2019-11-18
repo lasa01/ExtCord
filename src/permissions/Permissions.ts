@@ -1,18 +1,29 @@
+import { Role } from "discord.js";
 import { ensureDir, readdir, readFile, writeFile } from "fs-extra";
 import { resolve } from "path";
+import { In, Repository } from "typeorm";
 
 import { Config } from "../config/Config";
-import { ConfigEntry } from "../config/entry/ConfigEntry";
-import { ConfigEntryGroup } from "../config/entry/ConfigEntryGroup";
 import { StringConfigEntry } from "../config/entry/StringConfigEntry";
 import { Database } from "../database/Database";
+import { GuildEntity } from "../database/entity/GuildEntity";
+import { RoleEntity } from "../database/entity/RoleEntity";
+import { MemberRepository } from "../database/repo/MemberRepository";
+import { RoleRepository } from "../database/repo/RoleRepository";
 import { Languages } from "../language/Languages";
 import { Phrase } from "../language/phrase/Phrase";
 import { PhraseGroup } from "../language/phrase/PhraseGroup";
 import { Logger } from "../util/Logger";
 import { Serializer } from "../util/Serializer";
+import { IExtendedMember, IExtendedRole } from "../util/Types";
+import { CustomPrivilege } from "./CustomPrivilege";
+import { CustomPrivilegeEntity } from "./database/CustomPrivilegeEntity";
+import { CustomPrivilegeIncludeEntity } from "./database/CustomPrivilegeIncludeEntity";
+import { CustomPrivilegePermissionEntity } from "./database/CustomPrivilegePermissionEntity";
 import { MemberPermissionEntity } from "./database/MemberPermissionEntity";
+import { MemberPrivilegeEntity } from "./database/MemberPrivilegeEntity";
 import { RolePermissionEntity } from "./database/RolePermissionEntity";
+import { RolePrivilegeEntity } from "./database/RolePrivilegeEntity";
 import { Permission } from "./Permission";
 import { PermissionGroup } from "./PermissionGroup";
 import { PermissionPrivilege } from "./PermissionPrivilege";
@@ -21,29 +32,59 @@ export class Permissions {
     public database: Database;
     public privilegeDirConfigEntry?: StringConfigEntry;
     // TODO public map instead of this?
+    public everyonePrivilege: PermissionPrivilege;
     public adminPrivilege: PermissionPrivilege;
     public hostPrivilege: PermissionPrivilege;
+    public repos?: {
+        memberPermission: Repository<MemberPermissionEntity>;
+        rolePermission: Repository<RolePermissionEntity>;
+        memberPrivilege: Repository<MemberPrivilegeEntity>;
+        rolePrivilege: Repository<RolePrivilegeEntity>;
+        role: RoleRepository;
+        member: MemberRepository;
+        customPrivilege: Repository<CustomPrivilegeEntity>;
+        customPrivilegePermission: Repository<CustomPrivilegePermissionEntity>;
+        customPrivilegeInclude: Repository<CustomPrivilegeIncludeEntity>;
+    };
     private permissions: Map<string, Permission>;
+    private rolePermissionMap: Map<number, Map<string, boolean>>;
+    private memberPermissionsMap: Map<number, Map<string, boolean>>;
+    private memberFullPermissionsMap: Map<number, Map<string, boolean>>;
     private privileges: Map<string, PermissionPrivilege>;
+    private customPrivileges: Map<string, Map<string, CustomPrivilege>>;
+    private everyonePrivileges: PermissionPrivilege[];
     private privilegePhraseGroup: PhraseGroup;
     private phrases: Phrase[];
     private phraseGroup?: PhraseGroup;
-    private configTemplate: Map<string, ConfigEntry>;
-    private configEntry?: ConfigEntryGroup;
 
     constructor(database: Database) {
         this.database = database;
         this.permissions = new Map();
+        this.rolePermissionMap = new Map();
+        this.memberPermissionsMap = new Map();
+        this.memberFullPermissionsMap = new Map();
         this.privileges = new Map();
+        this.customPrivileges = new Map();
+        this.everyonePrivileges = [];
         this.privilegePhraseGroup = new PhraseGroup({ name: "privileges", description: "Permission privileges" });
         this.phrases = [];
-        this.configTemplate = new Map();
         database.registerEntity(MemberPermissionEntity);
         database.registerEntity(RolePermissionEntity);
+        database.registerEntity(MemberPrivilegeEntity);
+        database.registerEntity(RolePrivilegeEntity);
+        database.registerEntity(CustomPrivilegeEntity);
+        database.registerEntity(CustomPrivilegeIncludeEntity);
+        database.registerEntity(CustomPrivilegePermissionEntity);
+        this.everyonePrivilege = new PermissionPrivilege({
+            description: "Default permissions for everyone",
+            name: "everyone",
+        }, undefined, undefined, true);
+        this.registerPrivilege(this.everyonePrivilege);
+        this.registerPrivilegePhrase(this.everyonePrivilege.phraseGroup);
         this.adminPrivilege = new PermissionPrivilege({
             description: "Server administrator permissions",
             name: "admin",
-        });
+        }, undefined, [this.everyonePrivilege]);
         this.registerPrivilege(this.adminPrivilege);
         this.registerPrivilegePhrase(this.adminPrivilege.phraseGroup);
         this.hostPrivilege = new PermissionPrivilege({
@@ -57,13 +98,11 @@ export class Permissions {
     public registerPermission(permission: Permission) {
         permission.registerSelf(this);
         this.permissions.set(permission.name, permission);
-        this.configTemplate.set(permission.name, permission.getConfigEntry());
     }
 
     public unregisterPermission(permission: Permission) {
         permission.unregisterSelf();
         this.permissions.delete(permission.name);
-        this.configTemplate.delete(permission.name);
     }
 
     // TODO add directly to group
@@ -92,15 +131,10 @@ export class Permissions {
     }
 
     public registerConfig(config: Config) {
-        this.configEntry = new ConfigEntryGroup({
-            description: "Default permissions for everyone",
-            name: "permissions",
-        }, Array.from(this.configTemplate.values()));
         this.privilegeDirConfigEntry = new StringConfigEntry({
             description: "The directory for privilege files",
             name: "privilegesDirectory",
         }, "privileges");
-        config.registerEntry(this.configEntry);
         config.registerEntry(this.privilegeDirConfigEntry);
     }
 
@@ -161,6 +195,9 @@ export class Permissions {
                 privilege = PermissionPrivilege.fromRaw(this, parsed);
                 this.privileges.set(name, privilege);
             }
+            if (privilege.everyone) {
+                this.everyonePrivileges.push(privilege);
+            }
             return privilege;
         } catch (err) {
             Logger.error("An error occured while loading a privilege: " + err);
@@ -183,15 +220,165 @@ export class Permissions {
         return permission;
     }
 
-    public getPrivilege(name: string) {
+    public async getPrivilege(guild: GuildEntity, name: string) {
+        return this.getCustomPrivilege(guild, name) ?? this.getBuiltinPrivilege(name);
+    }
+
+    public getBuiltinPrivilege(name: string) {
         return this.privileges.get(name);
     }
 
-    public getDefaultEntry(name: string) {
-        return this.configTemplate.get(name);
+    public async getCustomPrivilege(guild: GuildEntity, name: string) {
+        if (!this.customPrivileges.has(guild.id)) {
+            this.customPrivileges.set(guild.id, new Map());
+        } else if (this.customPrivileges.get(guild.id)!.has(name)) {
+            return this.customPrivileges.get(guild.id)!.get(name)!;
+        }
+        this.ensureRepo();
+        const entity = await this.repos.customPrivilege.findOne({
+            relations: ["includes", "permissions"],
+            where: {
+                guild,
+                name,
+            },
+        });
+        if (entity) {
+            const privilege = new CustomPrivilege(this, entity);
+            await privilege.registerIncludes();
+            this.customPrivileges.get(guild.id)!.set(privilege.name, privilege);
+            return privilege;
+        }
     }
 
     public getStatus() {
         return `${this.permissions.size} permissions loaded: ${Array.from(this.permissions.keys()).join(", ")}`;
+    }
+
+    public async checkMemberPermission(permission: Permission, member: IExtendedMember) {
+        return (await this.getMemberFullPermissionMap(member)).get(permission.fullName) ?? false;
+    }
+
+    public async checkMemberPermissionOnly(permission: Permission, member: IExtendedMember) {
+        return (await this.getMemberPermissionMap(member)).get(permission.fullName) ?? false;
+    }
+
+    public async checkRolePermission(permission: Permission, role: IExtendedRole) {
+        return (await this.getRolePermissionMap(role.entity)).get(permission.fullName) ?? false;
+    }
+
+    public ensureRepo(): asserts this is this & { repos: Exclude<Permissions["repos"], undefined> } {
+        if (!this.repos) {
+            this.database.ensureConnection();
+            const connection = this.database.connection;
+            this.repos = {
+                customPrivilege: connection.getRepository(CustomPrivilegeEntity),
+                customPrivilegeInclude: connection.getRepository(CustomPrivilegeIncludeEntity),
+                customPrivilegePermission: connection.getRepository(CustomPrivilegePermissionEntity),
+                member: this.database.repos.member,
+                memberPermission: connection.getRepository(MemberPermissionEntity),
+                memberPrivilege: connection.getRepository(MemberPrivilegeEntity),
+                role: this.database.repos.role,
+                rolePermission: connection.getRepository(RolePermissionEntity),
+                rolePrivilege: connection.getRepository(RolePrivilegeEntity),
+            };
+        }
+    }
+
+    private async getRolePermissionMap(role: RoleEntity) {
+        if (this.rolePermissionMap.has(role.id)) {
+            return this.rolePermissionMap.get(role.id)!;
+        }
+        this.ensureRepo();
+        const map: Map<string, boolean> = new Map();
+        // The "@everyone" role has same id as the guild
+        if (role.roleId === role.guild.id) {
+            for (const privilege of this.everyonePrivileges) {
+                const permissions = privilege.getPermissionsMap();
+                for (const [permission, allow] of permissions) {
+                    map.set(permission.fullName, allow);
+                }
+            }
+        }
+        const rolePrivileges = await this.repos.rolePrivilege.find({
+            role,
+        });
+        for (const rolePrivilege of rolePrivileges) {
+            const rolePrivilegeInstance = this.privileges.get(rolePrivilege.name)!;
+            const rolePrivilegePermissions = rolePrivilegeInstance.getPermissionsMap();
+            for (const [permission, allow] of rolePrivilegePermissions) {
+                map.set(permission.fullName, allow);
+            }
+        }
+        const rolePermissions = await this.repos.rolePermission.find({
+            role,
+        });
+        for (const rolePermission of rolePermissions) {
+            map.set(rolePermission.name, rolePermission.permission);
+        }
+        this.rolePermissionMap.set(role.id, map);
+        return map;
+    }
+
+    private async getMemberPermissionMap(member: IExtendedMember) {
+        if (this.memberPermissionsMap.has(member.entity.id)) {
+            return this.memberPermissionsMap.get(member.entity.id)!;
+        }
+        this.ensureRepo();
+        const map: Map<string, boolean> = new Map();
+        const memberPrivileges = await this.repos.memberPrivilege.find({
+            member: member.entity,
+        });
+        for (const memberPrivilege of memberPrivileges) {
+            const memberPrivilegePermissions = this.privileges.get(memberPrivilege.name)!.getPermissionsMap();
+            for (const [permission, allow] of memberPrivilegePermissions) {
+                map.set(permission.fullName, allow);
+            }
+        }
+
+        const memberPermissions = await this.repos.memberPermission.find({
+            member: member.entity,
+        });
+        for (const memberPermission of memberPermissions) {
+            map.set(memberPermission.name, memberPermission.permission);
+        }
+        this.memberPermissionsMap.set(member.entity.id, map);
+        return map;
+    }
+
+    private async getMemberFullPermissionMap(member: IExtendedMember) {
+        if (this.memberFullPermissionsMap.has(member.entity.id)) {
+            return this.memberFullPermissionsMap.get(member.entity.id)!;
+        }
+        this.ensureRepo();
+        const map: Map<string, boolean> = new Map();
+        const roles = (await this.repos.role.find({ relations: ["guild"], where: {
+            guild: member.entity.guild,
+            roleId: In(member.member.roles.map((role) => role.id)),
+        }}))
+        .sort((a, b) => {
+            const dA = member.member.roles.get(a.roleId)!;
+            const dB = member.member.roles.get(b.roleId)!;
+            return Role.comparePositions(dA, dB);
+        });
+
+        if (roles.length === 0) {
+            // Ensure "@everyone" role is in database
+            roles.push(await this.repos.role.getEntity(member.member.guild.defaultRole));
+        }
+
+        for (const role of roles) {
+            const roleMap = await this.getRolePermissionMap(role);
+            for (const [permission, allow] of roleMap) {
+                map.set(permission, allow);
+            }
+        }
+
+        const memberMap = await this.getMemberPermissionMap(member);
+        for (const [permission, allow] of memberMap) {
+            map.set(permission, allow);
+        }
+
+        this.memberFullPermissionsMap.set(member.entity.id, map);
+        return map;
     }
 }

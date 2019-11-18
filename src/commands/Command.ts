@@ -9,6 +9,7 @@ import { Module } from "../modules/Module";
 import { Permission } from "../permissions/Permission";
 import { PermissionPrivilege } from "../permissions/PermissionPrivilege";
 import { Logger } from "../util/Logger";
+import { IExtendedMember } from "../util/Types";
 import { Argument } from "./arguments/Argument";
 import { CommandPhrases } from "./CommandPhrases";
 import { ICommandContext } from "./Commands";
@@ -34,8 +35,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
     private usageCache: Map<string, string>;
     private shortUsageCache: Map<string, string>;
 
-    constructor(info: ICommandInfo, args: T, permission: boolean|Permission = false,
-                allowed?: Array<string|PermissionPrivilege>) {
+    constructor(info: ICommandInfo, args: T,  allowed?: Array<string|PermissionPrivilege>, permission?: Permission) {
         this.name = typeof info.name === "string" ? info.name : info.name[DEFAULT_LANGUAGE];
         this.localizedName = new SimplePhrase({
             name: "name",
@@ -83,7 +83,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
         }
         this.defaultPermission = permission instanceof Permission ? permission : new Permission({
             name: this.name,
-        }, permission);
+        });
         this.allowedPrivileges = [];
         if (allowed) {
             for (const privilege of allowed) {
@@ -113,7 +113,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
 
     public registerSelf(bot: Bot) {
         for (const name of this.allowedPrivileges) {
-            const privilege = bot.permissions.getPrivilege(name);
+            const privilege = bot.permissions.getBuiltinPrivilege(name);
             if (privilege) {
                 privilege.allowPermissions(this.defaultPermission);
             } else {
@@ -142,10 +142,14 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
         return this.defaultPermission;
     }
 
+    public async canExecute(member: IExtendedMember) {
+        return this.defaultPermission.checkMember(member);
+    }
+
     public async command(context: ICommandContext): Promise<void> {
         let startTime = process.hrtime();
         Logger.debug(`Command: ${context.command}`);
-        if (!await this.getPermission().checkFull(context.message.member)) {
+        if (!await this.canExecute(context.message.member)) {
             await context.respond(CommandPhrases.noPermission, { permission: this.defaultPermission.fullName });
             return;
         }
@@ -157,6 +161,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
         if (rawArguments.length < this.minArguments) {
             await context.respond(CommandPhrases.tooFewArguments, {
                 commandUsage: this.getShortUsage(context.language),
+                // TODO can be defined for the Command instance
                 required: (this.minArguments === maxArgs) ? maxArgs.toString() : `${this.minArguments} - ${maxArgs}`,
                 supplied: rawArguments.length.toString(),
             });
@@ -168,6 +173,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
             if (this.combineIndex === undefined) {
                 await context.respond(CommandPhrases.tooManyArguments, {
                     commandUsage: this.getShortUsage(context.language),
+                    // TODO can be defined for the Command instance
                     required: (this.minArguments === maxArgs) ?
                         maxArgs.toString() : `${this.minArguments} - ${maxArgs}`,
                     supplied: rawArguments.length.toString(),

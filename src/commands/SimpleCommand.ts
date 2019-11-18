@@ -6,8 +6,8 @@ export class SimpleCommand<T extends ReadonlyArray<Argument<any, boolean>>> exte
     public execute: (context: IExecutionContext<T>) => Promise<void>;
 
     constructor(info: ICommandInfo, args: T, execute: (context: IExecutionContext<T>) => Promise<void>,
-                allowEveryone = false, allowed?: Array<PermissionPrivilege|string>) {
-        super(info, args, allowEveryone, allowed);
+                allowed?: Array<PermissionPrivilege|string>) {
+        super(info, args, allowed);
         this.execute = execute;
     }
 }

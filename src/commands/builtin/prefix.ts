@@ -41,7 +41,7 @@ const prefixShowCommand = new SimpleCommand(
     },
     [],
     (context) => context.respond(prefixShowPhrase, { prefix: context.prefix }),
-    true,
+    ["everyone"],
 );
 
 const prefixSetCommand = new SimpleCommand(
@@ -66,7 +66,6 @@ const prefixSetCommand = new SimpleCommand(
         }
         await context.respond(prefixSetPhrase, { prefix });
     },
-    false,
     ["admin"],
 );
 
@@ -76,6 +75,8 @@ export const prefixCommand = new CommandGroup(
         description: "Show or update the command prefix",
         name: "prefix",
     },
+    undefined, undefined,
+    ["everyone"],
 );
 
 prefixCommand.addSubcommands(prefixSetCommand, prefixShowCommand);

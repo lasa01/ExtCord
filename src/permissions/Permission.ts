@@ -1,18 +1,8 @@
-import { Role } from "discord.js";
-import { In, Repository } from "typeorm";
-
-import { BooleanConfigEntry } from "../config/entry/BooleanConfigEntry";
-import { ConfigEntry } from "../config/entry/ConfigEntry";
-import { RoleEntity } from "../database/entity/RoleEntity";
-import { RoleRepository } from "../database/repo/RoleRepository";
 import { DEFAULT_LANGUAGE } from "../language/Languages";
 import { Phrase } from "../language/phrase/Phrase";
 import { PhraseGroup } from "../language/phrase/PhraseGroup";
 import { ISimpleMap, SimplePhrase } from "../language/phrase/SimplePhrase";
-import { Logger } from "../util/Logger";
-import { ExtendedMember, ExtendedRole } from "../util/Types";
-import { MemberPermissionEntity } from "./database/MemberPermissionEntity";
-import { RolePermissionEntity } from "./database/RolePermissionEntity";
+import { IExtendedMember, IExtendedRole } from "../util/Types";
 import { Permissions } from "./Permissions";
 
 export class Permission {
@@ -25,14 +15,9 @@ export class Permission {
     private subPhraseGroup?: PhraseGroup;
     private phrases: Phrase[];
     private permissions?: Permissions;
-    private memberPermissionRepo?: Repository<MemberPermissionEntity>;
-    private rolePermissionRepo?: Repository<RolePermissionEntity>;
-    private roleRepo?: RoleRepository;
-    private defaultEntry: ConfigEntry;
     private parent?: Permission;
-    private fullCache: Map<number, boolean|undefined>;
 
-    constructor(info: IPermissionInfo, defaultPermission: boolean|ConfigEntry) {
+    constructor(info: IPermissionInfo) {
         this.name = info.name;
         this.description = typeof info.description === "object" ? info.description[DEFAULT_LANGUAGE] : info.description;
         if (info.description) {
@@ -42,10 +27,6 @@ export class Permission {
         }
         this.subPhrases = [];
         this.fullName = info.name;
-        this.defaultEntry = defaultPermission instanceof ConfigEntry ? defaultPermission : new BooleanConfigEntry({
-            description: this.description,
-            name: info.name,
-        }, defaultPermission);
         if (this.localizedDescription) {
             this.phrases = [this.localizedDescription];
         } else {
@@ -60,7 +41,6 @@ export class Permission {
         this.phraseGroup = new PhraseGroup({
             name: this.name,
         }, this.phrases);
-        this.fullCache = new Map();
     }
 
     public registerSelf(permissions: Permissions) {
@@ -94,124 +74,16 @@ export class Permission {
         if (this.parent) { this.fullName = this.parent.fullName + "." + this.name; }
     }
 
-    public getConfigEntry() {
-        return this.defaultEntry;
+    public async checkMember(member: IExtendedMember) {
+        return this.permissions!.checkMemberPermission(this, member);
     }
 
-    public async checkFull(member: ExtendedMember): Promise<boolean> {
-        const result = await this.checkFullNoDefault(member);
-        if (result !== undefined) {
-            return result;
-        }
-        Logger.debug(`Returning default for permission ${this.fullName} for member ${member.id}`);
-        return this.getDefault();
+    public async checkMemberOnly(member: IExtendedMember) {
+        return this.permissions!.checkMemberPermissionOnly(this, member);
     }
 
-    public async checkFullNoDefault(member: ExtendedMember): Promise<boolean|undefined> {
-        if (this.fullCache.has(member.entity.id)) {
-            return this.fullCache.get(member.entity.id);
-        }
-        Logger.debug(`Checking for permission ${this.fullName} for member ${member.id}`);
-        this.ensureRepo();
-        let result = await this.checkMember(member);
-        if (result !== undefined) {
-            Logger.debug(`Found member-specific entry for permission ${this.fullName} for member ${member.id}`);
-            this.fullCache.set(member.entity.id, result);
-            return result;
-        }
-        result = await this.checkRoles(member);
-        if (result !== undefined) {
-            Logger.debug(`Found role-specific entry for permission ${this.fullName} for member ${member.id}`);
-            this.fullCache.set(member.entity.id, result);
-            return result;
-        }
-        if (this.parent) {
-            Logger.debug(`Checking parent permission for permission ${this.fullName} for member ${member.id}`);
-            result = await this.parent.checkFullNoDefault(member);
-            if (result !== undefined) {
-                this.fullCache.set(member.entity.id, result);
-                return result;
-            }
-        }
-        this.fullCache.set(member.entity.id, result);
-    }
-
-    public async checkRole(role: ExtendedRole): Promise<boolean> {
-        const result = await this.checkRoleNoDefault(role);
-        if (result !== undefined) {
-            return result;
-        }
-        Logger.debug(`Returning default for permission ${this.fullName} for role ${role.id}`);
-        return this.getDefault();
-    }
-
-    public async checkRoleNoDefault(role: ExtendedRole): Promise<boolean|undefined> {
-        Logger.debug(`Checking for permission ${this.fullName} for role ${role.id}`);
-        this.ensureRepo();
-        let result = await this.checkRolePart(role.entity);
-        if (result !== undefined) {
-            Logger.debug(`Found role-specific entry for permission ${this.fullName} for role ${role.id}`);
-            return result;
-        }
-        if (this.parent) {
-            Logger.debug(`Checking parent permission for permission ${this.fullName} for role ${role.id}`);
-            result = await this.parent.checkRoleNoDefault(role);
-            if (result !== undefined) {
-                return result;
-            }
-        }
-    }
-
-    private async checkMember(member: ExtendedMember): Promise<boolean|undefined> {
-        const memberEntity = await this.permissions!.database.repos.member!.getEntity(member);
-        const permission = await this.memberPermissionRepo!.findOne({
-            member: memberEntity,
-            name: this.fullName,
-        });
-        if (permission) {
-            return permission.permission;
-        }
-    }
-
-    private async checkRoles(member: ExtendedMember): Promise<boolean|undefined> {
-        const roles = (await this.roleRepo!.find({ where: {
-                guildId: member.guild.id,
-                roleId: In(member.roles.map((role) => role.id)),
-            }}))
-            .sort((a, b) => {
-                const dA = member.roles.get(a.roleId)!;
-                const dB = member.roles.get(b.roleId)!;
-                return Role.comparePositions(dA, dB);
-            });
-        for (const role of roles) {
-            const permission = await this.checkRolePart(role);
-            if (permission !== undefined) { return permission; }
-        }
-    }
-
-    private async checkRolePart(role: RoleEntity) {
-        const roleEntity = await this.rolePermissionRepo!.findOne({
-            name: this.fullName,
-            role,
-        });
-        if (roleEntity) {
-            return roleEntity.permission;
-        }
-    }
-
-    private getDefault() {
-        if (this.defaultEntry instanceof BooleanConfigEntry) {
-            return this.defaultEntry.get();
-        } else {
-            return true;
-        }
-    }
-
-    private ensureRepo() {
-        if (this.memberPermissionRepo && this.rolePermissionRepo && this.roleRepo) { return; }
-        this.memberPermissionRepo = this.permissions!.database.connection!.getRepository(MemberPermissionEntity);
-        this.rolePermissionRepo = this.permissions!.database.connection!.getRepository(RolePermissionEntity);
-        this.roleRepo = this.permissions!.database.repos.role;
+    public async checkRole(role: IExtendedRole) {
+        return this.permissions!.checkRolePermission(this, role);
     }
 }
 

@@ -1,10 +1,10 @@
-import { Guild } from "discord.js";
 import { Bot } from "../Bot";
 import { DEFAULT_LANGUAGE } from "../language/Languages";
 import { Phrase } from "../language/phrase/Phrase";
 import { PhraseGroup } from "../language/phrase/PhraseGroup";
 import { PermissionGroup } from "../permissions/PermissionGroup";
-import { ExtendedGuild } from "../util/Types";
+import { PermissionPrivilege } from "../permissions/PermissionPrivilege";
+import { IExtendedGuild } from "../util/Types";
 import { BuiltInArguments } from "./arguments/BuiltinArguments";
 import { Command, ICommandInfo, IExecutionContext } from "./Command";
 import { CommandPhrases } from "./CommandPhrases";
@@ -17,8 +17,9 @@ export class CommandGroup
     private languageCommandsMap: Map<string, Map<string, Command<any>>>;
     private guildCommandsMap: Map<string, Map<string, Command<any>>>;
 
-    constructor(info: ICommandInfo, defaultSubcommand?: string, children?: ReadonlyArray<Command<any>>) {
-        super(info, [ BuiltInArguments.subcommand, BuiltInArguments.subcommandArguments ],
+    constructor(info: ICommandInfo, defaultSubcommand?: string, children?: ReadonlyArray<Command<any>>,
+                allowed?: Array<string|PermissionPrivilege>) {
+        super(info, [ BuiltInArguments.subcommand, BuiltInArguments.subcommandArguments ], allowed,
             new PermissionGroup({
                 description: `Gives the permission for the command group ${info.name}`,
                 name: typeof info.name === "string" ? info.name : info.name[DEFAULT_LANGUAGE],
@@ -106,18 +107,18 @@ export class CommandGroup
         }
     }
 
-    public getCommandInstance(guild: ExtendedGuild, language: string, command: string) {
-        if (!this.guildCommandsMap.has(guild.id)) {
+    public getCommandInstance(guild: IExtendedGuild, language: string, command: string) {
+        if (!this.guildCommandsMap.has(guild.guild.id)) {
             this.createGuildCommandsMap(guild, language);
         }
-        return this.guildCommandsMap.get(guild.id)!.get(command);
+        return this.guildCommandsMap.get(guild.guild.id)!.get(command);
     }
 
-    public createGuildCommandsMap(guild: ExtendedGuild, language: string) {
+    public createGuildCommandsMap(guild: IExtendedGuild, language: string) {
         if (!this.languageCommandsMap.has(language)) {
             this.createLanguageCommmandsMap(language);
         }
-        this.guildCommandsMap.set(guild.id, new Map(this.languageCommandsMap.get(language)!));
+        this.guildCommandsMap.set(guild.guild.id, new Map(this.languageCommandsMap.get(language)!));
     }
 
     public createLanguageCommmandsMap(language: string) {

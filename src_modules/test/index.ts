@@ -1,6 +1,6 @@
 import {
     Bot, CommandGroup, DynamicFieldMessagePhrase, IntArgument, MessagePhrase, Module, Permission,
-    SimpleCommand, SimplePhrase, StringArgument,
+    SimpleCommand, StringArgument,
 } from "../..";
 
 export default class TestModule extends Module {
@@ -9,14 +9,13 @@ export default class TestModule extends Module {
         const testPermission = new Permission({
                 description: "test",
                 name: "test",
-            }, true);
+            });
         this.registerPermission(testPermission);
         const commandGroup = new CommandGroup({
             author: this,
             description: "Test commands",
             name: "test",
-        });
-        this.registerCommand(commandGroup);
+        }, undefined, undefined, ["host"]);
         const testPhrase = new MessagePhrase({
                 name: "response",
             }, "Test {input}?", {
@@ -30,7 +29,7 @@ export default class TestModule extends Module {
             [new StringArgument({ description: "Text input for testing", name: "text" }, false, true)] as const,
             async (context) => {
                 await context.respond(testPhrase, { input: context.arguments[0] });
-            }, true);
+            }, ["host"]);
         testCommand.addPhrases(testPhrase);
         commandGroup.addSubcommands(testCommand);
 
@@ -60,7 +59,7 @@ export default class TestModule extends Module {
                 if (!perm) {
                     await context.respond(permNotFoundPhrase, { permission: context.arguments[0] });
                 } else {
-                    const result = await perm.checkFullNoDefault(context.message.member);
+                    const result = await perm.checkMember(context.message.member);
                     let resultText: string;
                     if (result === undefined) {
                         resultText = "undefined";
@@ -69,7 +68,7 @@ export default class TestModule extends Module {
                     }
                     await context.respond(permResultPhrase, { permission: context.arguments[0], result: resultText });
                 }
-            }, true);
+            }, ["everyone"]);
         permCommand.addPhrases(permResultPhrase, permNotFoundPhrase);
         this.registerCommand(permCommand);
 
@@ -104,7 +103,7 @@ export default class TestModule extends Module {
             [new StringArgument({ description: "Test argument", name: "test" }, false, true)] as const,
             async (context) => {
                 await context.respond(embedPhrase, { argument: context.arguments[0] });
-            }, true);
+            }, ["host"]);
         embedCommand.addPhrases(embedPhrase);
         commandGroup.addSubcommands(embedCommand);
 
@@ -138,8 +137,9 @@ export default class TestModule extends Module {
                     fields.push({ number: Math.floor(Math.random() * max).toString() });
                 }
                 await context.respond(randomPhrase, { n: n.toString(), max: max.toString() }, fields);
-            }, true);
+            }, ["everyone"]);
         randomCommand.addPhrases(randomPhrase);
         commandGroup.addSubcommands(randomCommand);
+        this.registerCommand(commandGroup);
     }
 }

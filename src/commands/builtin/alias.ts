@@ -87,7 +87,6 @@ const aliasSetCommand = new SimpleCommand(
         );
         await context.respond(aliasSetPhrase, { alias: context.arguments[0], command: context.arguments[1] });
     },
-    false,
     ["admin"],
 );
 
@@ -111,7 +110,6 @@ const aliasRemoveCommand = new SimpleCommand(
         await context.bot.commands.removeAlias(context.message.guild, context.language, alias);
         await context.respond(aliasRemovePhrase, { alias });
     },
-    false,
     ["admin"],
 );
 
@@ -121,6 +119,8 @@ export const aliasCommand = new CommandGroup(
         description: "Set, update or remove an alias",
         name: "alias",
     },
+    undefined, undefined,
+    ["admin"],
 );
 
 aliasCommand.addSubcommands(aliasSetCommand, aliasRemoveCommand);

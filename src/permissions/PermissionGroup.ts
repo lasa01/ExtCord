@@ -7,16 +7,7 @@ export class PermissionGroup extends Permission {
     public children: Map<string, Permission>;
 
     constructor(info: IPermissionInfo, children?: Permission[]) {
-        const configs = [];
-        if (children) {
-            for (const child of children) {
-                configs.push(child.getConfigEntry());
-            }
-        }
-        super(info, new ConfigEntryGroup({
-            description: typeof info.description === "object" ? info.description[DEFAULT_LANGUAGE] : info.description,
-            name: info.name,
-        }, configs));
+        super(info);
         this.children = new Map();
         if (children) {
             for (const child of children) {
@@ -31,7 +22,6 @@ export class PermissionGroup extends Permission {
             if (this.children.has(permission.name)) {
                 throw new Error(`The permission ${permission.name} is already registered`);
             }
-            (this.getConfigEntry() as ConfigEntryGroup).addEntries(permission.getConfigEntry());
             permission.registerParent(this);
             this.children.set(permission.name, permission);
         }
@@ -40,7 +30,6 @@ export class PermissionGroup extends Permission {
     public removePermissions(...permissions: Permission[]) {
         for (const permission of permissions) {
             if (this.children.has(permission.name)) {
-                (this.getConfigEntry() as ConfigEntryGroup).removeEntries(permission.getConfigEntry());
                 permission.unregisterParent(this);
                 this.children.delete(permission.name);
             }
