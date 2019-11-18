@@ -156,6 +156,7 @@ export class Bot extends EventEmitter {
                 });
                 Logger.info("Connecting to Discord");
                 await this.client.login(this.configEntries.client.token.get());
+                Logger.info(`Logged in as "${this.client.user.username}" (id ${this.client.user.id})`);
                 this.emit("ready");
                 this.client.on("message", async (message) => {
                     await this.commands.message(message);

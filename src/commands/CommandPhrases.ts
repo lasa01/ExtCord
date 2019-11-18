@@ -213,9 +213,9 @@ export const CommandPhrases = {
             description: "This is shown when an user is trying to do something they're not allowed to",
             name: "noPermission",
         },
-        "You are not allowed to do that.\nYou don't have the required permission `{permission}.",
+        "You are not allowed to do that.\nYou don't have the required permission `{permission}`.",
         {
-            description: "You are not allowed to do that.\nYou don't have the required permission `{permission}.`",
+            description: "You are not allowed to do that.\nYou don't have the required permission `{permission}`.",
             timestamp: false,
             title: "Insufficient permissions",
         },
