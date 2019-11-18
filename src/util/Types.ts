@@ -4,23 +4,25 @@ import { MemberEntity } from "../database/entity/MemberEntity";
 import { RoleEntity } from "../database/entity/RoleEntity";
 import { UserEntity } from "../database/entity/UserEntity";
 
-export type ExtendedGuild = Guild & {
-    entity: GuildEntity,
-};
-export type ExtendedMember = GuildMember & {
-    guild: ExtendedGuild,
-    entity: MemberEntity,
-    user: ExtendedUser,
-};
-export type ExtendedRole = Role & {
-    guild: ExtendedGuild,
-    entity: RoleEntity,
-};
-export type ExtendedUser = User & {
+export interface IExtendedGuild {
+    guild: Guild;
+    entity: GuildEntity;
+}
+export interface IExtendedMember {
+    member: GuildMember;
+    entity: MemberEntity;
+}
+export interface IExtendedRole {
+    role: Role;
+    entity: RoleEntity;
+}
+export interface IExtendedUser {
+    user: User;
     entity: UserEntity;
-};
-export type ExtendedMessage = Message & {
-    author: ExtendedUser,
-    guild: ExtendedGuild,
-    member: ExtendedMember,
-};
+}
+export interface IExtendedMessage {
+    message: Message;
+    author: IExtendedUser;
+    guild: IExtendedGuild;
+    member: IExtendedMember;
+}

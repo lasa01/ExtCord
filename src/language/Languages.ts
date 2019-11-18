@@ -10,7 +10,7 @@ import { StringConfigEntry } from "../config/entry/StringConfigEntry";
 import { Database } from "../database/Database";
 import { Logger } from "../util/Logger";
 import { Serializer } from "../util/Serializer";
-import { ExtendedGuild } from "../util/Types";
+import { IExtendedGuild } from "../util/Types";
 import { Phrase } from "./phrase/Phrase";
 import { ISimpleMap } from "./phrase/SimplePhrase";
 
@@ -165,13 +165,13 @@ export class Languages extends EventEmitter {
         config.registerEntry(this.configEntry);
     }
 
-    public async getLanguage(guild: ExtendedGuild) {
+    public async getLanguage(guild: IExtendedGuild) {
         if (this.languageConfigEntry) {
             const language = await this.languageConfigEntry.guildGet(guild);
             if (this.languages.includes(language)) {
                 return language;
             } else {
-                Logger.warn(`Guild ${guild.id} has an invalid language, resetting`);
+                Logger.warn(`Guild ${guild.guild.id} has an invalid language, resetting`);
                 await this.languageConfigEntry.guildSet(guild, DEFAULT_LANGUAGE);
                 return DEFAULT_LANGUAGE;
             }

@@ -5,7 +5,17 @@ import { GuildEntity } from "../entity/GuildEntity";
 
 @EntityRepository(GuildEntity)
 export class GuildRepository extends Repository<GuildEntity> {
-    public async getEntity(guild: Guild) {
+    private cache: Map<Guild, GuildEntity>;
+
+    constructor() {
+        super();
+        this.cache = new Map();
+    }
+
+    public async getEntity(guild: Guild): Promise<GuildEntity> {
+        if (this.cache.has(guild)) {
+            return this.cache.get(guild)!;
+        }
         const structure = {
             id: guild.id,
             name: guild.name,
@@ -15,6 +25,7 @@ export class GuildRepository extends Repository<GuildEntity> {
             entity = await this.create(structure);
             await this.save(entity);
         }
+        this.cache.set(guild, entity);
         return entity;
     }
 }

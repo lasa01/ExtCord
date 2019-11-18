@@ -36,11 +36,11 @@ export interface Database {
 
 export class Database extends EventEmitter {
     public configEntry?: ObjectConfigEntry;
-    public repos: {
-        guild?: GuildRepository,
-        member?: MemberRepository,
-        user?: UserRepository,
-        role?: RoleRepository,
+    public repos?: {
+        guild: GuildRepository,
+        member: MemberRepository,
+        user: UserRepository,
+        role: RoleRepository,
     };
     public connection?: Connection;
     private entities: Array<new () => any>;
@@ -48,7 +48,6 @@ export class Database extends EventEmitter {
     constructor() {
         super();
         this.entities = [GuildEntity, MemberEntity, UserEntity, RoleEntity];
-        this.repos = {};
     }
 
     public async connect(options?: ConnectionOptions) {
@@ -60,10 +59,12 @@ export class Database extends EventEmitter {
             logging: true,
             synchronize: true,
         }));
-        this.repos.guild = this.connection.getCustomRepository(GuildRepository);
-        this.repos.member = this.connection.getCustomRepository(MemberRepository);
-        this.repos.user = this.connection.getCustomRepository(UserRepository);
-        this.repos.role = this.connection.getCustomRepository(RoleRepository);
+        this.repos = {
+            guild: this.connection.getCustomRepository(GuildRepository),
+            member: this.connection.getCustomRepository(MemberRepository),
+            role: this.connection.getCustomRepository(RoleRepository),
+            user: this.connection.getCustomRepository(UserRepository),
+        };
         this.emit("ready");
     }
 
@@ -92,5 +93,13 @@ export class Database extends EventEmitter {
             type: "sqlite",
         });
         config.registerEntry(this.configEntry);
+    }
+
+    public ensureConnection(): asserts this is this & {
+        connection: Connection, repos: Exclude<Database["repos"], undefined>,
+    } {
+        if (!this.connection) {
+            throw new Error("Database is not connected");
+        }
     }
 }

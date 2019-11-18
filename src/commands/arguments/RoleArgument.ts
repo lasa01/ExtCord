@@ -21,7 +21,7 @@ export class RoleArgument<T extends boolean> extends Argument<Role, T> {
             return error(CommandPhrases.invalidRoleArgument);
         }
         const id = match[1];
-        if (!context.message.guild.roles.has(id)) {
+        if (!context.message.guild.guild.roles.has(id)) {
             return error(CommandPhrases.invalidRoleMentionArgument);
         }
         return false;
@@ -29,8 +29,8 @@ export class RoleArgument<T extends boolean> extends Argument<Role, T> {
 
     public parse(data: string, context: ICommandContext): Role {
         if (data === "@everyone") {
-            return context.message.guild.defaultRole;
+            return context.message.guild.guild.defaultRole;
         }
-        return context.message.guild.roles.get(MENTION_REGEX.exec(data)![1])!;
+        return context.message.guild.guild.roles.get(MENTION_REGEX.exec(data)![1])!;
     }
 }

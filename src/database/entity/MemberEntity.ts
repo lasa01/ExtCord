@@ -11,8 +11,14 @@ export class MemberEntity {
     @Column()
     public nickname!: string;
 
+    @Column()
+    public userId!: string;
+
     @ManyToOne((type) => UserEntity, (user) => user.members)
     public user!: UserEntity;
+
+    @Column()
+    public guildId!: string;
 
     @ManyToOne((type) => GuildEntity, (guild) => guild.members)
     public guild!: GuildEntity;

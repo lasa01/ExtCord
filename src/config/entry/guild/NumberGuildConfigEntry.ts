@@ -1,7 +1,7 @@
 import { Repository } from "typeorm";
 
 import { Database } from "../../../database/Database";
-import { ExtendedGuild } from "../../../util/Types";
+import { IExtendedGuild } from "../../../util/Types";
 import { IEntryInfo } from "../ConfigEntry";
 import { NumberConfigEntry } from "../NumberConfigEntry";
 import { NumberConfigEntity } from "./database/NumberConfigEntity";
@@ -18,12 +18,12 @@ export class NumberGuildConfigEntry extends NumberConfigEntry {
         this.cache = new Map();
     }
 
-    public async guildGet(guild: ExtendedGuild): Promise<number> {
+    public async guildGet(guild: IExtendedGuild): Promise<number> {
         const entity = await this.guildGetEntity(guild);
         return entity.value;
     }
 
-    public async guildSet(guild: ExtendedGuild, value: number) {
+    public async guildSet(guild: IExtendedGuild, value: number) {
         this.ensureRepo();
         const entity = await this.guildGetEntity(guild);
         entity.value = value;
@@ -32,12 +32,13 @@ export class NumberGuildConfigEntry extends NumberConfigEntry {
 
     private ensureRepo(): asserts this is this & { repo: Repository<NumberConfigEntity> } {
         if (this.repo) { return; }
-        this.repo = this.database.connection!.getRepository(NumberConfigEntity);
+        this.database.ensureConnection();
+        this.repo = this.database.connection.getRepository(NumberConfigEntity);
     }
 
-    private async guildGetEntity(guild: ExtendedGuild) {
-        if (this.cache.has(guild.id)) {
-            return this.cache.get(guild.id)!;
+    private async guildGetEntity(guild: IExtendedGuild) {
+        if (this.cache.has(guild.guild.id)) {
+            return this.cache.get(guild.guild.id)!;
         }
         this.ensureRepo();
         let entity = await this.repo.findOne({
@@ -52,7 +53,7 @@ export class NumberGuildConfigEntry extends NumberConfigEntry {
             });
             await this.repo.save(entity);
         }
-        this.cache.set(guild.id, entity);
+        this.cache.set(guild.guild.id, entity);
         return entity;
     }
 }

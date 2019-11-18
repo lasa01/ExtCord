@@ -1,7 +1,7 @@
 import { Repository } from "typeorm";
 
 import { Database } from "../../../database/Database";
-import { ExtendedGuild } from "../../../util/Types";
+import { IExtendedGuild } from "../../../util/Types";
 import { BooleanConfigEntry } from "../BooleanConfigEntry";
 import { IEntryInfo } from "../ConfigEntry";
 import { BooleanConfigEntity } from "./database/BooleanConfigEntity";
@@ -18,12 +18,12 @@ export class BooleanGuildConfigEntry extends BooleanConfigEntry {
         this.cache = new Map();
     }
 
-    public async guildGet(guild: ExtendedGuild): Promise<boolean> {
+    public async guildGet(guild: IExtendedGuild): Promise<boolean> {
         const entity = await this.guildGetEntity(guild);
         return entity.value;
     }
 
-    public async guildSet(guild: ExtendedGuild, value: boolean) {
+    public async guildSet(guild: IExtendedGuild, value: boolean) {
         this.ensureRepo();
         const entity = await this.guildGetEntity(guild);
         entity.value = value;
@@ -32,12 +32,13 @@ export class BooleanGuildConfigEntry extends BooleanConfigEntry {
 
     private ensureRepo(): asserts this is this & { repo: Repository<BooleanConfigEntity> } {
         if (this.repo) { return; }
-        this.repo = this.database.connection!.getRepository(BooleanConfigEntity);
+        this.database.ensureConnection();
+        this.repo = this.database.connection.getRepository(BooleanConfigEntity);
     }
 
-    private async guildGetEntity(guild: ExtendedGuild) {
-        if (this.cache.has(guild.id)) {
-            return this.cache.get(guild.id)!;
+    private async guildGetEntity(guild: IExtendedGuild) {
+        if (this.cache.has(guild.guild.id)) {
+            return this.cache.get(guild.guild.id)!;
         }
         this.ensureRepo();
         let entity = await this.repo.findOne({
@@ -52,7 +53,7 @@ export class BooleanGuildConfigEntry extends BooleanConfigEntry {
             });
             await this.repo.save(entity);
         }
-        this.cache.set(guild.id, entity);
+        this.cache.set(guild.guild.id, entity);
         return entity;
     }
 }

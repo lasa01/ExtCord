@@ -5,7 +5,17 @@ import { UserEntity } from "../entity/UserEntity";
 
 @EntityRepository(UserEntity)
 export class UserRepository extends Repository<UserEntity> {
-    public async getEntity(user: User) {
+    private cache: Map<User, UserEntity>;
+
+    constructor() {
+        super();
+        this.cache = new Map();
+    }
+
+    public async getEntity(user: User): Promise<UserEntity> {
+        if (this.cache.has(user)) {
+            return this.cache.get(user)!;
+        }
         const structure = {
             discriminator: user.discriminator,
             id: user.id,
@@ -16,6 +26,7 @@ export class UserRepository extends Repository<UserEntity> {
             entity = await this.create(structure);
             await this.save(entity);
         }
+        this.cache.set(user, entity);
         return entity;
     }
 }

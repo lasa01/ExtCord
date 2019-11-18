@@ -7,18 +7,32 @@ import { UserRepository } from "./UserRepository";
 
 @EntityRepository(MemberEntity)
 export class MemberRepository extends Repository<MemberEntity> {
-    public async getEntity(member: GuildMember) {
-        let entity = await this.findOne({ where: { guildId: member.guild.id, userId: member.user.id} });
+    private cache: Map<GuildMember, MemberEntity>;
+
+    constructor() {
+        super();
+        this.cache = new Map();
+    }
+
+    public async getEntity(member: GuildMember): Promise<MemberEntity> {
+        if (this.cache.has(member)) {
+            return this.cache.get(member)!;
+        }
+        let entity = await this.findOne(
+            { guildId: member.guild.id, userId: member.user.id },
+            { relations: ["guild", "user"] },
+        );
         if (!entity) {
             const guild = await this.manager.getCustomRepository(GuildRepository).getEntity(member.guild);
             const user = await this.manager.getCustomRepository(UserRepository).getEntity(member.user);
-            entity = await this.create({
+            entity = this.create({
                 guild,
                 nickname: member.displayName,
                 user,
             });
             await this.save(entity);
         }
+        this.cache.set(member, entity);
         return entity;
     }
 }

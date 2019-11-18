@@ -59,7 +59,7 @@ async function testConfig() {
  */
 async function testDatabase() {
     // Test database
-    const database = new Database();
+    const database: Database = new Database();
     Config.registerDatabase(database);
     const permissions = new Permissions(database);
 
@@ -68,9 +68,11 @@ async function testDatabase() {
         type: "sqlite",
     });
 
-    const gRepo = database.repos.guild!;
-    const uRepo = database.repos.user!;
-    const mRepo = database.repos.member!;
+    database.ensureConnection();
+
+    const gRepo = database.repos.guild;
+    const uRepo = database.repos.user;
+    const mRepo = database.repos.member;
 
     Logger.info("Clearing repos");
     await mRepo.clear();
@@ -78,12 +80,12 @@ async function testDatabase() {
     await uRepo.clear();
 
     Logger.info("Creating a guild and an user");
-    const guild = await gRepo.create({
+    const guild = gRepo.create({
         id: "testg",
         name: "guild",
     });
 
-    const user = await uRepo.create({
+    const user = uRepo.create({
         discriminator: "4123",
         id: "testu",
         username: "user",
@@ -103,7 +105,7 @@ async function testDatabase() {
     Logger.info("Saving member");
     await mRepo.save(member);
 
-    const pRepo = database.connection!.getRepository(MemberPermissionEntity);
+    const pRepo = database.connection.getRepository(MemberPermissionEntity);
     Logger.info("Testing permissions");
     const perm = pRepo.create({
         member,

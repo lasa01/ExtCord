@@ -13,6 +13,9 @@ export class RoleEntity {
     @Column()
     public name!: string;
 
+    @Column()
+    public guildId!: string;
+
     @ManyToOne((type) => GuildEntity, (guild) => guild.roles)
     public guild!: GuildEntity;
 }
