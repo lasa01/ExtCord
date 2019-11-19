@@ -71,7 +71,7 @@ const aliasSetCommand = new SimpleCommand(
                 if (!c) {
                     return error(commandNotFoundPhrase, { command: data });
                 }
-                return false;
+                return true;
             },
         ),
     ] as const,

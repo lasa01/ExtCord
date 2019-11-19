@@ -8,7 +8,7 @@ import { Argument, IArgumentInfo } from "./Argument";
 
 const MENTION_REGEX = /^<@!?(\d+)>$/;
 
-export class MemberArgument<T extends boolean> extends Argument<Promise<IExtendedMember>, T> {
+export class MemberArgument<T extends boolean> extends Argument<Promise<IExtendedMember>, T, string> {
     public repo?: MemberRepository;
     private database: Database;
 
@@ -17,7 +17,7 @@ export class MemberArgument<T extends boolean> extends Argument<Promise<IExtende
         this.database = database;
     }
 
-    public async check(data: string, context: ICommandContext, error: ILinkedErrorResponse): Promise<boolean> {
+    public async check(data: string, context: ICommandContext, error: ILinkedErrorResponse): Promise<string|undefined> {
         const match = MENTION_REGEX.exec(data);
         if (!match) {
             return error(CommandPhrases.invalidMemberArgument);
@@ -26,12 +26,12 @@ export class MemberArgument<T extends boolean> extends Argument<Promise<IExtende
         if (!context.message.guild.guild.members.has(id)) {
             return error(CommandPhrases.invalidMemberMentionArgument);
         }
-        return false;
+        return id;
     }
 
-    public async parse(data: string, context: ICommandContext): Promise<IExtendedMember> {
+    public async parse(data: string, context: ICommandContext, passed: string): Promise<IExtendedMember> {
         this.ensureRepo();
-        const member = context.message.guild.guild.members.get(MENTION_REGEX.exec(data)![1])!;
+        const member = context.message.guild.guild.members.get(passed)!;
         return {
             entity: await this.repo.getEntity(member),
             member,

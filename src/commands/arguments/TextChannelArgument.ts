@@ -7,12 +7,13 @@ import { Argument, IArgumentInfo } from "./Argument";
 
 const MENTION_REGEX = /^<#(\d+)>$/;
 
-export class TextChannelArgument<T extends boolean> extends Argument<TextChannel, T> {
+export class TextChannelArgument<T extends boolean> extends Argument<TextChannel, T, TextChannel> {
     constructor(info: IArgumentInfo, optional: T) {
         super(info, optional, false);
     }
 
-    public async check(data: string, context: ICommandContext, error: ILinkedErrorResponse): Promise<boolean> {
+    public async check(data: string, context: ICommandContext, error: ILinkedErrorResponse):
+        Promise<TextChannel|undefined> {
         const match = MENTION_REGEX.exec(data);
         if (!match) {
             return error(CommandPhrases.invalidChannelArgument);
@@ -24,10 +25,10 @@ export class TextChannelArgument<T extends boolean> extends Argument<TextChannel
         if (!(channel instanceof TextChannel)) {
             return error(CommandPhrases.invalidTextChannelArgument);
         }
-        return false;
+        return channel;
     }
 
-    public parse(data: string, context: ICommandContext): TextChannel {
-        return context.message.guild.guild.channels.get(MENTION_REGEX.exec(data)![1])! as TextChannel;
+    public parse(data: string, context: ICommandContext, passed: TextChannel): TextChannel {
+        return passed;
     }
 }

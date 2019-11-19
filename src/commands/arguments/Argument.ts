@@ -5,7 +5,7 @@ import { Command, ILinkedErrorResponse } from "../Command";
 import { CommandPhrases } from "../CommandPhrases";
 import { ICommandContext } from "../Commands";
 
-export abstract class Argument<T, U extends boolean> {
+export abstract class Argument<T, U extends boolean, V> {
     public name: string;
     public localizedName: SimplePhrase;
     public description: string;
@@ -62,9 +62,10 @@ export abstract class Argument<T, U extends boolean> {
         return usage;
     }
 
-    public abstract async check(data: string, context: ICommandContext, error: ILinkedErrorResponse): Promise<boolean>;
+    public abstract async check(data: string, context: ICommandContext, error: ILinkedErrorResponse):
+        Promise<V|undefined>;
 
-    public abstract parse(data: string, context: ICommandContext): T;
+    public abstract parse(data: string, context: ICommandContext, passed: V): T;
 }
 
 export interface IArgumentInfo {

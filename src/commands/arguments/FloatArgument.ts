@@ -3,7 +3,7 @@ import { CommandPhrases } from "../CommandPhrases";
 import { ICommandContext } from "../Commands";
 import { Argument, IArgumentInfo } from "./Argument";
 
-export class FloatArgument<T extends boolean> extends Argument<number, T> {
+export class FloatArgument<T extends boolean> extends Argument<number, T, number> {
     public min: number;
     public max: number;
 
@@ -24,10 +24,10 @@ export class FloatArgument<T extends boolean> extends Argument<number, T> {
         if (this.max < float) {
             return error(CommandPhrases.tooBigArgument, { max: this.max.toString() });
         }
-        return false;
+        return float;
     }
 
-    public parse(data: string, context: ICommandContext): number {
-        return parseFloat(data);
+    public parse(data: string, context: ICommandContext, passed: number): number {
+        return passed;
     }
 }

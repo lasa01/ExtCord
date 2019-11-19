@@ -94,7 +94,7 @@ const languageSetCommand = new SimpleCommand(
                         language: data,
                     });
                 }
-                return false;
+                return true;
             },
         ),
     ] as const,

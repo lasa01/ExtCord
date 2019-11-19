@@ -14,7 +14,7 @@ import { Argument } from "./arguments/Argument";
 import { CommandPhrases } from "./CommandPhrases";
 import { ICommandContext } from "./Commands";
 
-export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
+export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any>>> {
     public name: string;
     public localizedName: SimplePhrase;
     public description: string;
@@ -184,12 +184,12 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
         const parsed: any[] = [];
         let rawIndex = 0;
         let rawArgument: string;
-        let argument: Argument<any, boolean>;
-        let errorStuff: LinkedErrorArgs<ISimpleMap>|SimplePhrase|undefined;
+        let argument: Argument<any, boolean, any>;
+        let errorStuff: LinkedErrorArgs<Record<string, string>>|SimplePhrase|undefined;
         const errorResponseFn: ILinkedErrorResponse =
-        <U extends ISimpleMap>(phrase: TemplatePhrase<U>|SimplePhrase, stuff?: U): true => {
+        <U extends Record<string, string>>(phrase: TemplatePhrase<U>|SimplePhrase, stuff?: U): undefined => {
             errorStuff = stuff ? [phrase as TemplatePhrase<U>, stuff] : phrase;
-            return true;
+            return;
         };
         for (const index of this.arguments.keys()) {
             argument = this.arguments[index];
@@ -201,9 +201,9 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
                     rawArgument += " " + rawArguments[rawIndex];
                 }
             }
-            const error = await argument.check(rawArgument, context, errorResponseFn);
-            if (!error) {
-                parsed.push(await argument.parse(rawArgument, context));
+            const passed = await argument.check(rawArgument, context, errorResponseFn);
+            if (passed !== undefined) {
+                parsed.push(await argument.parse(rawArgument, context, passed));
                 rawIndex++;
             } else if (argument.optional) {
                 parsed.push(undefined);
@@ -276,7 +276,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean>>> {
     }
 }
 
-export interface IExecutionContext<T extends ReadonlyArray<Argument<any, boolean>>> extends ICommandContext {
+export interface IExecutionContext<T extends ReadonlyArray<Argument<any, boolean, any>>> extends ICommandContext {
     rawArguments: string[];
     arguments: ArgumentsParseReturns<T>;
 }
@@ -288,15 +288,15 @@ export interface ICommandInfo {
     aliases?: string[] | IListMap;
 }
 
-type ArgumentsParseReturns<T extends ReadonlyArray<Argument<any, boolean>>> = {
-    [P in keyof T]: T[P] extends Argument<infer U, infer V> ?
+type ArgumentsParseReturns<T extends ReadonlyArray<Argument<any, boolean, any>>> = {
+    [P in keyof T]: T[P] extends Argument<infer U, infer V, any> ?
         V extends false ? U : U|undefined
         : never
 };
 
 export interface ILinkedErrorResponse {
-    <T extends ISimpleMap>(phrase: TemplatePhrase<T>, stuff: T): true;
-    (phrase: SimplePhrase): true;
+    <T extends Record<string, string>>(phrase: TemplatePhrase<T>, stuff: T): undefined;
+    (phrase: SimplePhrase): undefined;
 }
 
 export type LinkedErrorArgs<T extends Record<string, string>> = [TemplatePhrase<T>, T];
