@@ -3,15 +3,15 @@ import format = require("string-format");
 
 import { DEFAULT_LANGUAGE } from "../Languages";
 import { IPhraseInfo } from "./Phrase";
-import { ISimpleMap, SimplePhrase } from "./SimplePhrase";
+import { SimplePhrase } from "./SimplePhrase";
 import { TemplatePhrase, TemplateStuff } from "./TemplatePhrase";
 
-export class MessagePhrase<T extends ISimpleMap> extends TemplatePhrase<T> {
+export class MessagePhrase<T extends Record<string, string>> extends TemplatePhrase<T> {
     protected defaultsEmbed: ILocalizedBaseEmbed;
     protected templatesEmbed: ILocalizedBaseEmbed;
     constructor(
             info: IPhraseInfo,
-            defaultsText: ISimpleMap | string, defaultsEmbed: ILocalizedBaseEmbed | IBaseEmbed,
+            defaultsText: Record<string, string> | string, defaultsEmbed: ILocalizedBaseEmbed | IBaseEmbed,
             templateDescription: T,
         ) {
         super(info, defaultsText, templateDescription);
@@ -181,7 +181,7 @@ export class MessagePhrase<T extends ISimpleMap> extends TemplatePhrase<T> {
         return [data, this.description];
     }
 
-    public formatEmbed<U extends ISimpleMap>(language: string, stuff?: TemplateStuff<T, U>): RichEmbed {
+    public formatEmbed<U extends Record<string, string>>(language: string, stuff?: TemplateStuff<T, U>): RichEmbed {
         const processedStuff: { [key: string]: string } = {};
         if (stuff) {
             for (const [key, thing] of Object.entries(stuff)) {

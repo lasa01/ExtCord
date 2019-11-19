@@ -1,6 +1,6 @@
 import { DEFAULT_LANGUAGE } from "../../language/Languages";
 import { PhraseGroup } from "../../language/phrase/PhraseGroup";
-import { ISimpleMap, SimplePhrase } from "../../language/phrase/SimplePhrase";
+import { SimplePhrase } from "../../language/phrase/SimplePhrase";
 import { Command, ILinkedErrorResponse } from "../Command";
 import { CommandPhrases } from "../CommandPhrases";
 import { ICommandContext } from "../Commands";
@@ -68,6 +68,6 @@ export abstract class Argument<T, U extends boolean> {
 }
 
 export interface IArgumentInfo {
-    name: string | ISimpleMap;
-    description: string | ISimpleMap;
+    name: string | Record<string, string>;
+    description: string | Record<string, string>;
 }

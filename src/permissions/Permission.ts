@@ -1,7 +1,7 @@
 import { DEFAULT_LANGUAGE } from "../language/Languages";
 import { Phrase } from "../language/phrase/Phrase";
 import { PhraseGroup } from "../language/phrase/PhraseGroup";
-import { ISimpleMap, SimplePhrase } from "../language/phrase/SimplePhrase";
+import { SimplePhrase } from "../language/phrase/SimplePhrase";
 import { IExtendedMember, IExtendedRole } from "../util/Types";
 import { Permissions } from "./Permissions";
 
@@ -89,5 +89,5 @@ export class Permission {
 
 export interface IPermissionInfo {
     name: string;
-    description?: string | ISimpleMap;
+    description?: string | Record<string, string>;
 }

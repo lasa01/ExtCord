@@ -12,7 +12,6 @@ import { DynamicFieldMessagePhrase, TemplateStuffs } from "../language/phrase/Dy
 import { MessagePhrase } from "../language/phrase/MessagePhrase";
 import { Phrase } from "../language/phrase/Phrase";
 import { PhraseGroup } from "../language/phrase/PhraseGroup";
-import { ISimpleMap } from "../language/phrase/SimplePhrase";
 import { TemplateStuff } from "../language/phrase/TemplatePhrase";
 import { Permission } from "../permissions/Permission";
 import { PermissionGroup } from "../permissions/PermissionGroup";
@@ -347,7 +346,13 @@ export interface ICommandContext {
     respond: LinkedResponse;
 }
 
-export type LinkedResponse = <T extends ISimpleMap, U extends ISimpleMap, V extends ISimpleMap>(
+export type LinkedResponse =
+    <
+        T extends Record<string, string>,
+        U extends Record<string, string>,
+        V extends Record<string, string>
+    >
+    (
     phrase: MessagePhrase<T> | DynamicFieldMessagePhrase<T, U>,
     stuff: TemplateStuff<T, V>, fieldStuff?: TemplateStuffs<U, V>,
 ) => Promise<void>;

@@ -3,19 +3,21 @@ import format = require("string-format");
 import { DEFAULT_LANGUAGE } from "../Languages";
 import { IBaseEmbed, IEmbedField, ILocalizedBaseEmbed, MessagePhrase } from "./MessagePhrase";
 import { IPhraseInfo } from "./Phrase";
-import { ISimpleMap, SimplePhrase } from "./SimplePhrase";
+import { SimplePhrase } from "./SimplePhrase";
 import { TemplateStuff } from "./TemplatePhrase";
 
-export class DynamicFieldMessagePhrase<T extends ISimpleMap, U extends ISimpleMap> extends MessagePhrase<T> {
+export class DynamicFieldMessagePhrase<T extends Record<string, string>, U extends Record<string, string>>
+    extends MessagePhrase<T> {
     protected defaultsField: ILocalizedEmbedField;
     protected templatesField: ILocalizedEmbedField;
-    protected defaultsFieldText: ISimpleMap;
-    protected templatesFieldText: ISimpleMap;
+    protected defaultsFieldText: Record<string, string>;
+    protected templatesFieldText: Record<string, string>;
     private fieldDescription: string;
 
     constructor(
-            info: IPhraseInfo, defaultsText: ISimpleMap | string, defaultsEmbed: ILocalizedBaseEmbed | IBaseEmbed,
-            defaultsFieldText: ISimpleMap | string, defaultsField: ILocalizedEmbedField | IEmbedField,
+            info: IPhraseInfo,
+            defaultsText: Record<string, string> | string, defaultsEmbed: ILocalizedBaseEmbed | IBaseEmbed,
+            defaultsFieldText: Record<string, string> | string, defaultsField: ILocalizedEmbedField | IEmbedField,
             templateDescription: T, fieldTemplateDescription: U,
         ) {
         super(info, defaultsText, defaultsEmbed, templateDescription);
@@ -83,7 +85,7 @@ export class DynamicFieldMessagePhrase<T extends ISimpleMap, U extends ISimpleMa
         return [parsed, comment];
     }
 
-    public format<F extends ISimpleMap>(
+    public format<F extends Record<string, string>>(
         language: string, stuff?: TemplateStuff<T, F>, fieldStuff?: TemplateStuffs<U, F>,
     ) {
         let text = super.format(language, stuff);
@@ -109,7 +111,7 @@ export class DynamicFieldMessagePhrase<T extends ISimpleMap, U extends ISimpleMa
         return text;
     }
 
-    public formatEmbed<F extends ISimpleMap>(
+    public formatEmbed<F extends Record<string, string>>(
         language: string, stuff?: TemplateStuff<T, F>, fieldStuff?: TemplateStuffs<U, F>,
     ) {
         const embed = super.formatEmbed(language, stuff);
@@ -138,7 +140,8 @@ export class DynamicFieldMessagePhrase<T extends ISimpleMap, U extends ISimpleMa
     }
 }
 
-export type TemplateStuffs<T extends ISimpleMap, U extends ISimpleMap> = Array<TemplateStuff<T, U>|undefined>;
+export type TemplateStuffs<T extends Record<string, string>, U extends Record<string, string>>
+    = Array<TemplateStuff<T, U>|undefined>;
 
 export interface ILocalizedEmbedField {
     [key: string]: IEmbedField;

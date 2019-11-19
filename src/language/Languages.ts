@@ -35,12 +35,7 @@ export interface Languages {
 
 export class Languages extends EventEmitter {
     public languages: string[];
-    public languageNames: ISimpleMap;
-    public languageConfigEntry?: StringGuildConfigEntry;
-    public useEmbedsConfigEntry?: BooleanGuildConfigEntry;
-    public useMentionsConfigEntry?: BooleanGuildConfigEntry;
-    public languageNameConfigEntry?: StringConfigEntry;
-    public languageDirConfigEntry?: StringConfigEntry;
+    public languageNames: Record<string, string>;
     private phrases: Map<string, Phrase>;
     private configEntry?: ConfigEntryGroup;
     private defaultLoaded: boolean;

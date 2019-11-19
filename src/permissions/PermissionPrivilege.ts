@@ -1,6 +1,6 @@
 import { DEFAULT_LANGUAGE } from "../language/Languages";
 import { PhraseGroup } from "../language/phrase/PhraseGroup";
-import { ISimpleMap, SimplePhrase } from "../language/phrase/SimplePhrase";
+import { SimplePhrase } from "../language/phrase/SimplePhrase";
 import { Logger } from "../util/Logger";
 import { Permission } from "./Permission";
 import { Permissions } from "./Permissions";
@@ -171,6 +171,6 @@ export class PermissionPrivilege {
 
 export interface IPrivilegeInfo {
     name: string;
-    description: string | ISimpleMap;
+    description: string | Record<string, string>;
     everyone?: boolean;
 }

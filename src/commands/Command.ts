@@ -3,7 +3,7 @@ import { DEFAULT_LANGUAGE } from "../language/Languages";
 import { IListMap, ListPhrase } from "../language/phrase/ListPhrase";
 import { Phrase } from "../language/phrase/Phrase";
 import { PhraseGroup } from "../language/phrase/PhraseGroup";
-import { ISimpleMap, SimplePhrase } from "../language/phrase/SimplePhrase";
+import { SimplePhrase } from "../language/phrase/SimplePhrase";
 import { TemplatePhrase } from "../language/phrase/TemplatePhrase";
 import { Module } from "../modules/Module";
 import { Permission } from "../permissions/Permission";
@@ -282,8 +282,8 @@ export interface IExecutionContext<T extends ReadonlyArray<Argument<any, boolean
 }
 
 export interface ICommandInfo {
-    name: string | ISimpleMap;
-    description: string | ISimpleMap;
+    name: string | Record<string, string>;
+    description: string | Record<string, string>;
     author: string | Module;
     aliases?: string[] | IListMap;
 }
@@ -299,4 +299,4 @@ export interface ILinkedErrorResponse {
     (phrase: SimplePhrase): true;
 }
 
-export type LinkedErrorArgs<T extends ISimpleMap> = [TemplatePhrase<T>, T];
+export type LinkedErrorArgs<T extends Record<string, string>> = [TemplatePhrase<T>, T];
