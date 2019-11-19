@@ -11,10 +11,10 @@ export class Permission {
     public description?: string;
     public localizedDescription?: SimplePhrase;
     public phraseGroup: PhraseGroup;
+    public permissions?: Permissions;
     private subPhrases: Phrase[];
     private subPhraseGroup?: PhraseGroup;
     private phrases: Phrase[];
-    private permissions?: Permissions;
     private parent?: Permission;
 
     constructor(info: IPermissionInfo) {
@@ -75,15 +75,24 @@ export class Permission {
     }
 
     public async checkMember(member: IExtendedMember) {
-        return this.permissions!.checkMemberPermission(this, member);
+        this.ensurePermissions();
+        return this.permissions.checkMemberPermission(this, member);
     }
 
     public async checkMemberOnly(member: IExtendedMember) {
-        return this.permissions!.checkMemberPermissionOnly(this, member);
+        this.ensurePermissions();
+        return this.permissions.checkMemberPermissionOnly(this, member);
     }
 
     public async checkRole(role: IExtendedRole) {
-        return this.permissions!.checkRolePermission(this, role);
+        this.ensurePermissions();
+        return this.permissions.checkRolePermission(this, role);
+    }
+
+    private ensurePermissions(): asserts this is this & { permissions: Permissions } {
+        if (!this.permissions) {
+            throw new Error(`Permission "${this.fullName}" is not registered`);
+        }
     }
 }
 

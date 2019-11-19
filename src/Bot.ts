@@ -108,8 +108,8 @@ export class Bot extends EventEmitter {
         this.database.registerConfig(this.config);
         Config.registerDatabase(this.database);
         this.permissions = new Permissions(this.database);
-        this.languages = new Languages();
-        this.languages.registerConfig(this.config, this.database);
+        this.languages = new Languages(this.database);
+        this.languages.registerConfig(this.config);
         this.commands = new Commands(this);
         this.commands.registerConfig();
         this.commands.registerDatabase();

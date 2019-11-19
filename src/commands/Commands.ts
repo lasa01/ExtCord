@@ -40,7 +40,7 @@ export interface Commands {
 }
 
 export class Commands extends EventEmitter {
-    public prefixConfigEntry?: StringGuildConfigEntry;
+    public prefixConfigEntry: StringGuildConfigEntry;
     public repos?: {
         alias: Repository<GuildAliasEntity>,
         member: MemberRepository,
@@ -49,7 +49,7 @@ export class Commands extends EventEmitter {
     private commands: Map<string, Command<any>>;
     private languageCommandsMap: Map<string, Map<string, Command<any>>>;
     private guildCommandsMap: Map<string, Map<string, Command<any>>>;
-    private configEntry?: ConfigEntryGroup;
+    private configEntry: ConfigEntryGroup;
     private permissions: Permission[];
     private permission?: Permission;
     private commandPhrases: Phrase[];
@@ -66,6 +66,13 @@ export class Commands extends EventEmitter {
         this.languageCommandsMap = new Map();
         this.permissions = [];
         this.commandPhrases = [];
+        this.prefixConfigEntry = new StringGuildConfigEntry({
+            description: "The prefix for commands",
+            name: "prefix",
+        }, this.bot.database, "!");
+        this.configEntry = new ConfigEntryGroup({
+            name: "commands",
+        }, [ this.prefixConfigEntry ]);
     }
 
     public async message(discordMessage: Message) {
@@ -91,7 +98,7 @@ export class Commands extends EventEmitter {
             },
             message: discordMessage,
         };
-        const prefix = await this.prefixConfigEntry!.guildGet(message.guild);
+        const prefix = await this.prefixConfigEntry.guildGet(message.guild);
         // TODO really doesn't need to be reassigned each call
         const mention = `<@${message.message.client.user.id}>`;
         let text;
@@ -105,8 +112,8 @@ export class Commands extends EventEmitter {
         const command = text.split(" ", 1)[0];
         const language = await this.bot.languages.getLanguage(message.guild);
         // TODO Could get both with one database query
-        const useEmbeds = await this.bot.languages.useEmbedsConfigEntry!.guildGet(message.guild);
-        const useMentions = await this.bot.languages.useMentionsConfigEntry!.guildGet(message.guild);
+        const useEmbeds = await this.bot.languages.useEmbedsConfigEntry.guildGet(message.guild);
+        const useMentions = await this.bot.languages.useMentionsConfigEntry.guildGet(message.guild);
         // TODO maybe don't need a new function every time
         const respond: LinkedResponse = async (phrase, stuff, fieldStuff) => {
                 let content: string;
@@ -262,13 +269,6 @@ export class Commands extends EventEmitter {
     }
 
     public registerConfig() {
-        this.prefixConfigEntry = new StringGuildConfigEntry({
-            description: "The prefix for commands",
-            name: "prefix",
-        }, this.bot.database, "!");
-        this.configEntry = new ConfigEntryGroup({
-            name: "commands",
-        }, [ this.prefixConfigEntry ]);
         this.bot.config.registerEntry(this.configEntry);
     }
 
@@ -353,6 +353,6 @@ export type LinkedResponse =
         V extends Record<string, string>
     >
     (
-    phrase: MessagePhrase<T> | DynamicFieldMessagePhrase<T, U>,
-    stuff: TemplateStuff<T, V>, fieldStuff?: TemplateStuffs<U, V>,
-) => Promise<void>;
+        phrase: MessagePhrase<T> | DynamicFieldMessagePhrase<T, U>,
+        stuff: TemplateStuff<T, V>, fieldStuff?: TemplateStuffs<U, V>,
+    ) => Promise<void>;

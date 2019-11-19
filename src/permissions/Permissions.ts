@@ -30,7 +30,7 @@ import { PermissionPrivilege } from "./PermissionPrivilege";
 
 export class Permissions {
     public database: Database;
-    public privilegeDirConfigEntry?: StringConfigEntry;
+    public privilegeDirConfigEntry: StringConfigEntry;
     // TODO public map instead of this?
     public everyonePrivilege: PermissionPrivilege;
     public adminPrivilege: PermissionPrivilege;
@@ -75,6 +75,10 @@ export class Permissions {
         database.registerEntity(CustomPrivilegeEntity);
         database.registerEntity(CustomPrivilegeIncludeEntity);
         database.registerEntity(CustomPrivilegePermissionEntity);
+        this.privilegeDirConfigEntry = new StringConfigEntry({
+            description: "The directory for privilege files",
+            name: "privilegesDirectory",
+        }, "privileges");
         this.everyonePrivilege = new PermissionPrivilege({
             description: "Default permissions for everyone",
             name: "everyone",
@@ -131,10 +135,6 @@ export class Permissions {
     }
 
     public registerConfig(config: Config) {
-        this.privilegeDirConfigEntry = new StringConfigEntry({
-            description: "The directory for privilege files",
-            name: "privilegesDirectory",
-        }, "privileges");
         config.registerEntry(this.privilegeDirConfigEntry);
     }
 
@@ -148,7 +148,7 @@ export class Permissions {
     }
 
     public async loadAllPrivileges(directory?: string) {
-        directory = directory ?? this.privilegeDirConfigEntry!.get();
+        directory = directory ?? this.privilegeDirConfigEntry.get();
         Logger.verbose("Loading all privileges");
         await ensureDir(directory);
         const dirContent = (await readdir(directory)).filter((file) => file.endsWith(Serializer.extension));

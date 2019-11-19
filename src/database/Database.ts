@@ -35,7 +35,7 @@ export interface Database {
 }
 
 export class Database extends EventEmitter {
-    public configEntry?: ObjectConfigEntry;
+    public configEntry: ObjectConfigEntry;
     public repos?: {
         guild: GuildRepository,
         member: MemberRepository,
@@ -48,10 +48,17 @@ export class Database extends EventEmitter {
     constructor() {
         super();
         this.entities = [GuildEntity, MemberEntity, UserEntity, RoleEntity];
+        this.configEntry = new ObjectConfigEntry({
+            description: "Database connection configuration for TypeORM\nSee https://typeorm.io/#/connection-options",
+            name: "database",
+        }, {
+            database: "bot.sqlite",
+            type: "sqlite",
+        });
     }
 
     public async connect(options?: ConnectionOptions) {
-        options = options ?? this.configEntry!.get() as ConnectionOptions;
+        options = options ?? this.configEntry.get() as ConnectionOptions;
         Logger.verbose("Connecting to database");
         this.connection = await createConnection(Object.assign(options, {
             entities: this.entities,
@@ -85,13 +92,6 @@ export class Database extends EventEmitter {
     }
 
     public registerConfig(config: Config) {
-        this.configEntry = new ObjectConfigEntry({
-            description: "Database connection configuration for TypeORM\nSee https://typeorm.io/#/connection-options",
-            name: "database",
-        }, {
-            database: "bot.sqlite",
-            type: "sqlite",
-        });
         config.registerEntry(this.configEntry);
     }
 

@@ -101,7 +101,7 @@ const languageSetCommand = new SimpleCommand(
     async (context) => {
         const language = context.arguments[0];
         if (context.language !== language) {
-            await context.bot.languages.languageConfigEntry!.guildSet(context.message.guild, language);
+            await context.bot.languages.languageConfigEntry.guildSet(context.message.guild, language);
         }
         await context.respond(languageSetPhrase, { language });
     },

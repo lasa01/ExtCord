@@ -12,7 +12,6 @@ import { Logger } from "../util/Logger";
 import { Serializer } from "../util/Serializer";
 import { IExtendedGuild } from "../util/Types";
 import { Phrase } from "./phrase/Phrase";
-import { ISimpleMap } from "./phrase/SimplePhrase";
 
 export const DEFAULT_LANGUAGE = "en";
 
@@ -36,16 +35,46 @@ export interface Languages {
 export class Languages extends EventEmitter {
     public languages: string[];
     public languageNames: Record<string, string>;
+    public languageConfigEntry: StringGuildConfigEntry;
+    public useEmbedsConfigEntry: BooleanGuildConfigEntry;
+    public useMentionsConfigEntry: BooleanGuildConfigEntry;
+    public languageNameConfigEntry: StringConfigEntry;
+    public languageDirConfigEntry: StringConfigEntry;
     private phrases: Map<string, Phrase>;
-    private configEntry?: ConfigEntryGroup;
+    private configEntry: ConfigEntryGroup;
     private defaultLoaded: boolean;
 
-    constructor() {
+    constructor(database: Database) {
         super();
         this.languages = [];
         this.languageNames = {};
         this.phrases = new Map();
         this.defaultLoaded = false;
+        this.languageNameConfigEntry = new StringConfigEntry({
+            description: "The name of the default language",
+            name: "languageName",
+        }, "English");
+        this.languageDirConfigEntry = new StringConfigEntry({
+            description: "The directory for language files",
+            name: "languagesDirectory",
+        }, "languages");
+        this.languageConfigEntry = new StringGuildConfigEntry({
+            description: "The default language ISO 639-1 code",
+            name: "language",
+        }, database, DEFAULT_LANGUAGE);
+        this.useEmbedsConfigEntry = new BooleanGuildConfigEntry({
+            description: "Use embeds when sending messages",
+            name: "useEmbeds",
+        }, database, true);
+        this.useMentionsConfigEntry = new BooleanGuildConfigEntry({
+            description: "Mention the author when replying to messages",
+            name: "useMentions",
+        }, database, false);
+        this.configEntry = new ConfigEntryGroup({
+            description: "Languages configuration",
+            name: "languages",
+        }, [this.languageConfigEntry, this.useEmbedsConfigEntry,
+            this.useMentionsConfigEntry, this.languageDirConfigEntry]);
     }
 
     public registerPhrase(phrase: Phrase) {
@@ -57,7 +86,7 @@ export class Languages extends EventEmitter {
     }
 
     public async loadAll(directory?: string) {
-        directory = directory ?? this.languageDirConfigEntry!.get();
+        directory = directory ?? this.languageDirConfigEntry.get();
         Logger.verbose("Loading all languages");
         await ensureDir(directory);
         // Filter out wrong extensions
@@ -79,11 +108,11 @@ export class Languages extends EventEmitter {
     public async writeLoadDefault(directory: string) {
         Logger.verbose("Writing default language file");
         let content = Serializer.stringify({
-            id: this.languageConfigEntry!.get(),
-            name: this.languageNameConfigEntry!.get(),
+            id: this.languageConfigEntry.get(),
+            name: this.languageNameConfigEntry.get(),
         });
         content = await this.loadText(content);
-        await writeFile(resolve(directory, this.languageConfigEntry!.get() + Serializer.extension), content);
+        await writeFile(resolve(directory, this.languageConfigEntry.get() + Serializer.extension), content);
     }
 
     public async loadFile(path: string) {
@@ -131,32 +160,7 @@ export class Languages extends EventEmitter {
         return Serializer.stringify(parsed);
     }
 
-    public registerConfig(config: Config, database: Database) {
-        this.languageConfigEntry = new StringGuildConfigEntry({
-            description: "The default language ISO 639-1 code",
-            name: "language",
-        }, database, DEFAULT_LANGUAGE);
-        this.useEmbedsConfigEntry = new BooleanGuildConfigEntry({
-            description: "Use embeds when sending messages",
-            name: "useEmbeds",
-        }, database, true);
-        this.useMentionsConfigEntry = new BooleanGuildConfigEntry({
-            description: "Mention the author when replying to messages",
-            name: "useMentions",
-        }, database, false);
-        this.languageNameConfigEntry = new StringConfigEntry({
-            description: "The name of the default language",
-            name: "languageName",
-        }, "English");
-        this.languageDirConfigEntry = new StringConfigEntry({
-            description: "The directory for language files",
-            name: "languagesDirectory",
-        }, "languages");
-        this.configEntry = new ConfigEntryGroup({
-            description: "Languages configuration",
-            name: "languages",
-        }, [this.languageConfigEntry, this.useEmbedsConfigEntry,
-            this.useMentionsConfigEntry, this.languageDirConfigEntry]);
+    public registerConfig(config: Config) {
         config.registerEntry(this.configEntry);
     }
 

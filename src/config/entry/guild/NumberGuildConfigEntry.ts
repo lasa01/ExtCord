@@ -46,7 +46,7 @@ export class NumberGuildConfigEntry extends NumberConfigEntry {
             name: this.fullName,
         });
         if (!entity) {
-            entity = this.repo!.create({
+            entity = this.repo.create({
                 guild: guild.entity,
                 name: this.fullName,
                 value: this.get(),
