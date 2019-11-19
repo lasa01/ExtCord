@@ -96,7 +96,7 @@ export class Database extends EventEmitter {
     }
 
     public ensureConnection(): asserts this is this & {
-        connection: Connection, repos: Exclude<Database["repos"], undefined>,
+        connection: Connection, repos: NonNullable<Database["repos"]>,
     } {
         if (!this.connection) {
             throw new Error("Database is not connected");

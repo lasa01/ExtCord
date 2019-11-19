@@ -325,7 +325,7 @@ export class Commands extends EventEmitter {
         return `${this.commands.size} commands loaded: ${Array.from(this.commands.keys()).join(", ")}`;
     }
 
-    private ensureRepo(): asserts this is this & { repos: Exclude<Commands["repos"], undefined> } {
+    private ensureRepo(): asserts this is this & { repos: NonNullable<Commands["repos"]> } {
         if (!this.repos) {
             this.bot.database.ensureConnection();
             this.repos = {

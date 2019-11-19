@@ -266,7 +266,7 @@ export class Permissions {
         return (await this.getRolePermissionMap(role.entity)).get(permission.fullName) ?? false;
     }
 
-    public ensureRepo(): asserts this is this & { repos: Exclude<Permissions["repos"], undefined> } {
+    public ensureRepo(): asserts this is this & { repos: NonNullable<Permissions["repos"]> } {
         if (!this.repos) {
             this.database.ensureConnection();
             const connection = this.database.connection;
