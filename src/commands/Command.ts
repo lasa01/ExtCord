@@ -148,7 +148,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
 
     public async command(context: ICommandContext): Promise<void> {
         let startTime = process.hrtime();
-        Logger.debug(`Command: ${context.command}`);
+        Logger.debug(`(command ${this.name}) Command: ${context.command}`);
         if (!await this.canExecute(context.message.member)) {
             await context.respond(CommandPhrases.noPermission, { permission: this.defaultPermission.fullName });
             return;
@@ -156,7 +156,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
         // Set to an empty array if the string is empty,
         // since the split function would return an array with an empty string, and we don't want that
         const rawArguments = context.passed === "" ? [] : context.passed.split(" ");
-        Logger.debug(`Arguments: ${rawArguments.join(", ")}`);
+        Logger.debug(`(command ${this.name}) Arguments: ${rawArguments.join(", ")}`);
         const maxArgs = this.arguments.length;
         if (rawArguments.length < this.minArguments) {
             await context.respond(CommandPhrases.tooFewArguments, {
@@ -218,7 +218,8 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
             }
         }
         let timeDiff = process.hrtime(startTime);
-        Logger.debug(`Argument parsing took ${((timeDiff[0] * 1e9 + timeDiff[1]) / 1000000).toFixed(3)} ms`);
+        let timeString = ((timeDiff[0] * 1e9 + timeDiff[1]) / 1000000).toFixed(3);
+        Logger.debug(`(command ${this.name}) Argument parsing took ${timeString} ms`);
         startTime = process.hrtime();
         try {
             await this.execute({
@@ -227,11 +228,12 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
         } catch (err) {
             const error = err.stack ?? err.toString();
             await context.respond(CommandPhrases.executionError, { error });
-            Logger.error(`An unexpected error occured executing command "${this.name}": ${error}`);
+            Logger.error(`(command ${this.name}) An unexpected error occured: ${error}`);
             return;
         }
         timeDiff = process.hrtime(startTime);
-        Logger.debug(`Command execution took ${((timeDiff[0] * 1e9 + timeDiff[1]) / 1000000).toFixed(3)} ms`);
+        timeString = ((timeDiff[0] * 1e9 + timeDiff[1]) / 1000000).toFixed(3);
+        Logger.debug(`(command ${this.name}) Command execution took ${timeString} ms`);
     }
 
     public abstract async execute(context: IExecutionContext<T>): Promise<void>;
