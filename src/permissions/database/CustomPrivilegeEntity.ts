@@ -14,9 +14,6 @@ export class CustomPrivilegeEntity {
     @Column()
     public description!: string;
 
-    @Column()
-    public everyone!: boolean;
-
     @ManyToOne((type) => GuildEntity)
     public guild!: GuildEntity;
 
