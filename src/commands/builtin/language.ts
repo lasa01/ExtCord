@@ -143,7 +143,7 @@ export const languageCommand = new CommandGroup(
     {
         aliases: ["lang"],
         author: "extcord",
-        description: "show or update the language",
+        description: "Show or update the language",
         name: "language",
     },
     undefined, undefined,

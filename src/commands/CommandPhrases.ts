@@ -20,10 +20,11 @@ export const CommandPhrases = {
             description: "The template for command group usage instructions",
             name: "commandGroupUsage",
         },
-        "Available subcommands:",
+        "{description}\nAvailable subcommands:",
         {
+            description: "Available subcommands:",
             timestamp: false,
-            title: "Available subcommands",
+            title: "{description}",
         },
         "{description}: {usage}",
         {
@@ -31,7 +32,9 @@ export const CommandPhrases = {
             name: "{description}",
             value: "{usage}",
         },
-        {},
+        {
+            description: "The description of the parent command",
+        },
         {
             description: "The description of the subcommand",
             usage: "The (short) usage for the subcommand",
