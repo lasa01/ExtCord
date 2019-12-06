@@ -21,6 +21,7 @@ import { BuiltInArguments } from "./arguments/BuiltinArguments";
 import { Command } from "./Command";
 import { CommandPhrases } from "./CommandPhrases";
 import { GuildAliasEntity } from "./database/GuildAliasEntity";
+import { HelpCommand } from "./HelpCommand";
 
 // Event definitions
 // tslint:disable-next-line:interface-name
@@ -160,17 +161,14 @@ export class Commands extends EventEmitter {
     }
 
     public async getCommandInstance(guild: IExtendedGuild, language: string, command: string) {
-        if (!this.guildCommandsMap.has(guild.guild.id)) {
-            await this.createGuildCommandsMap(guild, language);
-        }
-        return this.guildCommandsMap.get(guild.guild.id)!.get(command);
+        return (await this.getGuildCommandsMap(guild, language)).get(command);
     }
 
-    public async createGuildCommandsMap(guild: IExtendedGuild, language: string) {
-        if (!this.languageCommandsMap.has(language)) {
-            this.createLanguageCommmandsMap(language);
+    public async getGuildCommandsMap(guild: IExtendedGuild, language: string) {
+        if (this.guildCommandsMap.has(guild.guild.id)) {
+            return this.guildCommandsMap.get(guild.guild.id)!;
         }
-        const map = new Map(this.languageCommandsMap.get(language)!);
+        const map = new Map(this.getLanguageCommmandsMap(language));
         this.ensureRepo();
         const aliases = await this.repos.alias.find({
             guild: guild.entity,
@@ -186,9 +184,13 @@ export class Commands extends EventEmitter {
             map.set(alias.alias, command);
         }
         this.guildCommandsMap.set(guild.guild.id, map);
+        return map;
     }
 
-    public createLanguageCommmandsMap(language: string) {
+    public getLanguageCommmandsMap(language: string) {
+        if (this.languageCommandsMap.has(language)) {
+            return this.languageCommandsMap.get(language)!;
+        }
         const map: Map<string, Command<any>> = new Map();
         for (const [, command] of this.commands) {
             map.set(command.localizedName.get(language), command);
@@ -197,6 +199,7 @@ export class Commands extends EventEmitter {
             }
         }
         this.languageCommandsMap.set(language, map);
+        return map;
     }
 
     public async setAlias(guild: IExtendedGuild, language: string, alias: string, command: Command<any>) {
@@ -215,11 +218,7 @@ export class Commands extends EventEmitter {
             entity.command = command.name;
         }
         await this.repos.alias.save(entity);
-        if (!this.guildCommandsMap.has(guild.guild.id)) {
-            await this.createGuildCommandsMap(guild, language);
-        } else {
-            this.guildCommandsMap.get(guild.guild.id)!.set(alias, command);
-        }
+        (await this.getGuildCommandsMap(guild, language)).set(alias, command);
     }
 
     public async removeAlias(guild: IExtendedGuild, language: string, alias: string) {
@@ -231,11 +230,7 @@ export class Commands extends EventEmitter {
         if (entity) {
             await this.repos.alias.remove(entity);
         }
-        if (!this.guildCommandsMap.has(guild.guild.id)) {
-            await this.createGuildCommandsMap(guild, language);
-        } else {
-            this.guildCommandsMap.get(guild.guild.id)!.delete(alias);
-        }
+        (await this.getGuildCommandsMap(guild, language)).delete(alias);
     }
 
     public registerCommand(command: Command<any>) {
@@ -319,6 +314,9 @@ export class Commands extends EventEmitter {
                 }
             }
         }
+        const helpCommand = new HelpCommand();
+        this.registerCommand(helpCommand);
+        this.registerPhrase(helpCommand.phraseGroup);
     }
 
     public getStatus() {

@@ -7,18 +7,19 @@ import { Permissions } from "./Permissions";
 
 export class PermissionPrivilege {
     public static fromRaw(permissions: Permissions, raw: { [key: string]: any }) {
-        const [name, description, everyone, permTemplate, privTemplate] = this.parseRaw(permissions, raw);
-        return new PermissionPrivilege({ name, description, everyone }, permTemplate, privTemplate);
+        const [name, description, everyone, admin, permTemplate, privTemplate] = this.parseRaw(permissions, raw);
+        return new PermissionPrivilege({ name, description, everyone, admin }, permTemplate, privTemplate);
     }
 
     private static parseRaw(permissions: Permissions, raw: { [key: string]: any }) {
         const name: unknown = raw.name;
         const description: unknown = raw.description;
         const everyone: unknown = raw.everyone;
+        const admin: unknown = raw.admin;
         const values: unknown = raw.permissions;
         const included: unknown = raw.include;
         if (typeof name !== "string" || typeof description !== "string" || typeof everyone !== "boolean" ||
-            typeof values !== "object" || !Array.isArray(included)) {
+            typeof admin !== "boolean" || typeof values !== "object" || !Array.isArray(included)) {
             throw new Error("A privilege is missing required information");
         }
         const permTemplate: Array<[Permission, boolean]> = [];
@@ -47,19 +48,20 @@ export class PermissionPrivilege {
             }
             privTemplate.push(privilege);
         }
-        return [name, description, everyone, permTemplate, privTemplate] as const;
+        return [name, description, everyone, admin, permTemplate, privTemplate] as const;
     }
 
     public name: string;
     public description: string;
     public localizedDescription?: SimplePhrase;
     public phraseGroup: PhraseGroup;
+    // TODO enum instead?
     public everyone: boolean;
+    public admin: boolean;
     protected permissionsMap: Map<Permission, boolean>;
     protected included: Map<string, PermissionPrivilege>;
 
-    constructor(info: IPrivilegeInfo, permissions?: Array<[Permission, boolean]>,
-                included?: PermissionPrivilege[], everyone = false) {
+    constructor(info: IPrivilegeInfo, permissions?: Array<[Permission, boolean]>, included?: PermissionPrivilege[]) {
         this.name = info.name;
         this.description = typeof info.description === "string" ? info.description : info.description[DEFAULT_LANGUAGE];
         this.localizedDescription = new SimplePhrase({
@@ -67,7 +69,8 @@ export class PermissionPrivilege {
         }, info.description);
         this.permissionsMap = new Map(permissions);
         this.included = new Map(included ? included.map((priv) => [priv.name, priv]) : undefined);
-        this.everyone = everyone;
+        this.everyone = info.everyone ?? false;
+        this.admin = info.admin ?? false;
         this.phraseGroup = new PhraseGroup({ name: this.name }, [
             this.localizedDescription,
         ]);
@@ -114,12 +117,14 @@ export class PermissionPrivilege {
     }
 
     public updateFromRaw(permissions: Permissions, raw: { [key: string]: any }) {
-        const [name, descr, everyone, permTemplate, privTemplate] = PermissionPrivilege.parseRaw(permissions, raw);
+        const [name, descr, everyone, admin, permTemplate, privTemplate] =
+            PermissionPrivilege.parseRaw(permissions, raw);
         if (name !== this.name) {
             throw new Error(`Trying to update privilege ${this.name} with data identifying as ${name}`);
         }
         this.description = descr;
         this.everyone = everyone;
+        this.admin = admin;
         this.permissionsMap = new Map(permTemplate);
         this.included = new Map(privTemplate ? privTemplate.map((priv) => [priv.name, priv]) : undefined);
     }
@@ -153,6 +158,7 @@ export class PermissionPrivilege {
 
     public getRaw() {
         const obj = {
+            admin: this.admin,
             description: this.description,
             everyone: this.everyone,
             include: [] as string[],
@@ -173,4 +179,5 @@ export interface IPrivilegeInfo {
     name: string;
     description: string | Record<string, string>;
     everyone?: boolean;
+    admin?: boolean;
 }

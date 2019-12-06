@@ -99,7 +99,7 @@ export class CommandGroup
                 passed: context.arguments[1] ?? "",
             });
         } else {
-            await context.respond(CommandPhrases.commandGroupUsage, {},
+            await context.respond(CommandPhrases.commandGroupUsage, { description: this.localizedDescription },
                 Array.from(this.children.values()).map(
                     (sub) => ({ description: sub.localizedDescription, usage: sub.getShortUsage(context.language)}),
                 ),

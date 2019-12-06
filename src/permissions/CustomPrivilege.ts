@@ -22,7 +22,7 @@ export class CustomPrivilege extends PermissionPrivilege {
             },
             entity.permissions.map((perm) => [permissions.get(perm.name)!, perm.allow]),
             [],
-            entity.everyone);
+        );
         this.permissions = permissions;
         this.entity = entity;
         permissions.ensureRepo();
@@ -78,7 +78,6 @@ export class CustomPrivilege extends PermissionPrivilege {
     public async updateFromRaw(permissions: Permissions, raw: { [key: string]: any }) {
         super.updateFromRaw(permissions, raw);
         this.entity.description = this.description;
-        this.entity.everyone = this.everyone;
         await this.repo.save(this.entity);
         const includes = new Map((await this.includeRepo.find({
             name: In(new Array(this.included.values).map((include) => include.name)),

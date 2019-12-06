@@ -1,4 +1,4 @@
-import { Role } from "discord.js";
+import { Permissions as DiscordPermissions, Role } from "discord.js";
 import { ensureDir, readdir, readFile, writeFile } from "fs-extra";
 import { resolve } from "path";
 import { In, Repository } from "typeorm";
@@ -7,7 +7,6 @@ import { Config } from "../config/Config";
 import { StringConfigEntry } from "../config/entry/StringConfigEntry";
 import { Database } from "../database/Database";
 import { GuildEntity } from "../database/entity/GuildEntity";
-import { RoleEntity } from "../database/entity/RoleEntity";
 import { MemberRepository } from "../database/repo/MemberRepository";
 import { RoleRepository } from "../database/repo/RoleRepository";
 import { Languages } from "../language/Languages";
@@ -51,8 +50,9 @@ export class Permissions {
     private memberPermissionsMap: Map<number, Map<string, boolean>>;
     private memberFullPermissionsMap: Map<number, Map<string, boolean>>;
     private privileges: Map<string, PermissionPrivilege>;
-    private customPrivileges: Map<string, Map<string, CustomPrivilege>>;
+    private customPrivileges: Map<string, Map<string, CustomPrivilege|undefined>>;
     private everyonePrivileges: PermissionPrivilege[];
+    private adminPrivileges: PermissionPrivilege[];
     private privilegePhraseGroup: PhraseGroup;
     private phrases: Phrase[];
     private phraseGroup?: PhraseGroup;
@@ -66,6 +66,7 @@ export class Permissions {
         this.privileges = new Map();
         this.customPrivileges = new Map();
         this.everyonePrivileges = [];
+        this.adminPrivileges = [];
         this.privilegePhraseGroup = new PhraseGroup({ name: "privileges", description: "Permission privileges" });
         this.phrases = [];
         database.registerEntity(MemberPermissionEntity);
@@ -81,11 +82,13 @@ export class Permissions {
         }, "privileges");
         this.everyonePrivilege = new PermissionPrivilege({
             description: "Default permissions for everyone",
+            everyone: true,
             name: "everyone",
-        }, undefined, undefined, true);
+        }, undefined, undefined);
         this.registerPrivilege(this.everyonePrivilege);
         this.registerPrivilegePhrase(this.everyonePrivilege.phraseGroup);
         this.adminPrivilege = new PermissionPrivilege({
+            admin: true,
             description: "Server administrator permissions",
             name: "admin",
         }, undefined, [this.everyonePrivilege]);
@@ -198,6 +201,9 @@ export class Permissions {
             if (privilege.everyone) {
                 this.everyonePrivileges.push(privilege);
             }
+            if (privilege.admin) {
+                this.adminPrivileges.push(privilege);
+            }
             return privilege;
         } catch (err) {
             Logger.error("An error occured while loading a privilege: " + err);
@@ -221,7 +227,7 @@ export class Permissions {
     }
 
     public async getPrivilege(guild: GuildEntity, name: string) {
-        return this.getCustomPrivilege(guild, name) ?? this.getBuiltinPrivilege(name);
+        return (await this.getCustomPrivilege(guild, name)) ?? this.getBuiltinPrivilege(name);
     }
 
     public getBuiltinPrivilege(name: string) {
@@ -248,6 +254,7 @@ export class Permissions {
             this.customPrivileges.get(guild.id)!.set(privilege.name, privilege);
             return privilege;
         }
+        this.customPrivileges.get(guild.id)!.set(name, undefined);
     }
 
     public getStatus() {
@@ -263,7 +270,7 @@ export class Permissions {
     }
 
     public async checkRolePermission(permission: Permission, role: IExtendedRole) {
-        return (await this.getRolePermissionMap(role.entity)).get(permission.fullName) ?? false;
+        return (await this.getRolePermissionMap(role)).get(permission.fullName) ?? false;
     }
 
     public ensureRepo(): asserts this is this & { repos: NonNullable<Permissions["repos"]> } {
@@ -284,38 +291,60 @@ export class Permissions {
         }
     }
 
-    private async getRolePermissionMap(role: RoleEntity) {
-        if (this.rolePermissionMap.has(role.id)) {
-            return this.rolePermissionMap.get(role.id)!;
+    private async getRolePermissionMap(role: IExtendedRole) {
+        if (this.rolePermissionMap.has(role.entity.id)) {
+            return this.rolePermissionMap.get(role.entity.id)!;
         }
         this.ensureRepo();
         const map: Map<string, boolean> = new Map();
+        let rolePrivileges = await this.repos.rolePrivilege.find({
+            role: role.entity,
+        });
+        const missingPrivilegeEntities: RolePrivilegeEntity[] = [];
         // The "@everyone" role has same id as the guild
-        if (role.roleId === role.guild.id) {
+        if (role.entity.roleId === role.entity.guildId) {
+            // Add default privileges to role privilege database for the "@everyone" role
             for (const privilege of this.everyonePrivileges) {
-                const permissions = privilege.getPermissionsMap();
-                for (const [permission, allow] of permissions) {
-                    map.set(permission.fullName, allow);
+                if (!rolePrivileges.some((rolePriv) => rolePriv.name === privilege.name)) {
+                    missingPrivilegeEntities.push(this.repos.rolePrivilege.create({
+                        name: privilege.name,
+                        role: role.entity,
+                    }));
                 }
             }
         }
-        const rolePrivileges = await this.repos.rolePrivilege.find({
-            role,
-        });
+        if (role.role.hasPermission(DiscordPermissions.FLAGS.ADMINISTRATOR!)) {
+            for (const privilege of this.adminPrivileges) {
+                if (!rolePrivileges.some((rolePriv) => rolePriv.name === privilege.name)) {
+                    missingPrivilegeEntities.push(this.repos.rolePrivilege.create({
+                        name: privilege.name,
+                        role: role.entity,
+                    }));
+                }
+            }
+        }
+        if (missingPrivilegeEntities.length > 0) {
+            await this.repos.rolePrivilege.save(missingPrivilegeEntities);
+        }
+        rolePrivileges = [...rolePrivileges, ...missingPrivilegeEntities];
         for (const rolePrivilege of rolePrivileges) {
-            const rolePrivilegeInstance = this.privileges.get(rolePrivilege.name)!;
+            const rolePrivilegeInstance = await this.getPrivilege(role.entity.guild, rolePrivilege.name);
+            if (!rolePrivilegeInstance) {
+                Logger.warn(`Invalid privilege "${rolePrivilege.name}" in role "${role.entity.roleId}"`);
+                continue;
+            }
             const rolePrivilegePermissions = rolePrivilegeInstance.getPermissionsMap();
             for (const [permission, allow] of rolePrivilegePermissions) {
                 map.set(permission.fullName, allow);
             }
         }
         const rolePermissions = await this.repos.rolePermission.find({
-            role,
+            role: role.entity,
         });
         for (const rolePermission of rolePermissions) {
             map.set(rolePermission.name, rolePermission.permission);
         }
-        this.rolePermissionMap.set(role.id, map);
+        this.rolePermissionMap.set(role.entity.id, map);
         return map;
     }
 
@@ -325,11 +354,31 @@ export class Permissions {
         }
         this.ensureRepo();
         const map: Map<string, boolean> = new Map();
-        const memberPrivileges = await this.repos.memberPrivilege.find({
+        let memberPrivileges = await this.repos.memberPrivilege.find({
             member: member.entity,
         });
+        if (member.member.hasPermission(DiscordPermissions.FLAGS.ADMINISTRATOR!)) {
+            const missingPrivilegeEntities: MemberPrivilegeEntity[] = [];
+            for (const privilege of this.adminPrivileges) {
+                if (!memberPrivileges.some((memberPriv) => memberPriv.name === privilege.name)) {
+                    missingPrivilegeEntities.push(this.repos.memberPrivilege.create({
+                        member: member.entity,
+                        name: privilege.name,
+                    }));
+                }
+            }
+            if (missingPrivilegeEntities.length > 0) {
+                await this.repos.memberPrivilege.save(missingPrivilegeEntities);
+            }
+            memberPrivileges = [...memberPrivileges, ...missingPrivilegeEntities];
+        }
         for (const memberPrivilege of memberPrivileges) {
-            const memberPrivilegePermissions = this.privileges.get(memberPrivilege.name)!.getPermissionsMap();
+            const memberPrivilegeInstance = await this.getPrivilege(member.entity.guild, memberPrivilege.name);
+            if (!memberPrivilegeInstance) {
+                Logger.warn(`Invalid privilege "${memberPrivilege.name}" in member "${member.entity.userId}"`);
+                continue;
+            }
+            const memberPrivilegePermissions = memberPrivilegeInstance.getPermissionsMap();
             for (const [permission, allow] of memberPrivilegePermissions) {
                 map.set(permission.fullName, allow);
             }
@@ -359,11 +408,12 @@ export class Permissions {
             const dA = member.member.roles.get(a.roleId)!;
             const dB = member.member.roles.get(b.roleId)!;
             return Role.comparePositions(dA, dB);
-        });
+        }).map((roleEntity) => ({ role: member.member.roles.get(roleEntity.roleId)!, entity: roleEntity }));
 
-        if (roles.length === 0) {
+        if (!roles.some((role) => role.role.id === role.role.guild.id)) {
             // Ensure "@everyone" role is in database
-            roles.push(await this.repos.role.getEntity(member.member.guild.defaultRole));
+            const everyoneRole = member.member.guild.defaultRole;
+            roles.push({ role: everyoneRole, entity: await this.repos.role.getEntity(everyoneRole)});
         }
 
         for (const role of roles) {

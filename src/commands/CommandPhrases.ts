@@ -20,10 +20,11 @@ export const CommandPhrases = {
             description: "The template for command group usage instructions",
             name: "commandGroupUsage",
         },
-        "Available subcommands:",
+        "{description}\nAvailable subcommands:",
         {
+            description: "Available subcommands:",
             timestamp: false,
-            title: "Available subcommands",
+            title: "{description}",
         },
         "{description}: {usage}",
         {
@@ -31,7 +32,9 @@ export const CommandPhrases = {
             name: "{description}",
             value: "{usage}",
         },
-        {},
+        {
+            description: "The description of the parent command",
+        },
         {
             description: "The description of the subcommand",
             usage: "The (short) usage for the subcommand",
@@ -74,6 +77,32 @@ export const CommandPhrases = {
         },
         {
             error: "The error that occured",
+        },
+    ),
+    helpCommand: new DynamicFieldMessagePhrase(
+        {
+            description: "The response template for help command",
+            name: "helpCommand",
+        },
+        "Available commands:",
+        {
+            description: "Available commands:",
+            timestamp: false,
+            title: "Help for {guild}",
+        },
+        "{description}\n`{usage}`\nAliases: {aliases}",
+        {
+            inline: true,
+            name: "{description}",
+            value: "`{usage}`\nAliases: {aliases}",
+        },
+        {
+            guild: "The name of the guild",
+        },
+        {
+            aliases: "Aliases for the command",
+            description: "The description of the command",
+            usage: "The usage of the command",
         },
     ),
     invalidArgument: new MessagePhrase(
