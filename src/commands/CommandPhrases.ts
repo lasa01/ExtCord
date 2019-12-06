@@ -76,6 +76,32 @@ export const CommandPhrases = {
             error: "The error that occured",
         },
     ),
+    helpCommand: new DynamicFieldMessagePhrase(
+        {
+            description: "The response template for help command",
+            name: "helpCommand",
+        },
+        "Available commands:",
+        {
+            description: "Available commands:",
+            timestamp: false,
+            title: "Help for {guild}",
+        },
+        "{description}\n`{usage}`\nAliases: {aliases}",
+        {
+            inline: true,
+            name: "{description}",
+            value: "`{usage}`\nAliases: {aliases}",
+        },
+        {
+            guild: "The name of the guild",
+        },
+        {
+            aliases: "Aliases for the command",
+            description: "The description of the command",
+            usage: "The usage of the command",
+        },
+    ),
     invalidArgument: new MessagePhrase(
         {
             description: "This is shown when an invalid argument is supplied to a command",
