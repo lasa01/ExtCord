@@ -15,6 +15,28 @@ export const CommandPhrases = {
             description: "The description of the argument",
         },
     ),
+    botNoPermission: new MessagePhrase(
+        {
+            description: "This is shown when an user is trying to do something the bot is not allowed to",
+            name: "botNoPermission",
+        },
+        "I can't do that.\nI don't have the required permissions `{permissions}`.",
+        {
+            description: "I can't do that.\nI don't have the required permissions `{permissions}`.",
+            timestamp: false,
+            title: "Insufficient bot permissions",
+        },
+        {
+            permissions: "The permissions required to do the thing",
+        },
+    ),
+    botNoSendPermission: new SimplePhrase(
+        {
+            description: "This is shown when the bot doesn't have permissions to send messages",
+            name: "botNoSendPermission",
+        },
+        "Unfortunately, I don't have permission to send messages in that channel.",
+    ),
     commandGroupUsage: new DynamicFieldMessagePhrase(
         {
             description: "The template for command group usage instructions",

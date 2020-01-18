@@ -14,6 +14,8 @@ import { Argument } from "./arguments/Argument";
 import { CommandPhrases } from "./CommandPhrases";
 import { ICommandContext } from "./Commands";
 
+import { Permissions as DiscordPermissions } from "discord.js";
+
 export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any>>> {
     public name: string;
     public localizedName: SimplePhrase;
@@ -23,6 +25,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
     public localizedAliases: ListPhrase;
     public from?: Module;
     public author: string;
+    public discordPermissions: number;
     public arguments: T;
     public minArguments: number;
     public parent?: Command<any>;
@@ -54,6 +57,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
         } else {
             this.author = info.author;
         }
+        this.discordPermissions = info.discordPermissions ?? 0;
         this.argPhraseGroup = new PhraseGroup({
             name: "arguments",
         });
@@ -149,6 +153,21 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
     public async command(context: ICommandContext): Promise<void> {
         let startTime = process.hrtime();
         Logger.debug(`(command ${this.name}) Command: ${context.command}`);
+        const needBit = this.discordPermissions;
+        if (needBit !== 0) {
+            const botBit = context.botPermissions.bitfield;
+            // Bitwise XOR the permissions to get permissions which one has, other doesn't
+            // Then bitwise AND with needBit to get permissions that are different which are also needed
+            // Result is bot's missing permissions
+            // tslint:disable-next-line:no-bitwise
+            const missingPermissions = (needBit ^ botBit) & needBit;
+            // Admin overrides permissions, needs to be checked
+            if (missingPermissions !== 0 && !context.botPermissions.has(DiscordPermissions.FLAGS.ADMINISTRATOR!)) {
+                return context.respond(CommandPhrases.botNoPermission, {
+                    permissions: new DiscordPermissions(missingPermissions).toArray(false).join(", "),
+                });
+            }
+        }
         if (!await this.canExecute(context.message.member)) {
             await context.respond(CommandPhrases.noPermission, { permission: this.defaultPermission.fullName });
             return;
@@ -288,6 +307,7 @@ export interface ICommandInfo {
     description: string | Record<string, string>;
     author: string | Module;
     aliases?: string[] | IListMap;
+    discordPermissions?: number;
 }
 
 type ArgumentsParseReturns<T extends ReadonlyArray<Argument<any, boolean, any>>> = {

@@ -1,4 +1,4 @@
-import { Message } from "discord.js";
+import { Message, Permissions as DiscordPermissions } from "discord.js";
 import { EventEmitter } from "events";
 import { readdir } from "fs-extra";
 import { resolve } from "path";
@@ -110,8 +110,13 @@ export class Commands extends EventEmitter {
         } else {
             return;
         }
-        const command = text.split(" ", 1)[0];
         const language = await this.bot.languages.getLanguage(message.guild);
+        const botPermissions = discordMessage.guild.me.permissionsIn(discordMessage.channel);
+        if (!botPermissions.has(DiscordPermissions.FLAGS.SEND_MESSAGES!)) {
+            // Send private message telling the bot can't send messages
+            return discordMessage.author.send(CommandPhrases.botNoSendPermission.get(language));
+        }
+        const command = text.split(" ", 1)[0];
         // TODO Could get both with one database query
         const useEmbeds = await this.bot.languages.useEmbedsConfigEntry.guildGet(message.guild);
         const useMentions = await this.bot.languages.useMentionsConfigEntry.guildGet(message.guild);
@@ -146,6 +151,7 @@ export class Commands extends EventEmitter {
         const passed = text.replace(command, "").trim();
         const context = {
             bot: this.bot,
+            botPermissions,
             command,
             language,
             message,
@@ -342,6 +348,7 @@ export interface ICommandContext {
     passed: string;
     language: string;
     respond: LinkedResponse;
+    botPermissions: DiscordPermissions;
 }
 
 export type LinkedResponse =
