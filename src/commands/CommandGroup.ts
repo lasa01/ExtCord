@@ -34,14 +34,6 @@ export class CommandGroup
         if (children) {
             this.addSubcommands(...children);
         }
-        if (defaultSubcommand) {
-            if (!this.children.has(defaultSubcommand)) {
-                throw new Error(`The default subcommand ${defaultSubcommand} doesn't exist`);
-            }
-            if (this.children.get(defaultSubcommand)!.minArguments !== 0) {
-                throw new Error(`The default subcommand has required arguments`);
-            }
-        }
         this.languageCommandsMap = new Map();
         this.guildCommandsMap = new Map();
     }
@@ -57,6 +49,14 @@ export class CommandGroup
         super.registerSelf(bot);
         for (const [, child] of this.children) {
             child.registerSelf(bot);
+        }
+        if (this.defaultSubcommand) {
+            if (!this.children.has(this.defaultSubcommand)) {
+                throw new Error(`The default subcommand ${this.defaultSubcommand} doesn't exist`);
+            }
+            if (this.children.get(this.defaultSubcommand)!.minArguments !== 0) {
+                throw new Error(`The default subcommand has required arguments`);
+            }
         }
     }
 
