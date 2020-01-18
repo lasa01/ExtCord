@@ -1,5 +1,5 @@
 import { MessagePhrase } from "../../language/phrase/MessagePhrase";
-import { TemplatePhrase } from "../../language/phrase/TemplatePhrase";
+import { CommandArgument } from "../arguments/CommandArgument";
 import { StringArgument } from "../arguments/StringArgument";
 import { CommandGroup } from "../CommandGroup";
 import { SimpleCommand } from "../SimpleCommand";
@@ -35,14 +35,21 @@ const aliasRemovePhrase = new MessagePhrase(
         alias: "the removed alias",
     },
 );
-const commandNotFoundPhrase = new TemplatePhrase(
+
+const aliasListPhrase = new MessagePhrase(
     {
-        description: "Shown when a command (argument) is not found",
-        name: "commandNotFound",
+        description: "Shown when command aliases are listed",
+        name: "aliasList",
     },
-    "The argument {command} is not a valid command.",
+    "Aliases for {guild}:\n{aliases}",
     {
-        command: "the supplied command",
+        description: "{aliases}",
+        timestamp: false,
+        title: "Aliases for {guild}",
+    },
+    {
+        aliases: "List of the aliases",
+        guild: "Name of the guild",
     },
 );
 
@@ -60,32 +67,27 @@ const aliasSetCommand = new SimpleCommand(
             },
             false,
         ),
-        new StringArgument(
+        new CommandArgument(
             {
                 description: "the command the alias refers to",
                 name: "command",
             },
-            false, false,
-            async (data, context, error) => {
-                const c = await context.bot.commands.getCommandInstance(context.message.guild, context.language, data);
-                if (!c) {
-                    return error(commandNotFoundPhrase, { command: data });
-                }
-                return true;
-            },
+            false, true,
         ),
     ] as const,
     async (context) => {
         const guild = context.message.guild;
         const language = context.language;
-        const command = await context.bot.commands.getCommandInstance(guild, language, context.arguments[1]);
         await context.bot.commands.setAlias(
             guild,
             language,
             context.arguments[0],
-            command!,
+            context.arguments[1],
         );
-        await context.respond(aliasSetPhrase, { alias: context.arguments[0], command: context.arguments[1] });
+        await context.respond(aliasSetPhrase, {
+            alias: context.arguments[0],
+            command: context.arguments[1].getUsageName(language),
+        });
     },
     ["admin"],
 );
@@ -110,7 +112,36 @@ const aliasRemoveCommand = new SimpleCommand(
         await context.bot.commands.removeAlias(context.message.guild, context.language, alias);
         await context.respond(aliasRemovePhrase, { alias });
     },
-    ["admin"],
+);
+
+const aliasListCommand = new SimpleCommand(
+    {
+        allowedPrivileges: ["everyone"],
+        author: "extcord",
+        description: "List command aliases",
+        name: "list",
+    },
+    [],
+    async (context) => {
+        const map = await context.bot.commands.getGuildCommandsMap(context.message.guild, context.language);
+        const aliasMap: Record<string, string[]> = {};
+        for (const [alias, command] of map) {
+            const localizedName = command.localizedName.get(context.language);
+            if (alias === localizedName) {
+                continue;
+            }
+            if (aliasMap[localizedName] === undefined) {
+                aliasMap[localizedName] = [];
+            }
+            aliasMap[localizedName].push(alias);
+        }
+        return context.respond(aliasListPhrase, {
+            aliases: Object.entries(aliasMap)
+                .map(([command, list]) => `${command}: \`${list.join(", ")}\``)
+                .join("\n"),
+            guild: context.message.guild.guild.name,
+        });
+    },
 );
 
 export const aliasCommand = new CommandGroup(
@@ -119,9 +150,8 @@ export const aliasCommand = new CommandGroup(
         description: "Set, update or remove an alias",
         name: "alias",
     },
-    undefined, undefined,
-    ["admin"],
+    "list",
 );
 
-aliasCommand.addSubcommands(aliasSetCommand, aliasRemoveCommand);
-aliasCommand.addPhrases(aliasSetPhrase, aliasRemovePhrase, commandNotFoundPhrase);
+aliasCommand.addSubcommands(aliasSetCommand, aliasRemoveCommand, aliasListCommand);
+aliasCommand.addPhrases(aliasSetPhrase, aliasRemovePhrase, aliasListPhrase);

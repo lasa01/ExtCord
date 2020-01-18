@@ -19,6 +19,7 @@ import { Logger } from "../util/Logger";
 import { IExtendedGuild, IExtendedMessage } from "../util/Types";
 import { BuiltInArguments } from "./arguments/BuiltinArguments";
 import { Command } from "./Command";
+import { CommandGroup } from "./CommandGroup";
 import { CommandPhrases } from "./CommandPhrases";
 import { GuildAliasEntity } from "./database/GuildAliasEntity";
 import { HelpCommand } from "./HelpCommand";
@@ -170,24 +171,52 @@ export class Commands extends EventEmitter {
         return (await this.getGuildCommandsMap(guild, language)).get(command);
     }
 
+    public async getCommandInstanceRecursive(guild: IExtendedGuild, language: string, command: string) {
+        const commandParts = command.split(" ");
+        let currentCommand = await this.getCommandInstance(guild, language, commandParts.shift()!);
+        while (commandParts.length !== 0) {
+            if (!(currentCommand instanceof CommandGroup)) {
+                return undefined;
+            }
+            currentCommand = currentCommand.getCommandInstance(guild, language, commandParts.shift()!);
+        }
+        if (!currentCommand) {
+            return undefined;
+        }
+        return currentCommand;
+    }
+
     public async getGuildCommandsMap(guild: IExtendedGuild, language: string) {
         if (this.guildCommandsMap.has(guild.guild.id)) {
             return this.guildCommandsMap.get(guild.guild.id)!;
         }
         const map = new Map(this.getLanguageCommmandsMap(language));
         this.ensureRepo();
-        const aliases = await this.repos.alias.find({
-            guild: guild.entity,
-        });
+        const aliases = await this.getCustomAliases(guild);
         for (const alias of aliases) {
-            const command = this.commands.get(alias.command);
-            if (!command) {
+            if (alias.alias.includes(" ")) {
+                Logger.warn(`Alias "${alias.alias}" in guild ${guild.guild.id} contains a space`);
+                continue;
+            }
+            const commandParts = alias.command.split(" ");
+            let currentCommand = this.commands.get(commandParts.shift()!);
+            while (commandParts.length !== 0) {
+                if (!(currentCommand instanceof CommandGroup)) {
+                    Logger.warn(
+                        `Alias "${alias.alias}" in guild ${guild.guild.id}` +
+                        ` refers to an invalid command "${alias.command}"`,
+                    );
+                    continue;
+                }
+                currentCommand = currentCommand.getCommandInstance(guild, language, commandParts.shift()!);
+            }
+            if (!currentCommand) {
                 Logger.warn(
                     `Alias "${alias.alias}" in guild ${guild.guild.id} refers to an invalid command "${alias.command}"`,
                 );
                 continue;
             }
-            map.set(alias.alias, command);
+            map.set(alias.alias, currentCommand);
         }
         this.guildCommandsMap.set(guild.guild.id, map);
         return map;
@@ -209,6 +238,9 @@ export class Commands extends EventEmitter {
     }
 
     public async setAlias(guild: IExtendedGuild, language: string, alias: string, command: Command<any>) {
+        if (alias.includes(" ")) {
+            throw new Error("Trying to set an alias that contains spaces");
+        }
         this.ensureRepo();
         let entity = await this.repos.alias.findOne({
             alias,
@@ -217,11 +249,11 @@ export class Commands extends EventEmitter {
         if (!entity) {
             entity = this.repos.alias.create({
                 alias,
-                command: command.name,
+                command: command.fullName,
                 guild: guild.entity,
             });
         } else {
-            entity.command = command.name;
+            entity.command = command.fullName;
         }
         await this.repos.alias.save(entity);
         (await this.getGuildCommandsMap(guild, language)).set(alias, command);
@@ -239,12 +271,20 @@ export class Commands extends EventEmitter {
         (await this.getGuildCommandsMap(guild, language)).delete(alias);
     }
 
+    public getCustomAliases(guild: IExtendedGuild): Promise<GuildAliasEntity[]> {
+        this.ensureRepo();
+        return this.repos.alias.find({
+            guild: guild.entity,
+        });
+    }
+
     public registerCommand(command: Command<any>) {
         if (this.commands.has(command.name)) {
             throw new Error(`A command is already registered by the name ${command.name}`);
         }
         this.registerPermission(command.getPermission());
         command.registerSelf(this.bot);
+        command.updateFullName();
         this.commands.set(command.name, command);
     }
 

@@ -46,6 +46,13 @@ export class CommandGroup
         this.guildCommandsMap = new Map();
     }
 
+    public updateFullName() {
+        super.updateFullName();
+        for (const [, child] of this.children) {
+            child.updateFullName();
+        }
+    }
+
     public registerSelf(bot: Bot) {
         super.registerSelf(bot);
         for (const [, child] of this.children) {

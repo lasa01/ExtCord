@@ -28,6 +28,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
     public discordPermissions: number;
     public arguments: T;
     public minArguments: number;
+    public fullName: string;
     public parent?: Command<any>;
     public phraseGroup: PhraseGroup;
     public combineIndex?: number;
@@ -85,6 +86,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
             }
             argument.registerSelf(this);
         }
+        this.fullName = this.name;
         this.defaultPermission = permission instanceof Permission ? permission : new Permission({
             name: this.name,
         });
@@ -113,6 +115,12 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
 
     public unregisterParent() {
         this.parent = undefined;
+    }
+
+    public updateFullName() {
+        if (this.parent) {
+            this.fullName = this.parent.fullName + " " + this.name;
+        }
     }
 
     public registerSelf(bot: Bot) {
