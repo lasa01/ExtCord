@@ -178,21 +178,25 @@ export class Bot extends EventEmitter {
     }
 
     public input(input: string) {
-        if (input === "stop") {
-            this.stop();
+        switch (input) {
+            case "stop":
+                this.stop();
+                break;
+            default:
+                Logger.warn("Type \"stop\" to stop the bot. Other commands are not (yet) supported.");
         }
     }
 
     public async stop() {
         Logger.info("Bot stopping");
         this.emit("stop");
-        await this.database.stop();
+        const promises = [this.database.stop()];
         if (this.client) {
-            await this.client.destroy();
-            Logger.verbose("Client disconnected");
+            promises.push(this.client.destroy());
         }
         if (this.readline) {
             this.readline.close();
         }
+        await Promise.all(promises);
     }
 }
