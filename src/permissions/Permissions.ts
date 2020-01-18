@@ -30,7 +30,6 @@ import { PermissionPrivilege } from "./PermissionPrivilege";
 export class Permissions {
     public database: Database;
     public privilegeDirConfigEntry: StringConfigEntry;
-    // TODO public map instead of this?
     public everyonePrivilege: PermissionPrivilege;
     public adminPrivilege: PermissionPrivilege;
     public hostPrivilege: PermissionPrivilege;
@@ -51,8 +50,6 @@ export class Permissions {
     private memberFullPermissionsMap: Map<number, Map<string, boolean>>;
     private privileges: Map<string, PermissionPrivilege>;
     private customPrivileges: Map<string, Map<string, CustomPrivilege|undefined>>;
-    private everyonePrivileges: PermissionPrivilege[];
-    private adminPrivileges: PermissionPrivilege[];
     private privilegePhraseGroup: PhraseGroup;
     private phrases: Phrase[];
     private phraseGroup?: PhraseGroup;
@@ -65,8 +62,6 @@ export class Permissions {
         this.memberFullPermissionsMap = new Map();
         this.privileges = new Map();
         this.customPrivileges = new Map();
-        this.everyonePrivileges = [];
-        this.adminPrivileges = [];
         this.privilegePhraseGroup = new PhraseGroup({ name: "privileges", description: "Permission privileges" });
         this.phrases = [];
         database.registerEntity(MemberPermissionEntity);
@@ -82,13 +77,11 @@ export class Permissions {
         }, "privileges");
         this.everyonePrivilege = new PermissionPrivilege({
             description: "Default permissions for everyone",
-            everyone: true,
             name: "everyone",
         }, undefined, undefined);
         this.registerPrivilege(this.everyonePrivilege);
         this.registerPrivilegePhrase(this.everyonePrivilege.phraseGroup);
         this.adminPrivilege = new PermissionPrivilege({
-            admin: true,
             description: "Server administrator permissions",
             name: "admin",
         }, undefined, [this.everyonePrivilege]);
@@ -198,12 +191,6 @@ export class Permissions {
                 privilege = PermissionPrivilege.fromRaw(this, parsed);
                 this.privileges.set(name, privilege);
             }
-            if (privilege.everyone) {
-                this.everyonePrivileges.push(privilege);
-            }
-            if (privilege.admin) {
-                this.adminPrivileges.push(privilege);
-            }
             return privilege;
         } catch (err) {
             Logger.error("An error occured while loading a privilege: " + err);
@@ -304,23 +291,19 @@ export class Permissions {
         // The "@everyone" role has same id as the guild
         if (role.entity.roleId === role.entity.guildId) {
             // Add default privileges to role privilege database for the "@everyone" role
-            for (const privilege of this.everyonePrivileges) {
-                if (!rolePrivileges.some((rolePriv) => rolePriv.name === privilege.name)) {
+                if (!rolePrivileges.some((rolePriv) => rolePriv.name === this.everyonePrivilege.name)) {
                     missingPrivilegeEntities.push(this.repos.rolePrivilege.create({
-                        name: privilege.name,
+                        name: this.everyonePrivilege.name,
                         role: role.entity,
                     }));
-                }
             }
         }
         if (role.role.hasPermission(DiscordPermissions.FLAGS.ADMINISTRATOR!)) {
-            for (const privilege of this.adminPrivileges) {
-                if (!rolePrivileges.some((rolePriv) => rolePriv.name === privilege.name)) {
-                    missingPrivilegeEntities.push(this.repos.rolePrivilege.create({
-                        name: privilege.name,
-                        role: role.entity,
-                    }));
-                }
+            if (!rolePrivileges.some((rolePriv) => rolePriv.name === this.adminPrivilege.name)) {
+                missingPrivilegeEntities.push(this.repos.rolePrivilege.create({
+                    name: this.adminPrivilege.name,
+                    role: role.entity,
+                }));
             }
         }
         if (missingPrivilegeEntities.length > 0) {
@@ -359,13 +342,11 @@ export class Permissions {
         });
         if (member.member.hasPermission(DiscordPermissions.FLAGS.ADMINISTRATOR!)) {
             const missingPrivilegeEntities: MemberPrivilegeEntity[] = [];
-            for (const privilege of this.adminPrivileges) {
-                if (!memberPrivileges.some((memberPriv) => memberPriv.name === privilege.name)) {
-                    missingPrivilegeEntities.push(this.repos.memberPrivilege.create({
-                        member: member.entity,
-                        name: privilege.name,
-                    }));
-                }
+            if (!memberPrivileges.some((memberPriv) => memberPriv.name === this.adminPrivilege.name)) {
+                missingPrivilegeEntities.push(this.repos.memberPrivilege.create({
+                    member: member.entity,
+                    name: this.adminPrivilege.name,
+                }));
             }
             if (missingPrivilegeEntities.length > 0) {
                 await this.repos.memberPrivilege.save(missingPrivilegeEntities);
