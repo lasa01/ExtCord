@@ -34,7 +34,10 @@ export const Logger = {
     },
     log(level: LogLevel, message: string) {
         if (loggerInstance) {
-            loggerInstance.log(level, message);
+            const lines = message.split("\n");
+            for (const line of lines) {
+                loggerInstance!.log(level, line);
+            }
         } else {
             throw new Error("Logger is not initialized");
         }
