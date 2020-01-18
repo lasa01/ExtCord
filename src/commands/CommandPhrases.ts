@@ -164,6 +164,13 @@ export const CommandPhrases = {
             command: "The command that was called",
         },
     ),
+    invalidCommandArgument: new SimplePhrase(
+        {
+            description: "This is shown when a supplied argument is not a valid command",
+            name: "invalidCommandArgument",
+        },
+        "The argument is not a valid command.",
+    ),
     invalidIntegerArgument: new SimplePhrase(
         {
             description: "This is shown when a supplied integer argument is not an integer",
