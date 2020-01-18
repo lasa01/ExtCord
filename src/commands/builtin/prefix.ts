@@ -26,7 +26,7 @@ const prefixShowPhrase = new MessagePhrase(
     "The current prefix is `{prefix}`.",
     {
         timestamp: false,
-        title: "The current prefix is `{prefix}`.",
+        title: "The current prefix is `{prefix}`",
     },
     {
         prefix: "the current prefix",
