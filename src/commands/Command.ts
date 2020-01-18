@@ -221,6 +221,12 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
         for (const index of this.arguments.keys()) {
             argument = this.arguments[index];
             rawArgument = rawArguments[rawIndex];
+            if (rawArgument === undefined) {
+                // Argument must be optional here, since argument amount handling catches the problem
+                // if the argument is not optional and there are not enough arguments
+                parsed.push(undefined);
+                continue;
+            }
             if (rawArguments.length > maxArgs && index === this.combineIndex) {
                 const diff = rawArguments.length - this.arguments.length;
                 for (let i = 0; i < diff; i++) {
@@ -287,7 +293,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
         const args = this.arguments.map((arg) => arg.getUsageName(language));
         args.unshift(this.getUsageName(language));
         return "`" + args.join(" ") + "`";
-        }
+    }
 
     public getAliases(language: string): { [key: string]: Command<any> } {
         const aliases: { [key: string]: Command<any> } = {};
