@@ -29,15 +29,27 @@ export interface Commands {
     /** @event */
     addListener(event: "command", listener: (command: Command<any>, context: ICommandContext) => void): this;
     /** @event */
+    addListener(event: "message", listener: (message: IExtendedMessage) => void): this;
+    /** @event */
     emit(event: "command", command: Command<any>, context: ICommandContext): boolean;
+    /** @event */
+    emit(event: "message", message: IExtendedMessage): boolean;
     /** @event */
     on(event: "command", listener: (command: Command<any>, context: ICommandContext) => void): this;
     /** @event */
+    on(event: "message", listener: (message: IExtendedMessage) => void): this;
+    /** @event */
     once(event: "command", listener: (command: Command<any>, context: ICommandContext) => void): this;
+    /** @event */
+    once(event: "message", listener: (message: IExtendedMessage) => void): this;
     /** @event */
     prependListener(event: "command", listener: (command: Command<any>, context: ICommandContext) => void): this;
     /** @event */
+    prependListener(event: "message", listener: (message: IExtendedMessage) => void): this;
+    /** @event */
     prependOnceListener(event: "command", listener: (command: Command<any>, context: ICommandContext) => void): this;
+    /** @event */
+    prependOnceListener(event: "message", listener: (message: IExtendedMessage) => void): this;
 }
 
 export class Commands extends EventEmitter {
@@ -102,12 +114,17 @@ export class Commands extends EventEmitter {
         const prefix = await this.prefixConfigEntry.guildGet(message.guild);
         // TODO really doesn't need to be reassigned each call
         const mention = `<@${message.message.client.user.id}>`;
+        const mention2 = `<@!${message.message.client.user.id}>`; // Discord, why?
         let text;
         if (message.message.content.startsWith(prefix)) {
-            text = message.message.content.replace(prefix, "").trim();
+            text = message.message.content.slice(prefix.length).trim();
         } else if (message.message.content.startsWith(mention)) {
-            text = message.message.content.replace(mention, "").trim();
+            text = message.message.content.slice(mention.length).trim();
+        } else if (message.message.content.startsWith(mention2)) {
+            text = message.message.content.slice(mention2.length).trim();
         } else {
+            // This is a normal message
+            this.emit("message", message);
             return;
         }
         const language = await this.bot.languages.getLanguage(message.guild);
@@ -117,6 +134,11 @@ export class Commands extends EventEmitter {
             return discordMessage.author.send(CommandPhrases.botNoSendPermission.get(language));
         }
         const command = text.split(" ", 1)[0];
+        if (command === "") {
+            // Message only includes the prefix, no command, treat as a normal message
+            this.emit("message", message);
+            return;
+        }
         // TODO Could get both with one database query
         const useEmbeds = await this.bot.languages.useEmbedsConfigEntry.guildGet(message.guild);
         const useMentions = await this.bot.languages.useMentionsConfigEntry.guildGet(message.guild);
