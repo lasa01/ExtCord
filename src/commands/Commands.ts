@@ -22,7 +22,6 @@ import { Command } from "./Command";
 import { CommandGroup } from "./CommandGroup";
 import { CommandPhrases } from "./CommandPhrases";
 import { GuildAliasEntity } from "./database/GuildAliasEntity";
-import { HelpCommand } from "./HelpCommand";
 
 // Event definitions
 // tslint:disable-next-line:interface-name
@@ -360,9 +359,6 @@ export class Commands extends EventEmitter {
                 }
             }
         }
-        const helpCommand = new HelpCommand();
-        this.registerCommand(helpCommand);
-        this.registerPhrase(helpCommand.phraseGroup);
     }
 
     public getStatus() {

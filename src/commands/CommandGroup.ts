@@ -8,6 +8,7 @@ import { IExtendedGuild } from "../util/Types";
 import { BuiltInArguments } from "./arguments/BuiltinArguments";
 import { Command, ICommandInfo, IExecutionContext } from "./Command";
 import { CommandPhrases } from "./CommandPhrases";
+import { ICommandContext } from "./Commands";
 
 export class CommandGroup
     extends Command<[typeof BuiltInArguments.subcommand, typeof BuiltInArguments.subcommandArguments]> {
@@ -105,7 +106,11 @@ export class CommandGroup
                 passed: context.arguments[1] ?? "",
             });
         } else {
-            await context.respond(CommandPhrases.commandGroupUsage, { description: this.localizedDescription },
+            await context.respond(CommandPhrases.commandGroupHelp,
+                {
+                    command: this.getUsageName(context.language),
+                    description: this.localizedDescription,
+                },
                 Array.from(this.children.values()).map(
                     (sub) => ({ description: sub.localizedDescription, usage: sub.getShortUsage(context.language)}),
                 ),
@@ -136,5 +141,29 @@ export class CommandGroup
             }
         }
         this.languageCommandsMap.set(language, map);
+    }
+
+    public getShortUsage(language: string): string {
+        if (this.shortUsageCache.has(language)) {
+            return this.shortUsageCache.get(language)!;
+        }
+        let usage = "";
+        for (const [, command] of this.children) {
+            usage += (usage === "" ? "" : "\n") + command.getShortUsage(language);
+        }
+        this.shortUsageCache.set(language, usage);
+        return usage;
+    }
+
+    public respondHelp(context: ICommandContext) {
+        return context.respond(CommandPhrases.commandGroupHelp,
+            {
+                command: this.getUsageName(context.language),
+                description: this.localizedDescription,
+            },
+            Array.from(this.children.values()).map(
+                (sub) => ({ description: sub.localizedDescription, usage: sub.getShortUsage(context.language)}),
+            ),
+        );
     }
 }

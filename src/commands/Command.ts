@@ -35,9 +35,9 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
     protected defaultPermission: Permission;
     protected argPhraseGroup: PhraseGroup;
     protected customPhraseGroup: PhraseGroup;
+    protected usageCache: Map<string, string>;
+    protected shortUsageCache: Map<string, string>;
     private allowedPrivileges: string[];
-    private usageCache: Map<string, string>;
-    private shortUsageCache: Map<string, string>;
 
     constructor(info: ICommandInfo, args: T, permission?: Permission) {
         this.name = typeof info.name === "string" ? info.name : info.name[DEFAULT_LANGUAGE];
@@ -275,26 +275,19 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
             return this.usageCache.get(language)!;
         }
         const usage = CommandPhrases.commandUsage.format(language, {
-            arguments: this.arguments.map((arg) => arg.getUsageName(language)).join(" "),
             argumentsUsage: this.arguments.map((arg) => arg.getUsage(language)).join("\n"),
-            command: this.getUsageName(language),
             description: this.localizedDescription,
+            shortUsage: this.getShortUsage(language),
         });
         this.usageCache.set(language, usage);
         return usage;
     }
 
     public getShortUsage(language: string): string {
-        if (this.shortUsageCache.has(language)) {
-            return this.shortUsageCache.get(language)!;
+        const args = this.arguments.map((arg) => arg.getUsageName(language));
+        args.unshift(this.getUsageName(language));
+        return "`" + args.join(" ") + "`";
         }
-        const usage = CommandPhrases.commandUsageShort.format(language, {
-            arguments: this.arguments.map((arg) => arg.getUsageName(language)).join(" "),
-            command: this.getUsageName(language),
-        });
-        this.shortUsageCache.set(language, usage);
-        return usage;
-    }
 
     public getAliases(language: string): { [key: string]: Command<any> } {
         const aliases: { [key: string]: Command<any> } = {};
@@ -302,6 +295,13 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
             aliases[alias] = this;
         }
         return aliases;
+    }
+
+    public respondHelp(context: ICommandContext) {
+        return context.respond(CommandPhrases.commandHelp, {
+            command: this.getUsageName(context.language),
+            usage: this.getUsage(context.language),
+        });
     }
 }
 
