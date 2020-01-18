@@ -12,10 +12,11 @@ export default class TestModule extends Module {
             });
         this.registerPermission(testPermission);
         const commandGroup = new CommandGroup({
+            allowedPrivileges: ["host"],
             author: this,
             description: "Test commands",
             name: "test",
-        }, undefined, undefined, ["host"]);
+        });
         const testPhrase = new MessagePhrase({
                 name: "response",
             }, "Test {input}?", {
@@ -25,11 +26,16 @@ export default class TestModule extends Module {
             }, {
                 input: "Argument passed to command",
             });
-        const testCommand = new SimpleCommand({ description: "Test command", name: "test", author: this },
+        const testCommand = new SimpleCommand({
+            allowedPrivileges: ["host"],
+            author: this,
+            description: "Test command",
+            name: "test",
+        },
             [new StringArgument({ description: "Text input for testing", name: "text" }, false, true)] as const,
             async (context) => {
                 await context.respond(testPhrase, { input: context.arguments[0] });
-            }, ["host"]);
+            });
         testCommand.addPhrases(testPhrase);
         commandGroup.addSubcommands(testCommand);
 
@@ -52,7 +58,12 @@ export default class TestModule extends Module {
             }, {
                 permission: "Checked permission",
             });
-        const permCommand = new SimpleCommand({ description: "Check permission", name: "permission", author: this },
+        const permCommand = new SimpleCommand({
+            allowedPrivileges: ["everyone"],
+            author: this,
+            description: "Check permission",
+            name: "permission",
+        },
             [new StringArgument({ description: "Permission to check", name: "permission" }, false)] as const,
             async (context) => {
                 const perm = this.bot.permissions.get(context.arguments[0]);
@@ -68,10 +79,9 @@ export default class TestModule extends Module {
                     }
                     await context.respond(permResultPhrase, { permission: context.arguments[0], result: resultText });
                 }
-            }, ["everyone"]);
+            });
         permCommand.addPhrases(permResultPhrase, permNotFoundPhrase);
         this.registerCommand(permCommand);
-
         const embedPhrase = new MessagePhrase({
                 name: "response",
             }, "This is not an embed", {
@@ -99,11 +109,16 @@ export default class TestModule extends Module {
             }, {
                 argument: "The argument provided for the command",
             });
-        const embedCommand = new SimpleCommand({ description: "Test embeds", name: "embed", author: this },
+        const embedCommand = new SimpleCommand({
+            allowedPrivileges: ["host"],
+            author: this,
+            description: "Test embeds",
+            name: "embed",
+        },
             [new StringArgument({ description: "Test argument", name: "test" }, false, true)] as const,
             async (context) => {
                 await context.respond(embedPhrase, { argument: context.arguments[0] });
-            }, ["host"]);
+            });
         embedCommand.addPhrases(embedPhrase);
         commandGroup.addSubcommands(embedCommand);
 
@@ -124,6 +139,7 @@ export default class TestModule extends Module {
                 number: "Random number",
             });
         const randomCommand = new SimpleCommand({
+                allowedPrivileges: ["everyone"],
                 author: this,
                 description: "Random number generator",
                 name: "random",
@@ -137,7 +153,7 @@ export default class TestModule extends Module {
                     fields.push({ number: Math.floor(Math.random() * max).toString() });
                 }
                 await context.respond(randomPhrase, { n: n.toString(), max: max.toString() }, fields);
-            }, ["everyone"]);
+            });
         randomCommand.addPhrases(randomPhrase);
         commandGroup.addSubcommands(randomCommand);
         this.registerCommand(commandGroup);

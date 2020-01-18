@@ -55,6 +55,7 @@ const aliasListPhrase = new MessagePhrase(
 
 const aliasSetCommand = new SimpleCommand(
     {
+        allowedPrivileges: ["admin"],
         author: "extcord",
         description: "Add or update an alias",
         name: "set",
@@ -89,11 +90,11 @@ const aliasSetCommand = new SimpleCommand(
             command: context.arguments[1].getUsageName(language),
         });
     },
-    ["admin"],
 );
 
 const aliasRemoveCommand = new SimpleCommand(
     {
+        allowedPrivileges: ["admin"],
         author: "extcord",
         description: "Remove an alias",
         name: "remove",
@@ -146,6 +147,7 @@ const aliasListCommand = new SimpleCommand(
 
 export const aliasCommand = new CommandGroup(
     {
+        allowedPrivileges: ["everyone"],
         author: "extcord",
         description: "Set, update or remove an alias",
         name: "alias",

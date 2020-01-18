@@ -17,9 +17,8 @@ export class CommandGroup
     private languageCommandsMap: Map<string, Map<string, Command<any>>>;
     private guildCommandsMap: Map<string, Map<string, Command<any>>>;
 
-    constructor(info: ICommandInfo, defaultSubcommand?: string, children?: ReadonlyArray<Command<any>>,
-                allowed?: Array<string|PermissionPrivilege>) {
-        super(info, [ BuiltInArguments.subcommand, BuiltInArguments.subcommandArguments ], allowed,
+    constructor(info: ICommandInfo, defaultSubcommand?: string, children?: ReadonlyArray<Command<any>>) {
+        super(info, [ BuiltInArguments.subcommand, BuiltInArguments.subcommandArguments ],
             new PermissionGroup({
                 description: `Gives the permission for the command group ${info.name}`,
                 name: typeof info.name === "string" ? info.name : info.name[DEFAULT_LANGUAGE],

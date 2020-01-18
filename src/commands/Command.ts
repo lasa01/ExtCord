@@ -39,7 +39,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
     private usageCache: Map<string, string>;
     private shortUsageCache: Map<string, string>;
 
-    constructor(info: ICommandInfo, args: T,  allowed?: Array<string|PermissionPrivilege>, permission?: Permission) {
+    constructor(info: ICommandInfo, args: T, permission?: Permission) {
         this.name = typeof info.name === "string" ? info.name : info.name[DEFAULT_LANGUAGE];
         this.localizedName = new SimplePhrase({
             name: "name",
@@ -91,8 +91,8 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
             name: this.name,
         });
         this.allowedPrivileges = [];
-        if (allowed) {
-            for (const privilege of allowed) {
+        if (info.allowedPrivileges) {
+            for (const privilege of info.allowedPrivileges) {
                 if (typeof privilege === "string") {
                     // Process privilege later
                     this.allowedPrivileges.push(privilege);
@@ -315,6 +315,7 @@ export interface ICommandInfo {
     description: string | Record<string, string>;
     author: string | Module;
     aliases?: string[] | IListMap;
+    allowedPrivileges?: Array<string|PermissionPrivilege>;
     discordPermissions?: number;
 }
 

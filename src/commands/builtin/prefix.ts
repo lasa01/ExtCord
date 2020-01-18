@@ -35,17 +35,18 @@ const prefixShowPhrase = new MessagePhrase(
 
 const prefixShowCommand = new SimpleCommand(
     {
+        allowedPrivileges: ["everyone"],
         author: "extcord",
         description: "Show the command prefix",
         name: "show",
     },
     [],
     (context) => context.respond(prefixShowPhrase, { prefix: context.prefix }),
-    ["everyone"],
 );
 
 const prefixSetCommand = new SimpleCommand(
     {
+        allowedPrivileges: ["admin"],
         author: "extcord",
         description: "Set the command prefix",
         name: "set",
@@ -66,17 +67,16 @@ const prefixSetCommand = new SimpleCommand(
         }
         await context.respond(prefixSetPhrase, { prefix });
     },
-    ["admin"],
 );
 
 export const prefixCommand = new CommandGroup(
     {
+        allowedPrivileges: ["everyone"],
         author: "extcord",
         description: "Show or update the command prefix",
         name: "prefix",
     },
-    undefined, undefined,
-    ["everyone"],
+    "show",
 );
 
 prefixCommand.addSubcommands(prefixSetCommand, prefixShowCommand);

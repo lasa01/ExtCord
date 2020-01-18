@@ -75,6 +75,7 @@ const languageListPhrase = new DynamicFieldMessagePhrase(
 
 const languageSetCommand = new SimpleCommand(
     {
+        allowedPrivileges: ["admin"],
         author: "extcord",
         description: "Set the language",
         name: "set",
@@ -105,24 +106,24 @@ const languageSetCommand = new SimpleCommand(
         }
         await context.respond(languageSetPhrase, { language });
     },
-    ["admin"],
 );
 
 const languageShowCommand = new SimpleCommand(
     {
         aliases: ["s"],
+        allowedPrivileges: ["everyone"],
         author: "extcord",
         description: "Show the language",
         name: "show",
     },
     [] as const,
     async (context) => context.respond(languageShowPhrase, { language: context.language }),
-    ["everyone"],
 );
 
 const languageListCommand: SimpleCommand<[]> = new SimpleCommand(
     {
         aliases: ["l"],
+        allowedPrivileges: ["everyone"],
         author: "extcord",
         description: "List the available language",
         name: "list",
@@ -136,18 +137,17 @@ const languageListCommand: SimpleCommand<[]> = new SimpleCommand(
             name: context.bot.languages.languageNames[lang],
         })),
     ),
-    ["everyone"],
 );
 
 export const languageCommand = new CommandGroup(
     {
         aliases: ["lang"],
+        allowedPrivileges: ["everyone"],
         author: "extcord",
         description: "Show or update the language",
         name: "language",
     },
-    undefined, undefined,
-    ["everyone"],
+    "list",
 );
 
 languageCommand.addSubcommands(languageSetCommand, languageShowCommand, languageListCommand);
