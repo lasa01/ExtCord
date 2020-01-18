@@ -2,8 +2,8 @@
 
 import { Permissions } from "discord.js";
 import {
-    Bot, CommandGroup, DynamicFieldMessagePhrase, IntArgument, MessagePhrase, Module, Permission,
-    SimpleCommand, StringArgument,
+    Bot, CommandGroup, DynamicFieldMessagePhrase, IntArgument, MemberArgument, MessagePhrase, Module,
+    Permission, SimpleCommand, StringArgument,
 } from "../..";
 
 export default class TestModule extends Module {
@@ -160,5 +160,22 @@ export default class TestModule extends Module {
         randomCommand.addPhrases(randomPhrase);
         commandGroup.addSubcommands(randomCommand);
         this.registerCommand(commandGroup);
+        const kickCommand = new SimpleCommand({
+            allowedPrivileges: ["admin"],
+            author: this,
+            description: "Kick a member",
+            discordPermissions: Permissions.FLAGS.KICK_MEMBERS,
+            name: "kick",
+        }, [
+            new MemberArgument({
+                description: "The member to kick",
+                name: "member",
+            }, false, bot.database),
+        ],
+        async (context) => {
+            await (await context.arguments[0]).member.kick("Kick requested by " +
+                context.message.member.member.displayName);
+        });
+        this.registerCommand(kickCommand);
     }
 }
