@@ -33,7 +33,7 @@ export abstract class Module {
         this.permissionGroup = new PermissionGroup({ name });
         this.commandsPhraseGroup = new PhraseGroup({ name: "commands" });
         this.permissionsPhraseGroup = new PhraseGroup({ name: "permissions" });
-        this.phraseGroup = new PhraseGroup({ name }, [this.commandsPhraseGroup, this.permissionsPhraseGroup]);
+        this.phraseGroup = new PhraseGroup({ name });
     }
 
     public rename() {
@@ -41,9 +41,21 @@ export abstract class Module {
     }
 
     public load() {
-        this.bot.config.registerEntry(this.configEntryGroup);
-        this.bot.permissions.registerPermission(this.permissionGroup);
-        this.bot.languages.registerPhrase(this.phraseGroup);
+        if (this.configEntryGroup.entries.size !== 0) {
+            this.bot.config.registerEntry(this.configEntryGroup);
+        }
+        if (this.permissionGroup.children.size !== 0) {
+            this.bot.permissions.registerPermission(this.permissionGroup);
+        }
+        if (this.commandsPhraseGroup.phrases.size !== 0) {
+            this.phraseGroup.addPhrases(this.commandsPhraseGroup);
+        }
+        if (this.permissionsPhraseGroup.phrases.size !== 0) {
+            this.phraseGroup.addPhrases(this.permissionsPhraseGroup);
+        }
+        if (this.phraseGroup.phrases.size !== 0) {
+            this.bot.languages.registerPhrase(this.phraseGroup);
+        }
     }
 
     public async unload() {

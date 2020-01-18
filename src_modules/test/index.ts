@@ -1,3 +1,6 @@
+// extcord module
+
+import { Permissions } from "discord.js";
 import {
     Bot, CommandGroup, DynamicFieldMessagePhrase, IntArgument, MessagePhrase, Module, Permission,
     SimpleCommand, StringArgument,

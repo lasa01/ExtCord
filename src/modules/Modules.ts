@@ -1,5 +1,6 @@
+import { spawn } from "child_process";
 import { EventEmitter } from "events";
-import { ensureDir, readdir, stat } from "fs-extra";
+import { ensureDir, readdir, readFile, stat } from "fs-extra";
 import { resolve } from "path";
 
 import { Bot } from "../Bot";
@@ -26,15 +27,21 @@ export interface Modules {
 }
 
 export class Modules extends EventEmitter {
-    public moduleDirConfigEntry?: StringConfigEntry;
+    public moduleDirConfigEntry: StringConfigEntry;
     private modules: Map<string, Module>;
     private bot: Bot;
     private configEntry?: ConfigEntryGroup;
+    private dependencies: string[];
 
     constructor(bot: Bot) {
         super();
         this.modules = new Map();
         this.bot = bot;
+        this.moduleDirConfigEntry = new StringConfigEntry({
+            description: "The directory for modules",
+            name: "moduleDirectory",
+        }, "modules");
+        this.dependencies = [];
     }
 
     public async loadModule(module: new (bot: Bot) => Module) {
@@ -59,10 +66,11 @@ export class Modules extends EventEmitter {
     }
 
     public async loadAll(moduleDir?: string) {
-        moduleDir = moduleDir ?? this.moduleDirConfigEntry!.get();
+        moduleDir = moduleDir ?? this.moduleDirConfigEntry.get();
         Logger.verbose("Loading all modules");
         await ensureDir(moduleDir);
         const modules = await readdir(moduleDir);
+        const toRequire: string[] = [];
         for (const filename of modules) {
             let path = resolve(moduleDir, filename);
             const stats = await stat(path);
@@ -80,25 +88,67 @@ export class Modules extends EventEmitter {
             }
             // Skip files that aren't javascript
             if (!path.endsWith(".js")) { continue; }
+            const fileContent = await readFile(path, "utf8");
+            if (!fileContent.replace("\"use strict\";", "").trim().startsWith("// extcord module")) {
+                Logger.warn(`Skipping a non-module file "${filename}"`);
+                continue;
+            }
+            const dependencyLines = fileContent.split("\n").filter((line) => line.trim().startsWith("// requires"));
+            for (const line of dependencyLines) {
+                const dependencies = line.slice(11).split(" ");
+                if (dependencies.length === 1 && dependencies[0] === "") {
+                    continue;
+                }
+                for (const dependency of dependencies) {
+                    this.addDependency(dependency);
+                }
+            }
+            toRequire.push(path);
+        }
+        await this.installDependencies();
+        for (const path of toRequire) {
             try {
                 const loaded = require(path).default;
                 if (!Module.isPrototypeOf(loaded)) {
-                    Logger.warn(`Skipping a non-module file "${filename}"`);
+                    Logger.error(`File "${path}" is marked as an extcord module but does not contain one`);
                     continue;
                 }
                 await this.loadModule(loaded);
             } catch (error) {
-                Logger.error(`Error loading module ${filename}: ${error.stack ?? error}`);
+                Logger.error(`Error loading module ${path}: ${error.stack ?? error}`);
             }
         }
         this.emit("loaded");
     }
 
+    public addDependency(dependency: string) {
+        this.dependencies.push(dependency);
+    }
+
+    public async installDependencies() {
+        if (this.dependencies.length === 0) {
+            return;
+        }
+        Logger.verbose("Installing dependencies");
+        const installArgs = ["--quiet", "install", "--no-save", ...this.dependencies];
+        const isWindows = process.platform.startsWith("win");
+        const child = spawn(isWindows ? "npm.cmd" : "npm", installArgs);
+        child.stdout.on("data", (msg) => Logger.verbose(msg.toString()));
+        child.stderr.on("data", (msg) => Logger.error(msg.toString()));
+        const exitCode = await new Promise<number>((res, rej) => {
+            child.once("error", (err) => {
+                rej(err);
+            });
+            child.once("close", (code, signal) => {
+                res(code);
+            });
+        });
+        if (exitCode !== 0) {
+            throw new Error("Dependency installation failed with code " + exitCode);
+        }
+    }
+
     public registerConfig() {
-        this.moduleDirConfigEntry = new StringConfigEntry({
-            description: "The directory for modules",
-            name: "moduleDirectory",
-        }, "modules");
         this.configEntry = new ConfigEntryGroup({
             description: "Modules configuration",
             name: "modules",
