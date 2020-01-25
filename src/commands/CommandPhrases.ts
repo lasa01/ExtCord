@@ -3,6 +3,10 @@ import { MessagePhrase } from "../language/phrase/MessagePhrase";
 import { SimplePhrase } from "../language/phrase/SimplePhrase";
 import { TemplatePhrase } from "../language/phrase/TemplatePhrase";
 
+/**
+ * Internal phrases used by command-related functions.
+ * @category Command
+ */
 export const CommandPhrases = {
     argumentUsage: new TemplatePhrase(
         {

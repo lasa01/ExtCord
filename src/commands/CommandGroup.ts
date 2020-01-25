@@ -10,14 +10,26 @@ import { Command, ICommandInfo, IExecutionContext } from "./Command";
 import { CommandPhrases } from "./CommandPhrases";
 import { ICommandContext } from "./Commands";
 
+/**
+ * A parent command that does not do anything by itself but has subcommands.
+ * @category Command
+ */
 export class CommandGroup
     extends Command<[typeof BuiltInArguments.subcommand, typeof BuiltInArguments.subcommandArguments]> {
+    /** The subcommands of the command group. */
     public children: Map<string, Command<any>>;
+    /** The default subcommand that is called when no subcommand is specified, if any. */
     public defaultSubcommand?: string;
     protected subPhraseGroup: PhraseGroup;
     private languageCommandsMap: Map<string, Map<string, Command<any>>>;
     private guildCommandsMap: Map<string, Map<string, Command<any>>>;
 
+    /**
+     * Creates a new command group.
+     * @param info Defines basic command parameters.
+     * @param defaultSubcommand Defines the name of the default subcommand to call when no subcommand is specified.
+     * @param children Defines subcommands for the command group.
+     */
     constructor(info: ICommandInfo, defaultSubcommand?: string, children?: ReadonlyArray<Command<any>>) {
         super(info, [ BuiltInArguments.subcommand, BuiltInArguments.subcommandArguments ],
             new PermissionGroup({
@@ -38,6 +50,9 @@ export class CommandGroup
         this.guildCommandsMap = new Map();
     }
 
+    /**
+     * Updates the full name of the command and all subcommands to include the parent's name.
+     */
     public updateFullName() {
         super.updateFullName();
         for (const [, child] of this.children) {
@@ -45,6 +60,10 @@ export class CommandGroup
         }
     }
 
+    /**
+     * Registers the command and all subcommands for the specified bot.
+     * @param bot The bot to register the command for.
+     */
     public registerSelf(bot: Bot) {
         super.registerSelf(bot);
         for (const [, child] of this.children) {
@@ -60,6 +79,10 @@ export class CommandGroup
         }
     }
 
+    /**
+     * Associate the specified subcommands with the command group.
+     * @param subcommands Subcommands to add.
+     */
     public addSubcommands(...subcommands: Array<Command<any>>) {
         for (const subcommand of subcommands) {
             if (this.children.has(subcommand.name)) {
@@ -72,6 +95,10 @@ export class CommandGroup
         }
     }
 
+    /**
+     * Remove the specified associated subcommands from the group.
+     * @param subcommands Subcommands to remove.
+     */
     public removeSubcommands(...subcommands: Array<Command<any>>) {
         for (const subcommand of subcommands) {
             if (this.children.has(subcommand.name)) {
@@ -83,14 +110,27 @@ export class CommandGroup
         }
     }
 
+    /**
+     * Associate phrases with the command's subcommands.
+     * @param phrases Phrases to add.
+     */
     public addSubPhrases(...phrases: Phrase[]) {
         this.subPhraseGroup.addPhrases(...phrases);
     }
 
+    /**
+     * Remove associated phrases from the command's subcommands.
+     * @param phrases Phrases to remove.
+     */
     public removeSubPhrases(...phrases: Phrase[]) {
         this.subPhraseGroup.removePhrases(...phrases);
     }
 
+    /**
+     * Executes the command.
+     * This either invokes the specific subcommand or responds with an error if the subcommand isn't found.
+     * @param context Context of the execution.
+     */
     public async execute(
         context: IExecutionContext<[typeof BuiltInArguments.subcommand, typeof BuiltInArguments.subcommandArguments]>) {
         const subcommand = context.arguments[0] ?? this.defaultSubcommand;
@@ -118,6 +158,12 @@ export class CommandGroup
         }
     }
 
+    /**
+     * Gets the instance of the specified subcommand by a name, taking guild aliases and language into account.
+     * @param guild The guild to get commands from.
+     * @param language The language to use.
+     * @param command The name of the command/alias to resolve.
+     */
     public getCommandInstance(guild: IExtendedGuild, language: string, command: string) {
         if (!this.guildCommandsMap.has(guild.guild.id)) {
             this.createGuildCommandsMap(guild, language);
@@ -125,6 +171,11 @@ export class CommandGroup
         return this.guildCommandsMap.get(guild.guild.id)!.get(command);
     }
 
+    /**
+     * Creates a cached map of subcommands for the specified guild and language.
+     * @param guild The guild to create the map for.
+     * @param language The language to use.
+     */
     public createGuildCommandsMap(guild: IExtendedGuild, language: string) {
         if (!this.languageCommandsMap.has(language)) {
             this.createLanguageCommmandsMap(language);
@@ -132,6 +183,10 @@ export class CommandGroup
         this.guildCommandsMap.set(guild.guild.id, new Map(this.languageCommandsMap.get(language)!));
     }
 
+    /**
+     * Creates a cached map of subcommands for the specified language.
+     * @param language The language to use.
+     */
     public createLanguageCommmandsMap(language: string) {
         const map: Map<string, Command<any>> = new Map();
         for (const [, command] of this.children) {

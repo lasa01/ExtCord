@@ -7,7 +7,17 @@ import { Argument, IArgumentInfo } from "./Argument";
 
 const MENTION_REGEX = /^<#(\d+)>$/;
 
+/**
+ * A command argument resolving to a text channel of the relevant guild.
+ * @typeparam T A boolean representing whether the argument is optional.
+ * @category Command Argument
+ */
 export class TextChannelArgument<T extends boolean> extends Argument<TextChannel, T, TextChannel> {
+    /**
+     * Creates a new text channel argument.
+     * @param info Defines basic argument parameters.
+     * @param optional Allows the argument to be omitted.
+     */
     constructor(info: IArgumentInfo, optional: T) {
         super(info, optional, false);
     }

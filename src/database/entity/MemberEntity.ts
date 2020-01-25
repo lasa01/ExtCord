@@ -3,6 +3,10 @@ import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { GuildEntity } from "./GuildEntity";
 import { UserEntity } from "./UserEntity";
 
+/**
+ * Database entity for members.
+ * @category Database
+ */
 @Entity("members")
 export class MemberEntity {
     @PrimaryGeneratedColumn()

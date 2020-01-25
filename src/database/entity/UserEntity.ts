@@ -2,6 +2,10 @@ import { Column, Entity, OneToMany, PrimaryColumn } from "typeorm";
 
 import { MemberEntity } from "./MemberEntity";
 
+/**
+ * Database entity for users.
+ * @category Database
+ */
 @Entity("users")
 export class UserEntity {
     @PrimaryColumn()

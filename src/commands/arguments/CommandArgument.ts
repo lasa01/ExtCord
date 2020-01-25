@@ -3,7 +3,18 @@ import { CommandPhrases } from "../CommandPhrases";
 import { ICommandContext } from "../Commands";
 import { Argument, IArgumentInfo } from "./Argument";
 
+/**
+ * A command argument resolving to a command in the same guild.
+ * @typeparam T A boolean representing whether the argument is optional.
+ * @category Command Argument
+ */
 export class CommandArgument<T extends boolean> extends Argument<Command<any>, T, Command<any>> {
+    /**
+     * Creates a new command argument.
+     * @param info Defines basic argument parameters.
+     * @param optional Allows the argument to be omitted.
+     * @param allowSubcommands Allow the argument to match subcommands recursively, instead of only top-level commands.
+     */
     constructor(info: IArgumentInfo, optional: T, allowSubcommands = false) {
         super(info, optional, allowSubcommands);
     }

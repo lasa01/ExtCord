@@ -6,11 +6,22 @@ import { IEntryInfo } from "../ConfigEntry";
 import { StringConfigEntry } from "../StringConfigEntry";
 import { StringConfigEntity } from "./database/StringConfigEntity";
 
+/**
+ * A per-guild-configurable string config entry with a default value.
+ * @category Config
+ */
 export class StringGuildConfigEntry extends StringConfigEntry {
+    /** The database used for guild-specific configuration. */
     public repo?: Repository<StringConfigEntity>;
     private database: Database;
     private cache: Map<string, StringConfigEntity>;
 
+    /**
+     * Creates a new string guild config entry.
+     * @param info Defines basic entry parameters.
+     * @param database The database for guild-specific configuration.
+     * @param defaultValue Defines the defaultvalue.
+     */
     constructor(info: IEntryInfo, database: Database, defaultValue?: string) {
         info.loadStage = 1;
         super(info, defaultValue);
@@ -18,11 +29,20 @@ export class StringGuildConfigEntry extends StringConfigEntry {
         this.cache = new Map();
     }
 
+    /**
+     * Gets the guild-specific value of the entry for the specified guild.
+     * @param guild The guild to get the value for.
+     */
     public async guildGet(guild: IExtendedGuild): Promise<string> {
         const entity = await this.guildGetEntity(guild);
         return entity.value;
     }
 
+    /**
+     * Sets the guild-specific value of the entry for the specified guild.
+     * @param guild The guild to set the value for.
+     * @param value The new value.
+     */
     public async guildSet(guild: IExtendedGuild, value: string) {
         this.ensureRepo();
         const entity = await this.guildGetEntity(guild);

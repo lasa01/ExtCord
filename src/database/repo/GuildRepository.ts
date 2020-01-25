@@ -3,6 +3,10 @@ import { EntityRepository, Repository } from "typeorm";
 
 import { GuildEntity } from "../entity/GuildEntity";
 
+/**
+ * Database repository for guilds.
+ * @category Database
+ */
 @EntityRepository(GuildEntity)
 export class GuildRepository extends Repository<GuildEntity> {
     private cache: Map<Guild, GuildEntity>;
@@ -12,6 +16,10 @@ export class GuildRepository extends Repository<GuildEntity> {
         this.cache = new Map();
     }
 
+    /**
+     * Gets the associated guild database entity for the specified guild.
+     * @param guild The guild to use.
+     */
     public async getEntity(guild: Guild): Promise<GuildEntity> {
         if (this.cache.has(guild)) {
             return this.cache.get(guild)!;

@@ -2,6 +2,10 @@ import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 import { GuildEntity } from "./GuildEntity";
 
+/**
+ * Database entity for roles.
+ * @category Database
+ */
 @Entity("roles")
 export class RoleEntity {
     @PrimaryGeneratedColumn()

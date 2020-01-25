@@ -1,9 +1,18 @@
 import { ConfigEntry, IEntryInfo } from "./ConfigEntry";
 
+/**
+ * A config entry that can be any object.
+ * @category Config
+ */
 export class ObjectConfigEntry extends ConfigEntry {
     private value?: object;
     private defaultValue?: object;
 
+    /**
+     * Creates a new object config entry.
+     * @param info Defines basic entry parameters.
+     * @param defaultValue Defines the default value.
+     */
     constructor(info: IEntryInfo, defaultValue?: object) {
         super(info);
         this.defaultValue = defaultValue;

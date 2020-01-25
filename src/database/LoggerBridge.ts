@@ -1,6 +1,10 @@
 import { Logger } from "typeorm";
 import { Logger as ExtcordLogger } from "../util/Logger";
 
+/**
+ * A bridge between the bot's logger and the database.
+ * @category Database
+ */
 export class LoggerBridge implements Logger {
     private logger: typeof ExtcordLogger;
 
