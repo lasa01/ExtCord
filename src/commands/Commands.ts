@@ -184,7 +184,7 @@ export class Commands extends EventEmitter {
             await respond(CommandPhrases.invalidCommand, { command });
             return;
         }
-        const passed = text.replace(command, "").trim();
+        const passed = text.slice(command.length).trim();
         const context = {
             bot: this.bot,
             botPermissions,
@@ -486,8 +486,8 @@ export class Commands extends EventEmitter {
             this.repos = {
                 alias: this.bot.database.connection.getRepository(GuildAliasEntity),
                 member: this.bot.database.repos.member,
-            }
-;        }
+            };
+        }
     }
 }
 
