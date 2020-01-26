@@ -16,21 +16,41 @@ import { ICommandContext } from "./Commands";
 
 import { Permissions as DiscordPermissions } from "discord.js";
 
+/**
+ * A generic abstract base class for all commands.
+ * @category Command
+ * @typeparam T Array of types of the arguments for the command.
+ */
 export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any>>> {
+    /** The name the command is registered by internally. */
     public name: string;
+    /** The localized, user-friendly name of the command. */
     public localizedName: SimplePhrase;
+    /** The description of the command in default language. */
     public description: string;
+    /** The localized, user-friendly description of the command. */
     public localizedDescription: SimplePhrase;
+    /** A list of aliases for the command in default language. */
     public aliases: string[];
+    /** Localized aliases for the command. */
     public localizedAliases: ListPhrase;
+    /** The module the command is from, if any. */
     public from?: Module;
+    /** The name of the author of the command. */
     public author: string;
+    /** Bitflag for the Discord permissions the command requires. */
     public discordPermissions: number;
+    /** An array of the arguments of the command. */
     public arguments: T;
+    /** A computed minimum number of arguments the command requires. */
     public minArguments: number;
+    /** The full name of the command, including possible parents, seperated by spaces. */
     public fullName: string;
+    /** The parent command the command is a subcommand of, if any. */
     public parent?: Command<any>;
+    /** The phrase group of the command for registration purposes. */
     public phraseGroup: PhraseGroup;
+    /** A computed index of [[arguments]] where combining extra arguments should happen. */
     public combineIndex?: number;
     protected defaultPermission: Permission;
     protected argPhraseGroup: PhraseGroup;
@@ -39,6 +59,12 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
     protected shortUsageCache: Map<string, string>;
     private allowedPrivileges: string[];
 
+    /**
+     * Creates a new command.
+     * @param info Defines basic command parameters.
+     * @param args Defines arguments for the command.
+     * @param permission Optionally defines the permission checked when executing the command.
+     */
     constructor(info: ICommandInfo, args: T, permission?: Permission) {
         this.name = typeof info.name === "string" ? info.name : info.name[DEFAULT_LANGUAGE];
         this.localizedName = new SimplePhrase({
@@ -105,24 +131,35 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
         this.shortUsageCache = new Map();
     }
 
+    /** Gets the maximum number of arguments the command accepts. */
     public get maxArguments() {
         return this.arguments.length;
     }
 
+    /**
+     * Registers the command for the specified parent.
+     * @param parent The parent to register the command for.
+     */
     public registerParent(parent: Command<any>) {
         this.parent = parent;
     }
 
+    /** Unregisters the command for a previously registered parent. */
     public unregisterParent() {
         this.parent = undefined;
     }
 
+    /** Updates the full name of the command to include the parent's name. */
     public updateFullName() {
         if (this.parent) {
             this.fullName = this.parent.fullName + " " + this.name;
         }
     }
 
+    /**
+     * Registers the command for the specified bot.
+     * @param bot The bot to register the command for.
+     */
     public registerSelf(bot: Bot) {
         for (const name of this.allowedPrivileges) {
             const privilege = bot.permissions.getBuiltinPrivilege(name);
@@ -134,30 +171,56 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
         }
     }
 
+    /**
+     * Associate phrases with the command.
+     * @param phrases Phrases to add.
+     */
     public addPhrases(...phrases: Phrase[]) {
         this.customPhraseGroup.addPhrases(...phrases);
     }
 
+    /**
+     * Remove associated phrases from the command.
+     * @param phrases Phrases to remove.
+     */
     public removePhrases(...phrases: Phrase[]) {
         this.customPhraseGroup.removePhrases(...phrases);
     }
 
+    /**
+     * Associate phrases with the command's arguments.
+     * @param phrases Phrases to add.
+     */
     public addArgPhrases(...phrases: Phrase[]) {
         this.argPhraseGroup.addPhrases(...phrases);
     }
 
+    /**
+     * Remove associated phrases from the command's arguments.
+     * @param phrases Phrases to remove.
+     */
     public removeArgPhrases(...phrases: Phrase[]) {
         this.argPhraseGroup.removePhrases(...phrases);
     }
 
+    /** Get the permission of the command for registration purposes. */
     public getPermission() {
         return this.defaultPermission;
     }
 
+    /**
+     * Checks whether the specified member is allowed to execute the command.
+     * @param member The member to check permissions for.
+     */
     public async canExecute(member: IExtendedMember) {
         return this.defaultPermission.checkMember(member);
     }
 
+    /**
+     * Invokes the command execution.
+     * This ensures permissions, parses the arguments and executes the command.
+     * @param context Context of the command.
+     */
     public async command(context: ICommandContext): Promise<void> {
         let startTime = process.hrtime();
         Logger.debug(`(command ${this.name}) Command: ${context.command}`);
@@ -269,13 +332,25 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
         Logger.debug(`(command ${this.name}) Command execution took ${timeString} ms`);
     }
 
+    /**
+     * Executes the command.
+     * @param context Context of the execution.
+     */
     public abstract async execute(context: IExecutionContext<T>): Promise<void>;
 
+    /**
+     * Gets the localized full name for the given language.
+     * @param language The language to use.
+     */
     public getUsageName(language: string): string {
         const name = this.localizedName.get(language);
         return this.parent ? (this.parent.getUsageName(language) + " " + name) : name;
     }
 
+    /**
+     * Gets the localized usage string for the given language.
+     * @param language The language to use.
+     */
     public getUsage(language: string): string {
         if (this.usageCache.has(language)) {
             return this.usageCache.get(language)!;
@@ -289,12 +364,20 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
         return usage;
     }
 
+    /**
+     * Gets the localized short usage string for the given language.
+     * @param language The language to use.
+     */
     public getShortUsage(language: string): string {
         const args = this.arguments.map((arg) => arg.getUsageName(language));
         args.unshift(this.getUsageName(language));
         return "`" + args.join(" ") + "`";
     }
 
+    /**
+     * Gets a map of localized aliases for the given language.
+     * @param languageThe language to use.
+     */
     public getAliases(language: string): { [key: string]: Command<any> } {
         const aliases: { [key: string]: Command<any> } = {};
         for (const alias of this.localizedAliases.get(language)) {
@@ -303,6 +386,10 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
         return aliases;
     }
 
+    /**
+     * Respond to the specified command context with a help message for the command.
+     * @param context The command context to send help to.
+     */
     public respondHelp(context: ICommandContext) {
         return context.respond(CommandPhrases.commandHelp, {
             command: this.getUsageName(context.language),
@@ -311,29 +398,75 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
     }
 }
 
+/**
+ * An object providing context to command execution, such as the original message, a response function and so on.
+ * Also contains parsed arguments.
+ * @category Command
+ * @typeparam T Array of types of the arguments for the command associated with this context.
+ */
 export interface IExecutionContext<T extends ReadonlyArray<Argument<any, boolean, any>>> extends ICommandContext {
+    /** Array of the raw passed argument strings before parsing. */
     rawArguments: string[];
+    /** Array of the arguments after parsing. */
     arguments: ArgumentsParseReturns<T>;
 }
 
+/**
+ * Defines basic command parameters common to all commands.
+ * @category Command
+ */
 export interface ICommandInfo {
+    /**
+     * Name of the command.
+     * Can be either a string, in which case it is assumed to be in [[DEFAULT_LANGUAGE]],
+     * or an object, in which case the keys are languages and the values are associated localized names.
+     */
     name: string | Record<string, string>;
+    /**
+     * Description of the command.
+     * Can be either a string, in which case it is assumed to be in [[DEFAULT_LANGUAGE]],
+     * or an object, in which case the keys are languages and the values are associated localized descriptions.
+     */
     description: string | Record<string, string>;
+    /** Specifies the source of the command, either a [[Module]] or the name of the author. */
     author: string | Module;
+    /**
+     * Specifies default aliases for the command.
+     * Can be either an array, in which case they are assumed to be in [[DEFAULT_LANGUAGE]],
+     * or an objectm in which case the keys are languages and the values are associated localized aliases.
+     */
     aliases?: string[] | IListMap;
+    /**
+     * Specifies the privileges that are allowed to execute this command by default.
+     * Both privilege instances and names can be used.
+     */
     allowedPrivileges?: Array<string|PermissionPrivilege>;
+    /** Bitflag for the Discord permissions the command requires. */
     discordPermissions?: number;
 }
 
+/**
+ * Represents the array returned from argument parsing of the specified type of arguments.
+ * @typeparam T The type of the arguments.
+ * @category Command
+ */
 type ArgumentsParseReturns<T extends ReadonlyArray<Argument<any, boolean, any>>> = {
     [P in keyof T]: T[P] extends Argument<infer U, infer V, any> ?
         V extends false ? U : U|undefined
         : never
 };
 
+/**
+ * A function that responds to the command with the specified error message.
+ * @category Command
+ */
 export interface ILinkedErrorResponse {
     <T extends Record<string, string>>(phrase: TemplatePhrase<T>, stuff: T): undefined;
     (phrase: SimplePhrase): undefined;
 }
 
+/**
+ * Represents the arguments passed to [[ILinkedErrorResponse]].
+ * @category Command
+ */
 export type LinkedErrorArgs<T extends Record<string, string>> = [TemplatePhrase<T>, T];

@@ -4,6 +4,10 @@ import { EntityRepository, Repository } from "typeorm";
 import { RoleEntity } from "../entity/RoleEntity";
 import { GuildRepository } from "./GuildRepository";
 
+/**
+ * Database repository for roles.
+ * @category Database
+ */
 @EntityRepository(RoleEntity)
 export class RoleRepository extends Repository<RoleEntity> {
     private cache: Map<Role, RoleEntity>;
@@ -13,6 +17,10 @@ export class RoleRepository extends Repository<RoleEntity> {
         this.cache = new Map();
     }
 
+    /**
+     * Gets the associated role database entity for the specified role.
+     * @param role The role to use.
+     */
     public async getEntity(role: Role): Promise<RoleEntity> {
         if (this.cache.has(role)) {
             return this.cache.get(role)!;

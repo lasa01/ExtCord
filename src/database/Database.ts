@@ -34,17 +34,27 @@ export interface Database {
     prependOnceListener(event: "ready", listener: () => void): this;
 }
 
+/**
+ * The bot's handler for database connection and registering.
+ * @category Database
+ */
 export class Database extends EventEmitter {
+    /** Config entry for database connection settings. */
     public configEntry: ObjectConfigEntry;
+    /** General database repositories. */
     public repos?: {
         guild: GuildRepository,
         member: MemberRepository,
         user: UserRepository,
         role: RoleRepository,
     };
+    /** Database connection, if any. */
     public connection?: Connection;
     private entities: Array<new () => any>;
 
+    /**
+     * Creates a database handler.
+     */
     constructor() {
         super();
         this.entities = [GuildEntity, MemberEntity, UserEntity, RoleEntity];
@@ -57,6 +67,10 @@ export class Database extends EventEmitter {
         });
     }
 
+    /**
+     * Connects the client to the database.
+     * @param options Defines custom connection options instead of the database's config entry.
+     */
     public async connect(options?: ConnectionOptions) {
         options = options ?? this.configEntry.get() as ConnectionOptions;
         Logger.verbose("Connecting to database");
@@ -75,6 +89,9 @@ export class Database extends EventEmitter {
         this.emit("ready");
     }
 
+    /**
+     * Closes the database connection if it exists.
+     */
     public async stop() {
         if (this.connection) {
             await this.connection.close();
@@ -82,19 +99,34 @@ export class Database extends EventEmitter {
         }
     }
 
+    /**
+     * Registers an entity to the database handler.
+     * @param model The entity to register.
+     */
     public registerEntity(model: new () => any) {
         Logger.debug(`Registering database entity ${model.name}`);
         this.entities.push(model);
     }
 
+    /**
+     * Unregisters an entity from the database handler.
+     * @param model The entity to unregister.
+     */
     public unregisterEntity(model: new () => any) {
         this.entities.splice(this.entities.indexOf(model), 1);
     }
 
+    /**
+     * Registers the database handler's config entries to the specified config manager.
+     * @param config The config manager to use.
+     */
     public registerConfig(config: Config) {
         config.registerEntry(this.configEntry);
     }
 
+    /**
+     * Asserts that the database is connected. Throws if it isn't.
+     */
     public ensureConnection(): asserts this is this & {
         connection: Connection, repos: NonNullable<Database["repos"]>,
     } {

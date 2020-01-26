@@ -7,7 +7,17 @@ import { Argument, IArgumentInfo } from "./Argument";
 
 const MENTION_REGEX = /^<@!?(\d+)>$/;
 
+/**
+ * A command argument resolving to a user the bot is aware of.
+ * @typeparam T A boolean representing whether the argument is optional.
+ * @category Command Argument
+ */
 export class UserArgument<T extends boolean> extends Argument<User, T, string> {
+    /**
+     * Creates a new user argument.
+     * @param info Defines basic argument parameters.
+     * @param optional Allows the argument to be omitted.
+     */
     constructor(info: IArgumentInfo, optional: T) {
         super(info, optional, false);
     }

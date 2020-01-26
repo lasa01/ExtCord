@@ -3,6 +3,10 @@ import { EntityRepository, Repository } from "typeorm";
 
 import { UserEntity } from "../entity/UserEntity";
 
+/**
+ * Database repository for users.
+ * @category Database
+ */
 @EntityRepository(UserEntity)
 export class UserRepository extends Repository<UserEntity> {
     private cache: Map<User, UserEntity>;
@@ -12,6 +16,10 @@ export class UserRepository extends Repository<UserEntity> {
         this.cache = new Map();
     }
 
+    /**
+     * Gets the associated user database entity for the specified user.
+     * @param user The user to use.
+     */
     public async getEntity(user: User): Promise<UserEntity> {
         if (this.cache.has(user)) {
             return this.cache.get(user)!;

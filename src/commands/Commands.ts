@@ -52,8 +52,14 @@ export interface Commands {
     prependOnceListener(event: "message", listener: (message: IExtendedMessage) => void): this;
 }
 
+/**
+ * The bot's handler for command registering and invoking.
+ * @category Command
+ */
 export class Commands extends EventEmitter {
+    /** Guild-configurable config entry for the command prefix. */
     public prefixConfigEntry: StringGuildConfigEntry;
+    /** Database repositories used by commands. */
     public repos?: {
         alias: Repository<GuildAliasEntity>,
         member: MemberRepository,
@@ -71,6 +77,10 @@ export class Commands extends EventEmitter {
     private phrasesGroup?: PhraseGroup;
     private phraseGroup?: PhraseGroup;
 
+    /**
+     * Creates a commands handler.
+     * @param bot The bot that uses the handler.
+     */
     constructor(bot: Bot) {
         super();
         this.bot = bot;
@@ -88,6 +98,10 @@ export class Commands extends EventEmitter {
         }, [ this.prefixConfigEntry ]);
     }
 
+    /**
+     * Handles the specified incoming message.
+     * @param discordMessage The message to handle from Discord.
+     */
     public async message(discordMessage: Message) {
         const startTime = process.hrtime();
         if (!discordMessage.guild || discordMessage.author.bot) { return; } // For now
@@ -188,10 +202,23 @@ export class Commands extends EventEmitter {
         await commandInstance.command(context);
     }
 
-    public async getCommandInstance(guild: IExtendedGuild, language: string, command: string) {
+    /**
+     * Gets the instance of the specified command by a name, taking guild aliases and language into account.
+     * @param guild The guild to get commands from.
+     * @param language The language to use.
+     * @param command The name of the command/alias to resolve.
+     */
+        public async getCommandInstance(guild: IExtendedGuild, language: string, command: string) {
         return (await this.getGuildCommandsMap(guild, language)).get(command);
     }
 
+    /**
+     * Gets the instance of the specified command by a name, taking guild aliases and language into account.
+     * If the command name contains spaces, this searches for a subcommand by that name recursively.
+     * @param guild The guild to get commands from.
+     * @param language The language to use.
+     * @param command The name of the command/alias to resolve.
+     */
     public async getCommandInstanceRecursive(guild: IExtendedGuild, language: string, command: string) {
         const commandParts = command.split(" ");
         let currentCommand = await this.getCommandInstance(guild, language, commandParts.shift()!);
@@ -207,6 +234,11 @@ export class Commands extends EventEmitter {
         return currentCommand;
     }
 
+    /**
+     * Gets a map of commands for the specified guild and language.
+     * @param guild The guild to create the map for.
+     * @param language The language to use.
+     */
     public async getGuildCommandsMap(guild: IExtendedGuild, language: string) {
         if (this.guildCommandsMap.has(guild.guild.id)) {
             return this.guildCommandsMap.get(guild.guild.id)!;
@@ -243,6 +275,10 @@ export class Commands extends EventEmitter {
         return map;
     }
 
+    /**
+     * Gets a map of commands for the specified language.
+     * @param language The language to use.
+     */
     public getLanguageCommmandsMap(language: string) {
         if (this.languageCommandsMap.has(language)) {
             return this.languageCommandsMap.get(language)!;
@@ -258,6 +294,13 @@ export class Commands extends EventEmitter {
         return map;
     }
 
+    /**
+     * Creates or updates an alias in the specified guild.
+     * @param guild The guild to set the alias for.
+     * @param language The language to use.
+     * @param alias The alias that is being set.
+     * @param command The command the alias points to.
+     */
     public async setAlias(guild: IExtendedGuild, language: string, alias: string, command: Command<any>) {
         if (alias.includes(" ")) {
             throw new Error("Trying to set an alias that contains spaces");
@@ -280,6 +323,12 @@ export class Commands extends EventEmitter {
         (await this.getGuildCommandsMap(guild, language)).set(alias, command);
     }
 
+    /**
+     * Removes an alias from the specified guild.
+     * @param guild The guild to remove the alias from.
+     * @param language The language to use.
+     * @param alias The alias that is being removed.
+     */
     public async removeAlias(guild: IExtendedGuild, language: string, alias: string) {
         this.ensureRepo();
         const entity = await this.repos.alias.findOne({
@@ -292,6 +341,10 @@ export class Commands extends EventEmitter {
         (await this.getGuildCommandsMap(guild, language)).delete(alias);
     }
 
+    /**
+     * Gets custom aliases for the specified guild.
+     * @param guild The guild to get aliases from.
+     */
     public getCustomAliases(guild: IExtendedGuild): Promise<GuildAliasEntity[]> {
         this.ensureRepo();
         return this.repos.alias.find({
@@ -299,6 +352,10 @@ export class Commands extends EventEmitter {
         });
     }
 
+    /**
+     * Registers a command to the command handler.
+     * @param command The command to register.
+     */
     public registerCommand(command: Command<any>) {
         if (this.commands.has(command.name)) {
             throw new Error(`A command is already registered by the name ${command.name}`);
@@ -309,31 +366,57 @@ export class Commands extends EventEmitter {
         this.commands.set(command.name, command);
     }
 
+    /**
+     * Unregister a command from the command handler.
+     * @param command The command to unregister.
+     */
     public unregisterCommand(command: Command<any>) {
         this.unregisterPermission(command.getPermission());
         this.commands.delete(command.name);
     }
 
+    /**
+     * Registers a permission to the command handler.
+     * @param permission The permission to register.
+     */
     public registerPermission(permission: Permission) {
         this.permissions.push(permission);
     }
 
+    /**
+     * Unregisters a permission for the command handler.
+     * @param permission The permission to unregister.
+     */
     public unregisterPermission(permission: Permission) {
         this.permissions.splice(this.permissions.indexOf(permission), 1);
     }
 
+    /**
+     * Registers a phrase to the command handler.
+     * @param phrase The phrase to register.
+     */
     public registerPhrase(phrase: Phrase) {
         this.commandPhrases.push(phrase);
     }
 
+    /**
+     * Unregisters a phrase for the command handler.
+     * @param phrase The phrase to unregister.
+     */
     public unregisterPhrase(phrase: Phrase) {
         this.commandPhrases.splice(this.commandPhrases.indexOf(phrase), 1);
     }
 
+    /**
+     * Registers the command handler's config entries to the bot's config handler.
+     */
     public registerConfig() {
         this.bot.config.registerEntry(this.configEntry);
     }
 
+    /**
+     * Registers the command handler's permissions to the bot's permission handler.
+     */
     public registerPermissions() {
         this.permission = new PermissionGroup({
             description: "Permissions for command execution",
@@ -343,6 +426,9 @@ export class Commands extends EventEmitter {
         this.bot.permissions.everyonePrivilege.allowPermissions(this.permission);
     }
 
+    /**
+     * Registers the command handler's phrases to the bot's language handler.
+     */
     public registerLanguages() {
         this.commandPhraseGroup = new PhraseGroup({
             description: "Built-in commands",
@@ -362,10 +448,16 @@ export class Commands extends EventEmitter {
         this.bot.languages.registerPhrase(this.phraseGroup);
     }
 
+    /**
+     * Registers the command handler's database entities to the bot's database handler.
+     */
     public registerDatabase() {
         this.bot.database.registerEntity(GuildAliasEntity);
     }
 
+    /**
+     * Loads and registers the builtin commands to the command handler.
+     */
     public async registerCommands() {
         const commands = await readdir(resolve(__dirname, "builtin"));
         for (const filename of commands) {
@@ -383,6 +475,7 @@ export class Commands extends EventEmitter {
         }
     }
 
+    /** Gets the current status string of the command handler. */
     public getStatus() {
         return `${this.commands.size} commands loaded: ${Array.from(this.commands.keys()).join(", ")}`;
     }
@@ -398,17 +491,33 @@ export class Commands extends EventEmitter {
     }
 }
 
+/**
+ * An object providing context to command execution, such as the original message, a response function and so on.
+ * @category Command
+ */
 export interface ICommandContext {
+    /** The bot that handles the command. */
     bot: Bot;
+    /** The command prefix used for the command. */
     prefix: string;
+    /** The original message that triggered the command. */
     message: IExtendedMessage;
+    /** The original command that was called. */
     command: string;
+    /** The raw string that contains the arguments for the command. */
     passed: string;
+    /** The language for the command. */
     language: string;
+    /** The function to respond to the command with. */
     respond: LinkedResponse;
+    /** Bot permissions that are required for the command. */
     botPermissions: DiscordPermissions;
 }
 
+/**
+ * A function that responds to the command with the specified message.
+ * @category Command
+ */
 export type LinkedResponse =
     <
         T extends Record<string, string>,

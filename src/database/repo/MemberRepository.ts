@@ -5,6 +5,10 @@ import { MemberEntity } from "../entity/MemberEntity";
 import { GuildRepository } from "./GuildRepository";
 import { UserRepository } from "./UserRepository";
 
+/**
+ * Database repository for members.
+ * @category Database
+ */
 @EntityRepository(MemberEntity)
 export class MemberRepository extends Repository<MemberEntity> {
     private cache: Map<GuildMember, MemberEntity>;
@@ -14,6 +18,10 @@ export class MemberRepository extends Repository<MemberEntity> {
         this.cache = new Map();
     }
 
+    /**
+     * Gets the associated member database entity for the specified member.
+     * @param member The member to use.
+     */
     public async getEntity(member: GuildMember): Promise<MemberEntity> {
         if (this.cache.has(member)) {
             return this.cache.get(member)!;

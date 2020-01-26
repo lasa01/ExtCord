@@ -8,10 +8,22 @@ import { Argument, IArgumentInfo } from "./Argument";
 
 const MENTION_REGEX = /^<@!?(\d+)>$/;
 
+/**
+ * A command argument resolving to a member of the relevant guild.
+ * @typeparam T A boolean representing whether the argument is optional.
+ * @category Command Argument
+ */
 export class MemberArgument<T extends boolean> extends Argument<Promise<IExtendedMember>, T, string> {
+    /** The database for fetching members. */
     public repo?: MemberRepository;
     private database: Database;
 
+    /**
+     * Creates a new member argument.
+     * @param info Defines basic argument parameters.
+     * @param optional Allows the argument to be omitted.
+     * @param database The database for returned extended members.
+     */
     constructor(info: IArgumentInfo, optional: T, database: Database) {
         super(info, optional, false);
         this.database = database;

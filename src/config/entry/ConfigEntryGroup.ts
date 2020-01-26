@@ -1,10 +1,20 @@
 import { Serializer } from "../../util/Serializer";
 import { ConfigEntry, IEntryInfo } from "./ConfigEntry";
 
+/**
+ * A parent config entry that groups together child entries
+ * @category Config
+ */
 export class ConfigEntryGroup extends ConfigEntry {
+    /** The child entries of the entry group. */
     public entries: Map<string, ConfigEntry>;
     private value?: object;
 
+    /**
+     * Creates a new config entry group.
+     * @param info Defines basic entry parameters.
+     * @param entries Defines child entries for the entry group.
+     */
     constructor(info: IEntryInfo, entries?: ConfigEntry[]) {
         super(info);
         this.entries = new Map();
@@ -17,6 +27,10 @@ export class ConfigEntryGroup extends ConfigEntry {
         }
     }
 
+    /**
+     * Associate the specified config entries under the entry group.
+     * @param entries Entries to add.
+     */
     public addEntries(...entries: ConfigEntry[]) {
         for (const entry of entries) {
             if (this.entries.has(entry.name)) {
@@ -28,6 +42,10 @@ export class ConfigEntryGroup extends ConfigEntry {
         }
     }
 
+    /**
+     * Remove the specified config entries from the entry group.
+     * @param entries Entries to remove.
+     */
     public removeEntries(...entries: ConfigEntry[]) {
         for (const entry of entries) {
             if (this.entries.has(entry.name)) {

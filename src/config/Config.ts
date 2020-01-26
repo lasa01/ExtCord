@@ -26,7 +26,15 @@ export interface Config {
     prependOnceListener(event: "loaded", listener: (stage: number) => void): this;
 }
 
+/**
+ * The bot's handler for config registering and loading.
+ * @category Config
+ */
 export class Config extends EventEmitter {
+    /**
+     * Registers the config handler's database entities to the specified database.
+     * @param database The database to use.
+     */
     public static registerDatabase(database: Database) {
         database.registerEntity(BooleanConfigEntity);
         database.registerEntity(NumberConfigEntity);
@@ -38,6 +46,10 @@ export class Config extends EventEmitter {
     private stages: Map<number, ConfigEntry[]>;
     private orderedStages?: number[];
 
+    /**
+     * Creates a config handler.
+     * @param configFile The path of the config file.
+     */
     constructor(configFile: string) {
         super();
         this.configFile = configFile;
@@ -45,6 +57,10 @@ export class Config extends EventEmitter {
         this.stages = new Map();
     }
 
+    /**
+     * Registers a config entry to the config handler.
+     * @param entry The entry to register.
+     */
     public registerEntry(entry: ConfigEntry) {
         Logger.debug(`Registering config entry ${entry.name}`);
         this.entries.set(entry.name, entry);
@@ -54,12 +70,19 @@ export class Config extends EventEmitter {
         entry.updateFullName();
     }
 
+    /**
+     * Unregisters a config entry from the config handler.
+     * @param entry The entry to unregister.
+     */
     public unregisterEntry(entry: ConfigEntry) {
         this.entries.delete(entry.name);
         const stage = this.stages.get(entry.loadStage)!;
         stage.splice(stage.indexOf(entry));
     }
 
+    /**
+     * Checks if the config handler still has stages left to load.
+     */
     public hasNext() {
         if (!this.orderedStages) {
             return this.stages.size !== 0;
@@ -68,6 +91,10 @@ export class Config extends EventEmitter {
         }
     }
 
+    /**
+     * Loads the next config stage.
+     * @param filename Overrides the default config file if specified.
+     */
     public async loadNext(filename?: string): Promise<number> {
         filename = filename ?? this.configFile;
         if (!this.orderedStages) {
@@ -82,6 +109,11 @@ export class Config extends EventEmitter {
         return stage;
     }
 
+    /**
+     * Loads a specific config stage.
+     * @param stage The stage to load.
+     * @param filename Overrides the default config file if specified.
+     */
     public async load(stage: number, filename?: string) {
         filename = filename ?? this.configFile;
         Logger.verbose(`Loading config stage ${stage}`);
