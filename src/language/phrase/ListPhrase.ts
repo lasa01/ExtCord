@@ -6,15 +6,15 @@ import { IPhraseInfo, Phrase } from "./Phrase";
  * @category Language
  */
 export class ListPhrase extends Phrase {
-    protected defaults: IListMap;
-    protected templates: IListMap;
+    protected defaults: Record<string, string[]>;
+    protected templates: Record<string, string[]>;
 
     /**
      * Creates a new list phrase.
      * @param info Defines basic phrase parameters.
      * @param defaults Defines default translations for the phrase. If a string, assumed to be in [[DEFAULT_LANGUAGE]].
      */
-    constructor(info: IPhraseInfo, defaults?: IListMap | string[]) {
+    constructor(info: IPhraseInfo, defaults?: Record<string, string[]> | string[]) {
         super(info);
         if (!defaults) {
             defaults = [];
@@ -49,12 +49,4 @@ export class ListPhrase extends Phrase {
             return [this.defaults[language] ?? this.defaults[DEFAULT_LANGUAGE], this.description];
         }
     }
-}
-
-/**
- * Basically a Record<string, string[]>. Probably removed soon.
- * @category Language
- */
-export interface IListMap {
-    [key: string]: string[];
 }

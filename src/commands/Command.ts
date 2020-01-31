@@ -1,6 +1,6 @@
 import { Bot } from "../Bot";
 import { DEFAULT_LANGUAGE } from "../language/Languages";
-import { IListMap, ListPhrase } from "../language/phrase/ListPhrase";
+import { ListPhrase } from "../language/phrase/ListPhrase";
 import { Phrase } from "../language/phrase/Phrase";
 import { PhraseGroup } from "../language/phrase/PhraseGroup";
 import { SimplePhrase } from "../language/phrase/SimplePhrase";
@@ -435,7 +435,7 @@ export interface ICommandInfo {
      * Can be either an array, in which case they are assumed to be in [[DEFAULT_LANGUAGE]],
      * or an objectm in which case the keys are languages and the values are associated localized aliases.
      */
-    aliases?: string[] | IListMap;
+    aliases?: string[] | Record<string, string[]>;
     /**
      * Specifies the privileges that are allowed to execute this command by default.
      * Both privilege instances and names can be used.
