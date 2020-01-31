@@ -7,6 +7,10 @@ import { Permission } from "./Permission";
 import { PermissionPrivilege } from "./PermissionPrivilege";
 import { Permissions } from "./Permissions";
 
+/**
+ * A custom, guild-specific permission privilege.
+ * @category Permission
+ */
 export class CustomPrivilege extends PermissionPrivilege {
     private entity: CustomPrivilegeEntity;
     private permissions: Permissions;
@@ -14,6 +18,11 @@ export class CustomPrivilege extends PermissionPrivilege {
     private permissionRepo: Repository<CustomPrivilegePermissionEntity>;
     private includeRepo: Repository<CustomPrivilegeIncludeEntity>;
 
+    /**
+     * Creates a new custom privilege.
+     * @param permissions The permission manager to use for database repos.
+     * @param entity The database entity to create the privilege from.
+     */
     constructor(permissions: Permissions, entity: CustomPrivilegeEntity) {
         super(
             {
@@ -122,6 +131,7 @@ export class CustomPrivilege extends PermissionPrivilege {
         }
     }
 
+    /** Registers the included privileges. */
     public async registerIncludes() {
         for (const include of this.entity.includes) {
             const privilege = await this.permissions.getPrivilege(this.entity.guild, include.name);

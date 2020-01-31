@@ -6,9 +6,21 @@ import { IPhraseInfo } from "./Phrase";
 import { SimplePhrase } from "./SimplePhrase";
 import { TemplatePhrase, TemplateStuff } from "./TemplatePhrase";
 
+/**
+ * A phrase handling the translations of a message template.
+ * @category Language
+ */
 export class MessagePhrase<T extends Record<string, string>> extends TemplatePhrase<T> {
     protected defaultsEmbed: ILocalizedBaseEmbed;
     protected templatesEmbed: ILocalizedBaseEmbed;
+
+    /**
+     * Creates a new message phrase.
+     * @param info Defines basic phrase parameters.
+     * @param defaultsText Defines default translations for the text-only version of the message.
+     * @param defaultsEmbed Defines default translations for the embed version of the message.
+     * @param templateDescription Descriptions of available placeholders. Keys are placeholders and values descriptions.
+     */
     constructor(
             info: IPhraseInfo,
             defaultsText: Record<string, string> | string, defaultsEmbed: ILocalizedBaseEmbed | IBaseEmbed,
@@ -181,6 +193,11 @@ export class MessagePhrase<T extends Record<string, string>> extends TemplatePhr
         return [data, this.description];
     }
 
+    /**
+     * Formats the translated message for the specified language with the supplied placeholder replacements.
+     * @param language The language to use.
+     * @param stuff The placeholder replacements to use.
+     */
     public formatEmbed<U extends Record<string, string>>(language: string, stuff?: TemplateStuff<T, U>): RichEmbed {
         const processedStuff: { [key: string]: string } = {};
         if (stuff) {
@@ -227,31 +244,55 @@ export class MessagePhrase<T extends Record<string, string>> extends TemplatePhr
     }
 }
 
+/**
+ * Defines a single embed field.
+ * @category Language
+ */
 export interface IEmbedField {
+    /** The name of the field. */
     name: string;
+    /** The value of the field. */
     value: string;
+    /** Allows the field to be inlined with other fields. */
     inline: boolean;
 }
 
+/**
+ * Defines an embed.
+ * @category Language
+ */
 export interface IBaseEmbed {
+    /** The title of the embed. */
     title?: string;
+    /** The url the title links to. */
     url?: string;
+    /** The author information. */
     author?: {
         name: string;
         iconUrl?: string;
         url?: string;
     };
+    /** The description of the embed. */
     description?: string;
+    /** Fields of the embed. */
     fields?: IEmbedField[];
+    /** The url to the thumbnail image. */
     thumbnailUrl?: string;
+    /** The url to the embed image. */
     imageUrl?: string;
+    /** Whether to include the current time in the embed. */
     timestamp: boolean;
+    /** The footer of the embed. */
     footer?: {
         text?: string;
         iconUrl?: string;
     };
 }
 
+/**
+ * Localized version of an embed.
+ * @category Language
+ */
 export interface ILocalizedBaseEmbed {
     [key: string]: IBaseEmbed;
 }

@@ -6,6 +6,10 @@ import { IPhraseInfo } from "./Phrase";
 import { SimplePhrase } from "./SimplePhrase";
 import { TemplateStuff } from "./TemplatePhrase";
 
+/**
+ * A phrase handling the translations of a message template with dynamic number of embed fields.
+ * @category Language
+ */
 export class DynamicFieldMessagePhrase<T extends Record<string, string>, U extends Record<string, string>>
     extends MessagePhrase<T> {
     protected defaultsField: ILocalizedEmbedField;
@@ -14,6 +18,16 @@ export class DynamicFieldMessagePhrase<T extends Record<string, string>, U exten
     protected templatesFieldText: Record<string, string>;
     private fieldDescription: string;
 
+    /**
+     * Creates a new dynamic field message phrase.
+     * @param info Defines basic phrase parameters.
+     * @param defaultsText Defines default translations for the text-only version of the message.
+     * @param defaultsEmbed Defines default translations for the embed version of the message.
+     * @param defaultsFieldText Defines default translations for the text-only version of the dynamic fields.
+     * @param defaultsField Defines default translations for the embed version of the dynamic fields.
+     * @param templateDescription Descriptions of available placeholders. Keys are placeholders and values descriptions.
+     * @param fieldTemplateDescription Descriptions of available placeholders for the dynamic fields.
+     */
     constructor(
             info: IPhraseInfo,
             defaultsText: Record<string, string> | string, defaultsEmbed: ILocalizedBaseEmbed | IBaseEmbed,
@@ -140,9 +154,17 @@ export class DynamicFieldMessagePhrase<T extends Record<string, string>, U exten
     }
 }
 
+/**
+ * An array of template placeholder replacements.
+ * @category Language
+ */
 export type TemplateStuffs<T extends Record<string, string>, U extends Record<string, string>>
     = Array<TemplateStuff<T, U>|undefined>;
 
+/**
+ * Localized version of an embed field.
+ * @category Language
+ */
 export interface ILocalizedEmbedField {
     [key: string]: IEmbedField;
 }

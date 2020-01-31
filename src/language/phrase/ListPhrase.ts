@@ -1,10 +1,19 @@
 import { DEFAULT_LANGUAGE } from "../Languages";
 import { IPhraseInfo, Phrase } from "./Phrase";
 
+/**
+ * A phrase handling translations of a list of strings.
+ * @category Language
+ */
 export class ListPhrase extends Phrase {
     protected defaults: IListMap;
     protected templates: IListMap;
 
+    /**
+     * Creates a new list phrase.
+     * @param info Defines basic phrase parameters.
+     * @param defaults Defines default translations for the phrase. If a string, assumed to be in [[DEFAULT_LANGUAGE]].
+     */
     constructor(info: IPhraseInfo, defaults?: IListMap | string[]) {
         super(info);
         if (!defaults) {
@@ -24,6 +33,10 @@ export class ListPhrase extends Phrase {
         this.templates = defaults;
     }
 
+    /**
+     * Gets the translated array of strings for the specified language.
+     * @param language The language to use.
+     */
     public get(language: string) {
         return this.templates[language];
     }
@@ -38,6 +51,10 @@ export class ListPhrase extends Phrase {
     }
 }
 
+/**
+ * Basically a Record<string, string[]>. Probably removed soon.
+ * @category Language
+ */
 export interface IListMap {
     [key: string]: string[];
 }

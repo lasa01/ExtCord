@@ -26,13 +26,22 @@ export interface Modules {
     prependOnceListener(event: "loaded", listener: () => void): this;
 }
 
+/**
+ * The bot's handler for module loading.
+ * @category Module
+ */
 export class Modules extends EventEmitter {
+    /** Config entry specifying the module directory. */
     public moduleDirConfigEntry: StringConfigEntry;
     private modules: Map<string, Module>;
     private bot: Bot;
     private configEntry?: ConfigEntryGroup;
     private dependencies: string[];
 
+    /**
+     * Creates a module handler.
+     * @param bot The bot that uses the handler.
+     */
     constructor(bot: Bot) {
         super();
         this.modules = new Map();
@@ -44,6 +53,10 @@ export class Modules extends EventEmitter {
         this.dependencies = [];
     }
 
+    /**
+     * Loads a single module from the specified class.
+     * @param module The class of the module.
+     */
     public async loadModule(module: new (bot: Bot) => Module) {
         const constructed = new module(this.bot);
         if (constructed.name === "" || constructed.author === "") {
@@ -65,6 +78,10 @@ export class Modules extends EventEmitter {
         Logger.verbose(`Loaded module ${constructed.name}`);
     }
 
+    /**
+     * Loads all modules.
+     * @param moduleDir Overrides the directory to load modules from.
+     */
     public async loadAll(moduleDir?: string) {
         moduleDir = moduleDir ?? this.moduleDirConfigEntry.get();
         Logger.verbose("Loading all modules");
@@ -121,10 +138,15 @@ export class Modules extends EventEmitter {
         this.emit("loaded");
     }
 
+    /**
+     * Adds a dependency to install with npm.
+     * @param dependency The dependency string, in the format passed to npm install.
+     */
     public addDependency(dependency: string) {
         this.dependencies.push(dependency);
     }
 
+    /** Installs all added dependencies with npm. */
     public async installDependencies() {
         if (this.dependencies.length === 0) {
             return;
@@ -148,6 +170,7 @@ export class Modules extends EventEmitter {
         }
     }
 
+    /** Registers the module handler's config entries. */
     public registerConfig() {
         this.configEntry = new ConfigEntryGroup({
             description: "Modules configuration",

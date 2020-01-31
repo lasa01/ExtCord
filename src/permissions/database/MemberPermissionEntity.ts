@@ -1,6 +1,10 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { MemberEntity } from "../../database/entity/MemberEntity";
 
+/**
+ * Database entity for guild member's permissions.
+ * @category Permission
+ */
 @Entity("memberPermissions")
 export class MemberPermissionEntity {
     @PrimaryGeneratedColumn()

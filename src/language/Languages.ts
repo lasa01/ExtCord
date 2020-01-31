@@ -13,6 +13,10 @@ import { Serializer } from "../util/Serializer";
 import { IExtendedGuild } from "../util/Types";
 import { Phrase } from "./phrase/Phrase";
 
+/**
+ * The default language of the bot.
+ * @category Language
+ */
 export const DEFAULT_LANGUAGE = "en";
 
 // Event definitions
@@ -32,18 +36,33 @@ export interface Languages {
     prependOnceListener(event: "loaded", listener: () => void): this;
 }
 
+/**
+ * The bot's handler for language registering and loading.
+ * @category Language
+ */
 export class Languages extends EventEmitter {
+    /** Array of available languages. */
     public languages: string[];
+    /** Map of language names. The key is the language (e.g. en), value is the name (e.g. English)). */
     public languageNames: Record<string, string>;
+    /** Guild-configurable config entry for the language to use. */
     public languageConfigEntry: StringGuildConfigEntry;
+    /** Guild-configurable config entry for whether to use embeds in message. */
     public useEmbedsConfigEntry: BooleanGuildConfigEntry;
+    /** Guild-configurable config entry for whether to mention the recipient when replying to messages. */
     public useMentionsConfigEntry: BooleanGuildConfigEntry;
+    /** Config entry for the name of the default language. */
     public languageNameConfigEntry: StringConfigEntry;
+    /** Config entry for the directory to store language files in. */
     public languageDirConfigEntry: StringConfigEntry;
     private phrases: Map<string, Phrase>;
     private configEntry: ConfigEntryGroup;
     private defaultLoaded: boolean;
 
+    /**
+     * Creates a language handler.
+     * @param database The database for storing guild-specific data.
+     */
     constructor(database: Database) {
         super();
         this.languages = [];
@@ -77,14 +96,26 @@ export class Languages extends EventEmitter {
             this.useMentionsConfigEntry, this.languageDirConfigEntry]);
     }
 
+    /**
+     * Registers a phrase to the language handler.
+     * @param phrase The phrase to register.
+     */
     public registerPhrase(phrase: Phrase) {
         this.phrases.set(phrase.name, phrase);
     }
 
+    /**
+     * Unregisters a phrase from the language handler.
+     * @param phrase The phrase to unregister.
+     */
     public unregisterPhrase(phrase: Phrase) {
         this.phrases.delete(phrase.name);
     }
 
+    /**
+     * Loads all language files, updates them if necessary and writes the default language file if it doesn't exist.
+     * @param directory Overrides the directory to load languages from.
+     */
     public async loadAll(directory?: string) {
         directory = directory ?? this.languageDirConfigEntry.get();
         Logger.verbose("Loading all languages");
@@ -105,6 +136,10 @@ export class Languages extends EventEmitter {
         this.emit("loaded");
     }
 
+    /**
+     * Writes and loads the default language file.
+     * @param directory Overrides the directory to write the language to.
+     */
     public async writeLoadDefault(directory: string) {
         Logger.verbose("Writing default language file");
         let content = Serializer.stringify({
@@ -115,6 +150,10 @@ export class Languages extends EventEmitter {
         await writeFile(resolve(directory, this.languageConfigEntry.get() + Serializer.extension), content);
     }
 
+    /**
+     * Loads a single language file, and updates the file if necessary.
+     * @param path The path to the language file.
+     */
     public async loadFile(path: string) {
         let content;
         try {
@@ -129,6 +168,11 @@ export class Languages extends EventEmitter {
         }
     }
 
+    /**
+     * Loads a single language from a string. It is parsed with [[Serializer]].
+     * @param content The string to load the language from.
+     * @returns The updated content of the language, with missing phrases added.
+     */
     public async loadText(content: string) {
         let parsed: { [key: string]: any };
         try {
@@ -160,10 +204,18 @@ export class Languages extends EventEmitter {
         return Serializer.stringify(parsed);
     }
 
+    /**
+     * Registers the language handler's config entries.
+     * @param config The config handler to register entries to.
+     */
     public registerConfig(config: Config) {
         config.registerEntry(this.configEntry);
     }
 
+    /**
+     * Gets the language of the specified guild.
+     * @param guild The guild to use.
+     */
     public async getLanguage(guild: IExtendedGuild) {
         if (this.languageConfigEntry) {
             const language = await this.languageConfigEntry.guildGet(guild);
@@ -179,6 +231,7 @@ export class Languages extends EventEmitter {
         }
     }
 
+    /** Gets the current status string of the language handler. */
     public getStatus() {
         return `${this.phrases.size} phrases loaded: ${Array.from(this.phrases.keys()).join(", ")}`;
     }

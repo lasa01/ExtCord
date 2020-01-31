@@ -1,9 +1,19 @@
 import { Serializer } from "../../util/Serializer";
 import { IPhraseInfo, Phrase } from "./Phrase";
 
+/**
+ * A parent phrase that groups child phrases together.
+ * @category Language
+ */
 export class PhraseGroup extends Phrase {
+    /** The child phrases of the phrase group. */
     public phrases: Map<string, Phrase>;
 
+    /**
+     * Creates a new phrase group.
+     * @param info Defines basic phrase parameters.
+     * @param phrases Defines child phrases for the phrase group.
+     */
     constructor(info: IPhraseInfo, phrases?: Phrase[]) {
         super(info);
         this.phrases = new Map();
@@ -19,6 +29,10 @@ export class PhraseGroup extends Phrase {
         }
     }
 
+    /**
+     * Associate the specified phrases under the phrase group.
+     * @param phrases Phrases to add.
+     */
     public addPhrases(...phrases: Phrase[]) {
         for (const phrase of phrases) {
             if (this.phrases.has(phrase.name)) {
@@ -33,6 +47,10 @@ export class PhraseGroup extends Phrase {
         }
     }
 
+    /**
+     * Remove the specified phrases from the phrase group.
+     * @param phrases Phrases to remove.
+     */
     public removePhrases(...phrases: Phrase[]) {
         for (const phrase of phrases) {
             if (this.phrases.has(phrase.name)) {

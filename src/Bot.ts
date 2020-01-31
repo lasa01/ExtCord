@@ -37,14 +37,25 @@ export interface Bot {
     prependOnceListener(event: "ready" | "stop", listener: () => void): this;
 }
 
+/**
+ * The Discord bot handler.
+ */
 export class Bot extends EventEmitter {
+    /** The readline for console input. */
     public readline?: ReadLine;
+    /** The Discord client of the bot. */
     public client?: Client;
+    /** The config manager of the bot. */
     public config: Config;
+    /** The database manager of the bot. */
     public database: Database;
+    /** The permission manager of the bot. */
     public permissions: Permissions;
+    /** The command handler of the bot. */
     public commands: Commands;
+    /** The language handler of the bot. */
     public languages: Languages;
+    /** The module handler of the bot. */
     public modules: Modules;
     private configEntries: {
         loggerGroup?: ConfigEntryGroup, clientGroup?: ConfigEntryGroup,
@@ -60,6 +71,10 @@ export class Bot extends EventEmitter {
         },
     };
 
+    /**
+     * Creates a new bot.
+     * @param configFile The path to the bot configuration file.
+     */
     constructor(configFile: string) {
         super();
         this.config = new Config(configFile);
@@ -117,6 +132,7 @@ export class Bot extends EventEmitter {
         this.modules.registerConfig();
     }
 
+    /** Starts the bot. */
     public async run() {
         Logger.debug(`Processor architecture: ${process.arch}`);
         Logger.debug(`Command line: ${process.argv}`);
@@ -165,6 +181,10 @@ export class Bot extends EventEmitter {
         }
     }
 
+    /**
+     * Sets the bot into interactive mode, accepting commands from a stream.
+     * @param input The stream to accept commands from.
+     */
     public setInteractive(input: NodeJS.ReadableStream) {
         this.readline = createInterface({
             input,
@@ -177,6 +197,10 @@ export class Bot extends EventEmitter {
         });
     }
 
+    /**
+     * Sends a command to the bot.
+     * @param input The command to send.
+     */
     public input(input: string) {
         switch (input) {
             case "stop":
@@ -187,6 +211,7 @@ export class Bot extends EventEmitter {
         }
     }
 
+    /** Stops the bot from running. */
     public async stop() {
         Logger.info("Bot stopping");
         this.emit("stop");

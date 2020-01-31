@@ -3,6 +3,10 @@ import { GuildEntity } from "../../database/entity/GuildEntity";
 import { CustomPrivilegeIncludeEntity } from "./CustomPrivilegeIncludeEntity";
 import { CustomPrivilegePermissionEntity } from "./CustomPrivilegePermissionEntity";
 
+/**
+ * Database entity for guild's custom privileges.
+ * @category Permission
+ */
 @Entity("customPrivileges")
 export class CustomPrivilegeEntity {
     @PrimaryGeneratedColumn()

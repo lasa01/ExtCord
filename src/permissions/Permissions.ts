@@ -27,12 +27,22 @@ import { Permission } from "./Permission";
 import { PermissionGroup } from "./PermissionGroup";
 import { PermissionPrivilege } from "./PermissionPrivilege";
 
+/**
+ * The bot's handler for permission and privilege registering and loading.
+ * @category Permission
+ */
 export class Permissions {
+    /** The database used by permissions. */
     public database: Database;
+    /** Config entry for the privilege file directory. */
     public privilegeDirConfigEntry: StringConfigEntry;
+    /** Privilege for default permissions for everyone. */
     public everyonePrivilege: PermissionPrivilege;
+    /** Privilege for default permissions for guild administrators. */
     public adminPrivilege: PermissionPrivilege;
+    /** Privilege for default permissions for the bot's owner. */
     public hostPrivilege: PermissionPrivilege;
+    /** Database repositories used by permissions. */
     public repos?: {
         memberPermission: Repository<MemberPermissionEntity>;
         rolePermission: Repository<RolePermissionEntity>;
@@ -54,6 +64,10 @@ export class Permissions {
     private phrases: Phrase[];
     private phraseGroup?: PhraseGroup;
 
+    /**
+     * Creates a permission handler.
+     * @param database The database to use with permissions.
+     */
     constructor(database: Database) {
         this.database = database;
         this.permissions = new Map();
@@ -95,45 +109,85 @@ export class Permissions {
         this.registerPrivilegePhrase(this.hostPrivilege.phraseGroup);
     }
 
+    /**
+     * Registers a permission to the permission handler.
+     * @param permission The permission to register.
+     */
     public registerPermission(permission: Permission) {
         permission.registerSelf(this);
         this.permissions.set(permission.name, permission);
     }
 
+    /**
+     * Unregisters a permission from the permission handler.
+     * @param permission The permission to unregister.
+     */
     public unregisterPermission(permission: Permission) {
         permission.unregisterSelf();
         this.permissions.delete(permission.name);
     }
 
     // TODO add directly to group
+    /**
+     * Registers a phrase to the permission handler.
+     * @param phrase The phrase to register.
+     */
     public registerPhrase(phrase: Phrase) {
         this.phrases.push(phrase);
     }
 
+    /**
+     * Unregisters a phrase from the permission handler.
+     * @param phrase The phrase to unregister.
+     */
     public unregisterPhrase(phrase: Phrase) {
         this.phrases.splice(this.phrases.indexOf(phrase), 1);
     }
 
+    /**
+     * Registers a phrase to the permission handler's privileges.
+     * @param phrase The phrase to register.
+     */
     public registerPrivilegePhrase(phrase: Phrase) {
         this.privilegePhraseGroup.addPhrases(phrase);
     }
 
+    /**
+     * Unregisters a phrase from the permission handler's privileges.
+     * @param phrase The phrase to unregister.
+     */
     public unregisterPrivilegePhrase(phrase: Phrase) {
         this.privilegePhraseGroup.removePhrases(phrase);
     }
 
+    /**
+     * Registers a privilege to the permission handler.
+     * @param privilege The privilege to register.
+     */
     public registerPrivilege(privilege: PermissionPrivilege) {
         this.privileges.set(privilege.name, privilege);
     }
 
+    /**
+     * Unregisters a privilege from the permission handler.
+     * @param privilege The privilege to unregister.
+     */
     public unregisterPrivilege(privilege: PermissionPrivilege) {
         this.privileges.delete(privilege.name);
     }
 
+    /**
+     * Registers the permission handler's config entries.
+     * @param config The config handler to register entries to.
+     */
     public registerConfig(config: Config) {
         config.registerEntry(this.privilegeDirConfigEntry);
     }
 
+    /**
+     * Registers the permission handler's phrases.
+     * @param languages The language handler to register phrases to.
+     */
     public registerLanguages(languages: Languages) {
         this.phraseGroup = new PhraseGroup({
             description: "Built-in permissions",
@@ -143,6 +197,10 @@ export class Permissions {
         languages.registerPhrase(this.privilegePhraseGroup);
     }
 
+    /**
+     * Loads all privilege files and writes missing internal privileges.
+     * @param directory Overrides the directory to load privileges from.
+     */
     public async loadAllPrivileges(directory?: string) {
         directory = directory ?? this.privilegeDirConfigEntry.get();
         Logger.verbose("Loading all privileges");
@@ -162,6 +220,10 @@ export class Permissions {
         }
     }
 
+    /**
+     * Loads a single privilege file.
+     * @param path The path to the privilege file.
+     */
     public async loadPrivilegeFile(path: string) {
         let content;
         try {
@@ -173,6 +235,10 @@ export class Permissions {
         return this.loadPrivilegeText(content);
     }
 
+    /**
+     * Loads a single privilege from a string. It is parsed with [[Serializer]].
+     * @param content The string to load the privilege from.
+     */
     public async loadPrivilegeText(content: string) {
         let parsed: { [key: string]: any };
         try {
@@ -197,12 +263,21 @@ export class Permissions {
         }
     }
 
+    /**
+     * Writes a privilege to the specified directory.
+     * @param privilege The privilege to write to disk.
+     * @param directory The directory to write the file to.
+     */
     public async writePrivilegeFile(privilege: PermissionPrivilege, directory: string) {
         Logger.verbose(`Writing privilege file ${privilege.name}`);
         const stringified = Serializer.stringify(privilege.getRaw());
         await writeFile(resolve(directory, privilege.name + Serializer.extension), stringified);
     }
 
+    /**
+     * Gets the instance of the specified permission by name.
+     * @param name The name of the permission.
+     */
     public get(name: string) {
         const tree = name.split(".");
         let permission = this.permissions.get(tree.shift()!);
@@ -213,14 +288,29 @@ export class Permissions {
         return permission;
     }
 
+    /**
+     * Gets the instance of the specified privilege by name.
+     * Searches first for guild-specific privileges and then fall backs to built-in privileges.
+     * @param guild The guild to get guild-specific privileges from.
+     * @param name The name of the privilege.
+     */
     public async getPrivilege(guild: GuildEntity, name: string) {
         return (await this.getCustomPrivilege(guild, name)) ?? this.getBuiltinPrivilege(name);
     }
 
+    /**
+     * Gets the instance of a built-in privilege by name.
+     * @param name The name of the privilege.
+     */
     public getBuiltinPrivilege(name: string) {
         return this.privileges.get(name);
     }
 
+    /**
+     * Gets the instance of a custom privilege by name.
+     * @param guild The guild to get the custom privilege from.
+     * @param name The name of the privilege.
+     */
     public async getCustomPrivilege(guild: GuildEntity, name: string) {
         if (!this.customPrivileges.has(guild.id)) {
             this.customPrivileges.set(guild.id, new Map());
@@ -244,22 +334,41 @@ export class Permissions {
         this.customPrivileges.get(guild.id)!.set(name, undefined);
     }
 
+    /** Gets the current status string of the permission handler. */
     public getStatus() {
         return `${this.permissions.size} permissions loaded: ${Array.from(this.permissions.keys()).join(", ")}`;
     }
 
+    /**
+     * Checks if a member has the specified permission.
+     * Includes permissions inherited from roles.
+     * @param permission The permission to check.
+     * @param member The member to use.
+     */
     public async checkMemberPermission(permission: Permission, member: IExtendedMember) {
         return (await this.getMemberFullPermissionMap(member)).get(permission.fullName) ?? false;
     }
 
+    /**
+     * Checks if a member has the specified permission.
+     * Does not include permissions inherited from roles.
+     * @param permission The permission to check.
+     * @param member The member to use.
+     */
     public async checkMemberPermissionOnly(permission: Permission, member: IExtendedMember) {
         return (await this.getMemberPermissionMap(member)).get(permission.fullName) ?? false;
     }
 
+    /**
+     * Checks if a role has the specified permission.
+     * @param permission The permission to check.
+     * @param role The role to use.
+     */
     public async checkRolePermission(permission: Permission, role: IExtendedRole) {
         return (await this.getRolePermissionMap(role)).get(permission.fullName) ?? false;
     }
 
+    /** Ensures that [[repos]] are initialized. */
     public ensureRepo(): asserts this is this & { repos: NonNullable<Permissions["repos"]> } {
         if (!this.repos) {
             this.database.ensureConnection();

@@ -81,22 +81,47 @@ const getComments = (object: any, level = 1) => {
     }
 };
 
+/**
+ * Serializer for parsing and stringifying objects to strings.
+ * @category Util
+ */
 export const Serializer = {
+    /** The file extension of the serialized files. */
     extension : ".hjson",
+    /**
+     * Parses a string to an object.
+     * @param text The string to parse.
+     */
     parse(text: string) {
         const data = Hjson.parse(text, { keepWsc: true });
         setComments(data);
         return data;
     },
+    /**
+     * Stringifies an object to a string.
+     * @param data The object to stringify.
+     */
     stringify(data: any) {
         getComments(data);
         return Hjson.stringify(data, { keepWsc: true });
     },
+    /**
+     * Sets a comment to an object's property. Does not overwrite existing comments.
+     * @param data The object that contains the commented property.
+     * @param name The name of the property to comment.
+     * @param comment The comment to set.
+     */
     setComment(data: any, name: string, comment: string) {
         if (!data[name + "__comment__"] && comment) {
             this.forceComment(data, name, comment);
         }
     },
+    /**
+     * Sets a comment to an object's property. Overwrites existing comments.
+     * @param data The object that contains the commented property.
+     * @param name The name of the property to comment.
+     * @param comment The comment to set.
+     */
     forceComment(data: any, name: string, comment: string) {
         Object.defineProperty(data, name + "__comment__", { enumerable: false, writable: true });
         data[name + "__comment__"] = comment;
