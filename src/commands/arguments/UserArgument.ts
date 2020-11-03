@@ -28,13 +28,13 @@ export class UserArgument<T extends boolean> extends Argument<User, T, string> {
             return error(CommandPhrases.invalidUserArgument);
         }
         const id = match[1];
-        if (!context.bot.client!.users.has(id)) {
+        if (!context.bot.client!.users.fetch(id)) {
             return error(CommandPhrases.invalidUserMentionArgument);
         }
         return id;
     }
 
     public parse(data: string, context: ICommandContext, passed: string): User {
-        return context.bot.client!.users.get(passed)!;
+        return context.bot.client!.users.cache.get(passed)!;
     }
 }

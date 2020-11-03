@@ -294,7 +294,7 @@ export class Permissions {
      * @param guild The guild to get guild-specific privileges from.
      * @param name The name of the privilege.
      */
-    public async getPrivilege(guild: GuildEntity, name: string) {
+    public async getPrivilege(guild: GuildEntity, name: string): Promise<PermissionPrivilege | undefined> {
         return (await this.getCustomPrivilege(guild, name)) ?? this.getBuiltinPrivilege(name);
     }
 
@@ -311,7 +311,7 @@ export class Permissions {
      * @param guild The guild to get the custom privilege from.
      * @param name The name of the privilege.
      */
-    public async getCustomPrivilege(guild: GuildEntity, name: string) {
+    public async getCustomPrivilege(guild: GuildEntity, name: string): Promise<CustomPrivilege | undefined> {
         if (!this.customPrivileges.has(guild.id)) {
             this.customPrivileges.set(guild.id, new Map());
         } else if (this.customPrivileges.get(guild.id)!.has(name)) {
@@ -407,7 +407,7 @@ export class Permissions {
                     }));
             }
         }
-        if (role.role.hasPermission(DiscordPermissions.FLAGS.ADMINISTRATOR!)) {
+        if (role.role.permissions.has(DiscordPermissions.FLAGS.ADMINISTRATOR!)) {
             if (!rolePrivileges.some((rolePriv) => rolePriv.name === this.adminPrivilege.name)) {
                 missingPrivilegeEntities.push(this.repos.rolePrivilege.create({
                     name: this.adminPrivilege.name,
@@ -492,17 +492,17 @@ export class Permissions {
         const map: Map<string, boolean> = new Map();
         const roles = (await this.repos.role.find({ relations: ["guild"], where: {
             guild: member.entity.guild,
-            roleId: In(member.member.roles.map((role) => role.id)),
+            roleId: In(member.member.roles.cache.map((role) => role.id)),
         }}))
         .sort((a, b) => {
-            const dA = member.member.roles.get(a.roleId)!;
-            const dB = member.member.roles.get(b.roleId)!;
+            const dA = member.member.roles.cache.get(a.roleId)!;
+            const dB = member.member.roles.cache.get(b.roleId)!;
             return Role.comparePositions(dA, dB);
-        }).map((roleEntity) => ({ role: member.member.roles.get(roleEntity.roleId)!, entity: roleEntity }));
+        }).map((roleEntity) => ({ role: member.member.roles.cache.get(roleEntity.roleId)!, entity: roleEntity }));
 
         if (!roles.some((role) => role.role.id === role.role.guild.id)) {
             // Ensure "@everyone" role is in database
-            const everyoneRole = member.member.guild.defaultRole;
+            const everyoneRole = member.member.guild.roles.everyone;
             roles.push({ role: everyoneRole, entity: await this.repos.role.getEntity(everyoneRole)});
         }
 

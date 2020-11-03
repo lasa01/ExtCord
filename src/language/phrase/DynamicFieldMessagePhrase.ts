@@ -146,7 +146,7 @@ export class DynamicFieldMessagePhrase<T extends Record<string, string>, U exten
                     embed.addField(format(template.name, formattedFieldThing),
                         format(template.value, formattedFieldThing), template.inline);
                 } else {
-                    embed.addBlankField();
+                    embed.addField("", "");
                 }
             }
         }

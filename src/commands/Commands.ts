@@ -104,7 +104,7 @@ export class Commands extends EventEmitter {
      */
     public async message(discordMessage: Message) {
         const startTime = process.hrtime();
-        if (!discordMessage.guild || discordMessage.author.bot) { return; } // For now
+        if (!discordMessage.guild || !discordMessage.member || discordMessage.author.bot) { return; } // For now
         // TODO this somewhere else, will be needed elsewhere
         this.ensureRepo();
         const member = await this.repos.member.getEntity(discordMessage.member);
@@ -127,8 +127,8 @@ export class Commands extends EventEmitter {
         };
         const prefix = await this.prefixConfigEntry.guildGet(message.guild);
         // TODO really doesn't need to be reassigned each call
-        const mention = `<@${message.message.client.user.id}>`;
-        const mention2 = `<@!${message.message.client.user.id}>`; // Discord, why?
+        const mention = `<@${message.message.client.user!.id}>`;
+        const mention2 = `<@!${message.message.client.user!.id}>`; // Discord, why?
         let text;
         if (message.message.content.startsWith(prefix)) {
             text = message.message.content.slice(prefix.length).trim();
@@ -142,7 +142,7 @@ export class Commands extends EventEmitter {
             return;
         }
         const language = await this.bot.languages.getLanguage(message.guild);
-        const botPermissions = discordMessage.guild.me.permissionsIn(discordMessage.channel);
+        const botPermissions = discordMessage.guild.me!.permissionsIn(discordMessage.channel);
         if (!botPermissions.has(DiscordPermissions.FLAGS.SEND_MESSAGES!)) {
             // Send private message telling the bot can't send messages
             return discordMessage.author.send(CommandPhrases.botNoSendPermission.get(language));
@@ -170,7 +170,7 @@ export class Commands extends EventEmitter {
                 } else {
                     content = phrase instanceof DynamicFieldMessagePhrase ?
                         phrase.format(language, stuff, fieldStuff) : phrase.format(language, stuff);
-                    options = undefined;
+                    options = {};
                 }
                 if (useMentions) {
                     await message.message.reply(content, options);
@@ -511,7 +511,7 @@ export interface ICommandContext {
     /** The function to respond to the command with. */
     respond: LinkedResponse;
     /** Bot permissions that are required for the command. */
-    botPermissions: DiscordPermissions;
+    botPermissions: Readonly<DiscordPermissions>;
 }
 
 /**

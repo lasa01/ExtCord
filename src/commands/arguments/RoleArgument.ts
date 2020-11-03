@@ -31,13 +31,13 @@ export class RoleArgument<T extends boolean> extends Argument<Role, T, string> {
             return error(CommandPhrases.invalidRoleArgument);
         }
         const id = match[1];
-        if (!context.message.guild.guild.roles.has(id)) {
+        if (!await context.message.guild.guild.roles.fetch(id)) {
             return error(CommandPhrases.invalidRoleMentionArgument);
         }
         return id;
     }
 
     public parse(data: string, context: ICommandContext, passed: string): Role {
-        return context.message.guild.guild.roles.get(passed)!;
+        return context.message.guild.guild.roles.cache.get(passed)!;
     }
 }

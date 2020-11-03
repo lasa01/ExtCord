@@ -28,7 +28,7 @@ export class TextChannelArgument<T extends boolean> extends Argument<TextChannel
         if (!match) {
             return error(CommandPhrases.invalidChannelArgument);
         }
-        const channel = context.message.guild.guild.channels.get(match[1]);
+        const channel = context.message.guild.guild.channels.cache.get(match[1]);
         if (!channel) {
             return error(CommandPhrases.invalidChannelMentionArgument);
         }

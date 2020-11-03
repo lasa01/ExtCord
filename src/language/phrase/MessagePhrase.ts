@@ -1,4 +1,4 @@
-import { RichEmbed } from "discord.js";
+import { MessageEmbed } from "discord.js";
 import format = require("string-format");
 
 import { DEFAULT_LANGUAGE } from "../Languages";
@@ -198,7 +198,7 @@ export class MessagePhrase<T extends Record<string, string>> extends TemplatePhr
      * @param language The language to use.
      * @param stuff The placeholder replacements to use.
      */
-    public formatEmbed<U extends Record<string, string>>(language: string, stuff?: TemplateStuff<T, U>): RichEmbed {
+    public formatEmbed<U extends Record<string, string>>(language: string, stuff?: TemplateStuff<T, U>): MessageEmbed {
         const processedStuff: { [key: string]: string } = {};
         if (stuff) {
             for (const [key, thing] of Object.entries(stuff)) {
@@ -223,7 +223,7 @@ export class MessagePhrase<T extends Record<string, string>> extends TemplatePhr
                 });
             }
         }
-        return new RichEmbed({
+        return new MessageEmbed({
             author: embed.author ? {
                 icon_url: embed.author.iconUrl ? format(embed.author.iconUrl, processedStuff) : undefined,
                 name: format(embed.author.name, processedStuff),

@@ -35,7 +35,7 @@ export class MemberArgument<T extends boolean> extends Argument<Promise<IExtende
             return error(CommandPhrases.invalidMemberArgument);
         }
         const id = match[1];
-        if (!context.message.guild.guild.members.has(id)) {
+        if (!await context.message.guild.guild.members.fetch(id)) {
             return error(CommandPhrases.invalidMemberMentionArgument);
         }
         return id;
@@ -43,7 +43,7 @@ export class MemberArgument<T extends boolean> extends Argument<Promise<IExtende
 
     public async parse(data: string, context: ICommandContext, passed: string): Promise<IExtendedMember> {
         this.ensureRepo();
-        const member = context.message.guild.guild.members.get(passed)!;
+        const member = context.message.guild.guild.members.cache.get(passed)!;
         return {
             entity: await this.repo.getEntity(member),
             member,
