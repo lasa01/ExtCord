@@ -4,6 +4,7 @@ import { resolve } from "path";
 import { In, Repository } from "typeorm";
 
 import { Config } from "../config/Config";
+import { ConfigEntryGroup } from "../config/entry/ConfigEntryGroup";
 import { StringConfigEntry } from "../config/entry/StringConfigEntry";
 import { Database } from "../database/Database";
 import { GuildEntity } from "../database/entity/GuildEntity";
@@ -36,6 +37,8 @@ export class Permissions {
     public database: Database;
     /** Config entry for the privilege file directory. */
     public privilegeDirConfigEntry: StringConfigEntry;
+    /** Config entry for the bot host user id */
+    public hostIdConfigEntry: StringConfigEntry;
     /** Privilege for default permissions for everyone. */
     public everyonePrivilege: PermissionPrivilege;
     /** Privilege for default permissions for guild administrators. */
@@ -63,6 +66,7 @@ export class Permissions {
     private privilegePhraseGroup: PhraseGroup;
     private phrases: Phrase[];
     private phraseGroup?: PhraseGroup;
+    private configEntry?: ConfigEntryGroup;
 
     /**
      * Creates a permission handler.
@@ -89,6 +93,10 @@ export class Permissions {
             description: "The directory for privilege files",
             name: "privilegesDirectory",
         }, "privileges");
+        this.hostIdConfigEntry = new StringConfigEntry({
+            description: "The Discord user id to give the bot host permissions for",
+            name: "hostId",
+        }, "");
         this.everyonePrivilege = new PermissionPrivilege({
             description: "Default permissions for everyone",
             name: "everyone",
@@ -181,7 +189,11 @@ export class Permissions {
      * @param config The config handler to register entries to.
      */
     public registerConfig(config: Config) {
-        config.registerEntry(this.privilegeDirConfigEntry);
+        this.configEntry = new ConfigEntryGroup({
+            description: "Permissions configuration",
+            name: "permissions",
+        }, [ this.privilegeDirConfigEntry, this.hostIdConfigEntry ]);
+        config.registerEntry(this.configEntry);
     }
 
     /**
@@ -449,19 +461,27 @@ export class Permissions {
         let memberPrivileges = await this.repos.memberPrivilege.find({
             member: member.entity,
         });
+        const missingPrivilegeEntities: MemberPrivilegeEntity[] = [];
         if (member.member.hasPermission(DiscordPermissions.FLAGS.ADMINISTRATOR!)) {
-            const missingPrivilegeEntities: MemberPrivilegeEntity[] = [];
             if (!memberPrivileges.some((memberPriv) => memberPriv.name === this.adminPrivilege.name)) {
                 missingPrivilegeEntities.push(this.repos.memberPrivilege.create({
                     member: member.entity,
                     name: this.adminPrivilege.name,
                 }));
             }
-            if (missingPrivilegeEntities.length > 0) {
-                await this.repos.memberPrivilege.save(missingPrivilegeEntities);
-            }
-            memberPrivileges = [...memberPrivileges, ...missingPrivilegeEntities];
         }
+        if (member.member.id === this.hostIdConfigEntry.get()) {
+            if (!memberPrivileges.some((memberPriv) => memberPriv.name === this.hostPrivilege.name)) {
+                missingPrivilegeEntities.push(this.repos.memberPrivilege.create({
+                    member: member.entity,
+                    name: this.hostPrivilege.name,
+                }));
+            }
+        }
+        if (missingPrivilegeEntities.length > 0) {
+            await this.repos.memberPrivilege.save(missingPrivilegeEntities);
+        }
+        memberPrivileges = [...memberPrivileges, ...missingPrivilegeEntities];
         for (const memberPrivilege of memberPrivileges) {
             const memberPrivilegeInstance = await this.getPrivilege(member.entity.guild, memberPrivilege.name);
             if (!memberPrivilegeInstance) {
