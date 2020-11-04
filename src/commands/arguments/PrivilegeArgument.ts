@@ -1,17 +1,17 @@
-import { Permission } from "../../permissions/Permission";
+import { PermissionPrivilege } from "../../permissions/PermissionPrivilege";
 import { ILinkedErrorResponse } from "../Command";
 import { CommandPhrases } from "../CommandPhrases";
 import { ICommandContext } from "../Commands";
 import { Argument, IArgumentInfo } from "./Argument";
 
 /**
- * A permission argument.
+ * A privilege argument.
  * @typeparam T A boolean representing whether the argument is optional.
  * @category Permission Argument
  */
-export class PermissionArgument<T extends boolean> extends Argument<Permission, T, Permission> {
+export class PrivilegeArgument<T extends boolean> extends Argument<PermissionPrivilege, T, PermissionPrivilege> {
     /**
-     * Creates a new permission argument.
+     * Creates a new privilege argument.
      * @param info Defines basic argument parameters.
      * @param optional Allows the argument to be omitted.
      */
@@ -20,15 +20,15 @@ export class PermissionArgument<T extends boolean> extends Argument<Permission, 
     }
 
     public async check(data: string, context: ICommandContext, error: ILinkedErrorResponse):
-        Promise<Permission|undefined> {
-        const p = context.bot.permissions.get(data);
+        Promise<PermissionPrivilege|undefined> {
+        const p = await context.bot.permissions.getPrivilege(context.message.guild.entity, data);
         if (!p) {
-            return error(CommandPhrases.invalidPermissionArgument);
+            return error(CommandPhrases.invalidPrivilegeArgument);
         }
         return p;
     }
 
-    public parse(data: string, context: ICommandContext, passed: Permission): Permission {
+    public parse(data: string, context: ICommandContext, passed: PermissionPrivilege): PermissionPrivilege {
         return passed;
     }
 }

@@ -217,6 +217,13 @@ export const CommandPhrases = {
         },
         "The argument is not a valid permission.",
     ),
+    invalidPrivilegeArgument: new SimplePhrase(
+        {
+            description: "This is shown when a supplied argument is not a valid privilege",
+            name: "invalidPrivilegeArgument",
+        },
+        "The argument is not a valid privilege.",
+    ),
     invalidRoleArgument: new SimplePhrase(
         {
             description: "This is shown when a supplied argument is not a valid role",

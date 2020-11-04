@@ -354,6 +354,43 @@ export class Permissions {
         this.customPrivileges.get(guild.id)!.set(name, undefined);
     }
 
+    public async createCustomPrivilege(guild: GuildEntity, name: string): Promise<CustomPrivilege> {
+        if (!this.customPrivileges.has(guild.id)) {
+            this.customPrivileges.set(guild.id, new Map());
+        } else if (this.customPrivileges.get(guild.id)!.has(name)) {
+            return this.customPrivileges.get(guild.id)!.get(name)!;
+        }
+        this.ensureRepo();
+        let entity = await this.repos.customPrivilege.findOne({
+            where: {
+                guild,
+                name,
+            },
+        });
+        if (!entity) {
+            entity = this.repos.customPrivilege.create({
+                guild,
+                name,
+            });
+            await this.repos.customPrivilege.save(entity);
+        }
+        const privilege = new CustomPrivilege(this, entity);
+        await privilege.registerIncludes();
+        this.customPrivileges.get(guild.id)!.set(privilege.name, privilege);
+        return privilege;
+    }
+
+    public async removeCustomPrivilege(guild: GuildEntity, name: string) {
+        if (this.customPrivileges.has(guild.id) && this.customPrivileges.get(guild.id)!.has(name)) {
+            this.customPrivileges.get(guild.id)!.delete(name);
+        }
+        this.ensureRepo();
+        await this.repos.customPrivilege.delete({
+            guild,
+            name,
+        });
+    }
+
     /** Gets the current status string of the permission handler. */
     public getStatus() {
         return `${this.permissions.size} permissions loaded: ${Array.from(this.permissions.keys()).join(", ")}`;
