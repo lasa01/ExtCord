@@ -232,6 +232,14 @@ export class Permissions {
         }
     }
 
+    /** Reloads the permission handler */
+    public async reload() {
+        await this.loadAllPrivileges();
+        this.rolePermissionMap.clear();
+        this.memberPermissionsMap.clear();
+        this.memberFullPermissionsMap.clear();
+    }
+
     /**
      * Loads a single privilege file.
      * @param path The path to the privilege file.

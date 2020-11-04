@@ -181,6 +181,16 @@ export class Bot extends EventEmitter {
         }
     }
 
+    /** Reloads the bot */
+    public async reload() {
+        await this.config.reload();
+        // TODO: reload modules
+        await this.permissions.reload();
+        await this.languages.reload();
+        await this.database.reload();
+        this.commands.reload();
+    }
+
     /**
      * Sets the bot into interactive mode, accepting commands from a stream.
      * @param input The stream to accept commands from.

@@ -99,6 +99,15 @@ export class Database extends EventEmitter {
         }
     }
 
+    /** Reloads the database manager. */
+    public async reload() {
+        if (this.connection) {
+            Logger.verbose("Reconnecting database...");
+            await this.connection.close();
+            await this.connection.connect();
+        }
+    }
+
     /**
      * Registers an entity to the database handler.
      * @param model The entity to register.

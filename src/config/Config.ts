@@ -146,4 +146,13 @@ export class Config extends EventEmitter {
         }
         this.emit("loaded", stage);
     }
+
+    /** Reloads the config handler */
+    public async reload() {
+        Logger.verbose("Reloading config...");
+        this.orderedStages = undefined;
+        while (this.hasNext()) {
+            await this.loadNext();
+        }
+    }
 }

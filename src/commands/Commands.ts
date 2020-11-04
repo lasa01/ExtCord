@@ -475,6 +475,12 @@ export class Commands extends EventEmitter {
         }
     }
 
+    /** Reloads the command handler */
+    public reload() {
+        this.languageCommandsMap.clear();
+        this.guildCommandsMap.clear();
+    }
+
     /** Gets the current status string of the command handler. */
     public getStatus() {
         return `${this.commands.size} commands loaded: ${Array.from(this.commands.keys()).join(", ")}`;

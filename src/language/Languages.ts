@@ -136,6 +136,11 @@ export class Languages extends EventEmitter {
         this.emit("loaded");
     }
 
+    /** Reloads the language manager */
+    public async reload() {
+        await this.loadAll();
+    }
+
     /**
      * Writes and loads the default language file.
      * @param directory Overrides the directory to write the language to.
