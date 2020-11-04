@@ -80,19 +80,22 @@ const musicPlayCommand = new SimpleCommand(
         if (!voiceChannel) {
             return context.respond(musicNoVoicePhrase, {});
         }
-        const connection = await voiceChannel.join();
         const url = context.arguments[0];
         if (!isValidUrl(url)) {
             return context.respond(musicUrlInvalidPhrase, { url });
         }
 
         const ytdlResult = ytdl(url, { filter: "audioonly" });
-        ytdlResult.on("info", async (video: ytdl.videoInfo, format: ytdl.videoFormat) => {
+        ytdlResult.once("info", async (video: ytdl.videoInfo, format: ytdl.videoFormat) => {
             await context.respond(musicPlayPhrase, {
                 title: video.videoDetails.title,
             });
         });
-        connection.play(ytdlResult);
+        const connection = await voiceChannel.join();
+        const dispatcher = connection.play(ytdlResult);
+        context.bot.once("stop", () => {
+            dispatcher.destroy();
+        });
     },
 );
 
