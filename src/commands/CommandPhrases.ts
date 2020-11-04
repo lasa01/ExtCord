@@ -196,12 +196,26 @@ export const CommandPhrases = {
         },
         "The member mentioned doesn't exist.",
     ),
+    invalidMemberOrRoleArgument: new SimplePhrase(
+        {
+            description: "This is shown when a supplied argument is not a valid member or role",
+            name: "invalidMemberOrRoleArgument",
+        },
+        "The argument does not mention a member or a role.",
+    ),
     invalidNumberArgument: new SimplePhrase(
         {
             description: "This is shown when a supplied float argument is not a valid float",
             name: "invalidNumberArgument",
         },
         "The argument is not a valid number.",
+    ),
+    invalidPermissionArgument: new SimplePhrase(
+        {
+            description: "This is shown when a supplied argument is not a valid permission",
+            name: "invalidPermissionArgument",
+        },
+        "The argument is not a valid permission.",
     ),
     invalidRoleArgument: new SimplePhrase(
         {

@@ -407,7 +407,11 @@ export class Permissions {
         }
     }
 
-    private async getRolePermissionMap(role: IExtendedRole) {
+    /**
+     * Gets a map containing the role's permissions.
+     * @param role The role whose permissions to get
+     */
+    public async getRolePermissionMap(role: IExtendedRole) {
         if (this.rolePermissionMap.has(role.entity.id)) {
             return this.rolePermissionMap.get(role.entity.id)!;
         }
@@ -460,7 +464,11 @@ export class Permissions {
         return map;
     }
 
-    private async getMemberPermissionMap(member: IExtendedMember) {
+    /**
+     * Gets a map containing the member's permissions without permissions inherited from roles.
+     * @param member The member whose permissions to get
+     */
+    public async getMemberPermissionMap(member: IExtendedMember) {
         if (this.memberPermissionsMap.has(member.entity.id)) {
             return this.memberPermissionsMap.get(member.entity.id)!;
         }
@@ -512,7 +520,11 @@ export class Permissions {
         return map;
     }
 
-    private async getMemberFullPermissionMap(member: IExtendedMember) {
+    /**
+     * Gets a map containing the member's permissions including permissions inherited from roles.
+     * @param member The member whose permissions to get
+     */
+    public async getMemberFullPermissionMap(member: IExtendedMember) {
         if (this.memberFullPermissionsMap.has(member.entity.id)) {
             return this.memberFullPermissionsMap.get(member.entity.id)!;
         }
@@ -548,5 +560,90 @@ export class Permissions {
 
         this.memberFullPermissionsMap.set(member.entity.id, map);
         return map;
+    }
+
+    /**
+     * Add a guild-specific permission override to a role
+     * @param role The role to add the permission to
+     * @param permission The name of the permission
+     * @param allow Whether to allow or deny the permission
+     */
+    public async roleAddPermission(role: IExtendedRole, permission: string, allow: boolean = true) {
+        this.ensureRepo();
+        let entity = await this.repos.rolePermission.findOne({
+            name: permission,
+            role: role.entity,
+        });
+        if (!entity) {
+            entity = this.repos.rolePermission.create({
+                name: permission,
+                permission: allow,
+                role: role.entity,
+            });
+        } else {
+            entity.permission = allow;
+        }
+        await this.repos.rolePermission.save(entity);
+        if (this.rolePermissionMap.has(role.entity.id)) {
+            this.rolePermissionMap.get(role.entity.id)!.set(permission, allow);
+        }
+        // TODO: try to update the map instead of regenerating
+        this.memberFullPermissionsMap.clear();
+    }
+
+    /**
+     * Remove guild-specific permission overrides from a role
+     * @param role The role to remove the permission from
+     * @param permission The name of the permission
+     */
+    public async roleRemovePermission(role: IExtendedRole, permission: string) {
+        this.ensureRepo();
+        await this.repos.rolePermission.delete({
+            name: permission,
+            role: role.entity,
+        });
+    }
+
+    /**
+     * Add a guild-specific permission override to a member
+     * @param member The member to add the permission to
+     * @param permission The name of the permission
+     * @param allow Whether to allow or deny the permission
+     */
+    public async memberAddPermission(member: IExtendedMember, permission: string, allow: boolean = true) {
+        this.ensureRepo();
+        let entity = await this.repos.memberPermission.findOne({
+            member: member.entity,
+            name: permission,
+        });
+        if (!entity) {
+            entity = this.repos.memberPermission.create({
+                member: member.entity,
+                name: permission,
+                permission: allow,
+            });
+        } else {
+            entity.permission = allow;
+        }
+        await this.repos.memberPermission.save(entity);
+        if (this.memberPermissionsMap.has(member.entity.id)) {
+            this.memberPermissionsMap.get(member.entity.id)!.set(permission, allow);
+        }
+        if (this.memberFullPermissionsMap.has(member.entity.id)) {
+            this.memberFullPermissionsMap.get(member.entity.id)!.set(permission, allow);
+        }
+    }
+
+    /**
+     * Remove guild-specific permission overrides from a role
+     * @param role The role to remove the permission from
+     * @param permission The name of the permission
+     */
+    public async memberRemovePermission(member: IExtendedMember, permission: string) {
+        this.ensureRepo();
+        await this.repos.memberPermission.delete({
+            member: member.entity,
+            name: permission,
+        });
     }
 }

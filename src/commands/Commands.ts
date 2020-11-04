@@ -464,7 +464,10 @@ export class Commands extends EventEmitter {
             const path = resolve(__dirname, "builtin", filename);
             // Skip files that aren't javascript
             if (!path.endsWith(".js")) { continue; }
-            const required = require(path);
+            let required = require(path);
+            if (typeof(required) === "function") {
+                required = required(this.bot);
+            }
             for (const value of Object.values(required)) {
                 if (value instanceof Command) {
                     Logger.debug(`Found builtin command ${value.name} in file ${filename}`);
