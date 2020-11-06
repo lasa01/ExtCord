@@ -125,6 +125,7 @@ export class Modules extends EventEmitter {
         await this.installDependencies();
         for (const path of toRequire) {
             try {
+                delete require.cache[require.resolve(path)];
                 const loaded = require(path).default;
                 if (!Module.isPrototypeOf(loaded)) {
                     Logger.error(`File "${path}" is marked as an extcord module but does not contain one`);
@@ -136,6 +137,20 @@ export class Modules extends EventEmitter {
             }
         }
         this.emit("loaded");
+    }
+
+    /** Unloads all modules */
+    public async unloadAll() {
+        for (const [, module] of this.modules) {
+            await module.unload();
+        }
+        this.modules.clear();
+    }
+
+    /** Reloads the module handler */
+    public async reload() {
+        await this.unloadAll();
+        await this.loadAll();
     }
 
     /**

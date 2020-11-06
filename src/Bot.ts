@@ -183,8 +183,8 @@ export class Bot extends EventEmitter {
 
     /** Reloads the bot */
     public async reload() {
+        await this.modules.reload();
         await this.config.reload();
-        // TODO: reload modules
         await this.permissions.reload();
         await this.languages.reload();
         await this.database.reload();
