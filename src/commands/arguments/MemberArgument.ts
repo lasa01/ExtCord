@@ -14,9 +14,7 @@ const MENTION_REGEX = /^<@!?(\d+)>$/;
  * @category Command Argument
  */
 export class MemberArgument<T extends boolean> extends Argument<Promise<IExtendedMember>, T, string> {
-    /** The database for fetching members. */
     public repo?: MemberRepository;
-    private database: Database;
 
     /**
      * Creates a new member argument.
@@ -26,7 +24,6 @@ export class MemberArgument<T extends boolean> extends Argument<Promise<IExtende
      */
     constructor(info: IArgumentInfo, optional: T, database: Database) {
         super(info, optional, false);
-        this.database = database;
     }
 
     public async check(data: string, context: ICommandContext, error: ILinkedErrorResponse): Promise<string|undefined> {
@@ -42,7 +39,7 @@ export class MemberArgument<T extends boolean> extends Argument<Promise<IExtende
     }
 
     public async parse(data: string, context: ICommandContext, passed: string): Promise<IExtendedMember> {
-        this.ensureRepo();
+        this.ensureRepo(context.bot.database);
         const member = context.message.guild.guild.members.cache.get(passed)!;
         return {
             entity: await this.repo.getEntity(member),
@@ -50,10 +47,10 @@ export class MemberArgument<T extends boolean> extends Argument<Promise<IExtende
         };
     }
 
-    private ensureRepo(): asserts this is this & { repo: MemberRepository } {
+    private ensureRepo(database: Database): asserts this is this & { repo: MemberRepository } {
         if (!this.repo) {
-            this.database.ensureConnection();
-            this.repo = this.database.repos.member;
+            database.ensureConnection();
+            this.repo = database.repos.member;
         }
     }
 }

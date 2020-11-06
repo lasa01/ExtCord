@@ -17,10 +17,8 @@ const ROLE_MENTION_REGEX = /^<@&(\d+)>$/;
  */
 export class MemberOrRoleArgument<T extends boolean>
         extends Argument<Promise<IExtendedMember | IExtendedRole>, T, [boolean, string]> {
-    /** The database for fetching members. */
     public memberRepo?: MemberRepository;
     public roleRepo?: RoleRepository;
-    private database: Database;
 
     /**
      * Creates a new member argument.
@@ -28,9 +26,8 @@ export class MemberOrRoleArgument<T extends boolean>
      * @param optional Allows the argument to be omitted.
      * @param database The database for returned extended members.
      */
-    constructor(info: IArgumentInfo, optional: T, database: Database) {
+    constructor(info: IArgumentInfo, optional: T) {
         super(info, optional, false);
-        this.database = database;
     }
 
     public async check(data: string, context: ICommandContext, error: ILinkedErrorResponse):
@@ -60,7 +57,7 @@ export class MemberOrRoleArgument<T extends boolean>
 
     public async parse(data: string, context: ICommandContext, passed: [boolean, string]):
             Promise<IExtendedMember | IExtendedRole> {
-        this.ensureRepo();
+        this.ensureRepo(context.bot.database);
         const [isRole, id] = passed;
         if (isRole) {
             const role = context.message.guild.guild.roles.cache.get(id)!;
@@ -77,11 +74,14 @@ export class MemberOrRoleArgument<T extends boolean>
         }
     }
 
-    private ensureRepo(): asserts this is this & { memberRepo: MemberRepository, roleRepo: RoleRepository } {
+    private ensureRepo(database: Database): asserts this is this & {
+        memberRepo: MemberRepository,
+        roleRepo: RoleRepository,
+    } {
         if (!this.memberRepo || !this.roleRepo) {
-            this.database.ensureConnection();
-            this.memberRepo = this.database.repos.member;
-            this.roleRepo = this.database.repos.role;
+            database.ensureConnection();
+            this.memberRepo = database.repos.member;
+            this.roleRepo = database.repos.role;
         }
     }
 }
