@@ -73,9 +73,10 @@ const botSendCommand = new SimpleCommand(
         ),
     ] as const,
     async (context) => {
-        const [recipient, message] = context.arguments;
-        await recipient.send(message);
-        await context.respond(botSendPhrase, { user: recipient.toString() });
+        const [recipientPromise, message] = context.arguments;
+        const recipient = await recipientPromise;
+        await recipient.user.send(message);
+        await context.respond(botSendPhrase, { user: recipient.user.toString() });
     },
 );
 

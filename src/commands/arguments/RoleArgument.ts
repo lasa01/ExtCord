@@ -1,5 +1,6 @@
-import { Role } from "discord.js";
-
+import { Database } from "../../database/Database";
+import { RoleRepository } from "../../database/repo/RoleRepository";
+import { IExtendedRole } from "../../util/Types";
 import { ILinkedErrorResponse } from "../Command";
 import { CommandPhrases } from "../CommandPhrases";
 import { ICommandContext } from "../Commands";
@@ -12,7 +13,9 @@ const MENTION_REGEX = /^<@&(\d+)>$/;
  * @typeparam T A boolean representing whether the argument is optional.
  * @category Command Argument
  */
-export class RoleArgument<T extends boolean> extends Argument<Role, T, string> {
+export class RoleArgument<T extends boolean> extends Argument<Promise<IExtendedRole>, T, string> {
+    public repo?: RoleRepository;
+
     /**
      * Creates a new role argument.
      * @param info Defines basic argument parameters.
@@ -37,7 +40,19 @@ export class RoleArgument<T extends boolean> extends Argument<Role, T, string> {
         return id;
     }
 
-    public parse(data: string, context: ICommandContext, passed: string): Role {
-        return context.message.guild.guild.roles.cache.get(passed)!;
+    public async parse(data: string, context: ICommandContext, passed: string): Promise<IExtendedRole> {
+        this.ensureRepo(context.bot.database);
+        const role = context.message.guild.guild.roles.cache.get(passed)!;
+        return {
+            entity: await this.repo.getEntity(role),
+            role,
+        };
+    }
+
+    private ensureRepo(database: Database): asserts this is this & { repo: RoleRepository } {
+        if (!this.repo) {
+            database.ensureConnection();
+            this.repo = database.repos.role;
+        }
     }
 }

@@ -1,5 +1,6 @@
-import { User } from "discord.js";
-
+import { Database } from "../../database/Database";
+import { UserRepository } from "../../database/repo/UserRepository";
+import { IExtendedUser } from "../../util/Types";
 import { ILinkedErrorResponse } from "../Command";
 import { CommandPhrases } from "../CommandPhrases";
 import { ICommandContext } from "../Commands";
@@ -12,7 +13,9 @@ const MENTION_REGEX = /^<@!?(\d+)>$/;
  * @typeparam T A boolean representing whether the argument is optional.
  * @category Command Argument
  */
-export class UserArgument<T extends boolean> extends Argument<User, T, string> {
+export class UserArgument<T extends boolean> extends Argument<Promise<IExtendedUser>, T, string> {
+    public repo?: UserRepository;
+
     /**
      * Creates a new user argument.
      * @param info Defines basic argument parameters.
@@ -34,7 +37,19 @@ export class UserArgument<T extends boolean> extends Argument<User, T, string> {
         return id;
     }
 
-    public parse(data: string, context: ICommandContext, passed: string): User {
-        return context.bot.client!.users.cache.get(passed)!;
+    public async parse(data: string, context: ICommandContext, passed: string): Promise<IExtendedUser> {
+        this.ensureRepo(context.bot.database);
+        const user = context.bot.client!.users.cache.get(passed)!;
+        return {
+            entity: await this.repo.getEntity(user),
+            user,
+        };
+    }
+
+    private ensureRepo(database: Database): asserts this is this & { repo: UserRepository } {
+        if (!this.repo) {
+            database.ensureConnection();
+            this.repo = database.repos.user;
+        }
     }
 }
