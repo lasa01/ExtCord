@@ -1,12 +1,12 @@
 // extcord module
-// requires ffmpeg-static ytdl-core
+// requires ffmpeg-static ytdl-core ytsr
 
 import { Bot, Module } from "../..";
-import { musicCommand } from "./commands";
+import { getCommand } from "./commands";
 
 export default class PlayerModule extends Module {
     constructor(bot: Bot) {
         super(bot, "extcord", "player");
-        this.registerCommand(musicCommand);
+        this.registerCommand(getCommand(this));
     }
 }
