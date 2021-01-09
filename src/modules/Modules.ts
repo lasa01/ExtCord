@@ -167,7 +167,15 @@ export class Modules extends EventEmitter {
             return;
         }
         Logger.verbose("Installing dependencies");
-        const installArgs = ["--quiet", "install", "--no-save", ...this.dependencies];
+        const installArgs = [
+            "--quiet",
+            "install",
+            "--no-save",
+            "--no-package-lock",
+            "--no-audit",
+            "--no-fund",
+            ...this.dependencies,
+        ];
         const isWindows = process.platform.startsWith("win");
         const child = spawn(isWindows ? "npm.cmd" : "npm", installArgs);
         child.stdout.on("data", (msg) => Logger.verbose(msg.toString()));
