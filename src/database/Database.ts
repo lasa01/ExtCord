@@ -74,7 +74,7 @@ export class Database extends EventEmitter {
     public async connect(options?: ConnectionOptions) {
         options = options ?? this.configEntry.get() as ConnectionOptions;
         options = Object.assign(options, {
-            charset: "utf8mb4",
+            charset: "utf8mb4_unicode_ci",
             entities: this.entities,
             logger: new LoggerBridge(Logger),
             logging: true,
