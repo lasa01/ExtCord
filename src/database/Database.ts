@@ -73,13 +73,15 @@ export class Database extends EventEmitter {
      */
     public async connect(options?: ConnectionOptions) {
         options = options ?? this.configEntry.get() as ConnectionOptions;
-        Logger.verbose("Connecting to database");
-        this.connection = await createConnection(Object.assign(options, {
+        options = Object.assign(options, {
+            charset: "utf8mb4",
             entities: this.entities,
             logger: new LoggerBridge(Logger),
             logging: true,
             synchronize: true,
-        }));
+        });
+        Logger.verbose("Connecting to database");
+        this.connection = await createConnection(options);
         this.repos = {
             guild: this.connection.getCustomRepository(GuildRepository),
             member: this.connection.getCustomRepository(MemberRepository),
