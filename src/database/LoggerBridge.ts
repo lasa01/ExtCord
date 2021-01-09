@@ -16,8 +16,8 @@ export class LoggerBridge implements Logger {
         this.logger.debug(`Database querying: ${query}`);
     }
 
-    public logQueryError(error: string) {
-        this.logger.error(error);
+    public logQueryError(error: string | Error) {
+        this.logger.error(error.toString());
     }
 
     public logQuerySlow(time: number) {
