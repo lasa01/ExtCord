@@ -218,27 +218,28 @@ export class MessagePhrase<T extends Record<string, string>> extends TemplatePhr
             for (const field of embed.fields) {
                 fields.push({
                     inline: field.inline,
-                    name: format(field.name, processedStuff),
-                    value: format(field.value, processedStuff),
+                    name: format(field.name, processedStuff).substring(0, 256),
+                    value: format(field.value, processedStuff).substring(0, 1024),
                 });
             }
+            fields = fields.slice(0, 25);
         }
         return new MessageEmbed({
             author: embed.author ? {
                 icon_url: embed.author.iconUrl ? format(embed.author.iconUrl, processedStuff) : undefined,
-                name: format(embed.author.name, processedStuff),
+                name: format(embed.author.name, processedStuff).substring(0, 256),
                 url: embed.author.url ? format(embed.author.url, processedStuff) : undefined,
             } : undefined,
-            description: embed.description ? format(embed.description, processedStuff) : undefined,
+            description: embed.description ? format(embed.description, processedStuff).substring(0, 2048) : undefined,
             fields,
             footer: embed.footer ? {
                 icon_url: embed.footer.iconUrl ? format(embed.footer.iconUrl, processedStuff) : undefined,
-                text: embed.footer.text ? format(embed.footer.text, processedStuff) : undefined,
+                text: embed.footer.text ? format(embed.footer.text, processedStuff).substring(0, 2048) : undefined,
             } : undefined,
             image: embed.imageUrl ? { url: format(embed.imageUrl, processedStuff) } : undefined,
             thumbnail: embed.thumbnailUrl ? { url: format(embed.thumbnailUrl, processedStuff) } : undefined,
             timestamp: embed.timestamp ? new Date() : undefined,
-            title: embed.title ? format(embed.title, processedStuff) : undefined,
+            title: embed.title ? format(embed.title, processedStuff).substring(0, 256) : undefined,
             url: embed.url ? format(embed.url, processedStuff) : undefined,
         });
     }
