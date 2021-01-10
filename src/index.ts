@@ -1,7 +1,7 @@
 export { Bot } from "./Bot";
 
-export { Commands } from "./commands/Commands";
-export { Command } from "./commands/Command";
+export { Commands, ICommandContext } from "./commands/Commands";
+export { Command, IExecutionContext } from "./commands/Command";
 export { CommandGroup } from "./commands/CommandGroup";
 export { SimpleCommand } from "./commands/SimpleCommand";
 export { Argument } from "./commands/arguments/Argument";
@@ -70,3 +70,4 @@ export { CustomPrivilegePermissionEntity } from "./permissions/database/CustomPr
 export { Serializer } from "./util/Serializer";
 export { Logger } from "./util/Logger";
 export { IExtendedGuild, IExtendedMember, IExtendedMessage, IExtendedRole, IExtendedUser } from "./util/Types";
+export { Util } from "./util/Util";
