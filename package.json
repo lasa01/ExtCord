@@ -46,7 +46,7 @@
   "dependencies": {
     "@discordjs/opus": "^0.3.3",
     "bufferutil": "^4.0.2",
-    "discord.js": "^12.4.1",
+    "discord.js": "^12.5.1",
     "erlpack": "github:discord/erlpack",
     "fs-extra": "^7.0.1",
     "hjson": "^3.2.1",
