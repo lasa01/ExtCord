@@ -100,7 +100,7 @@ export abstract class Argument<T, U extends boolean, V> {
      * @param context The context associated with the command being called.
      * @param error A function to call and return when the argument is invalid.
      */
-    public abstract async check(data: string, context: ICommandContext, error: ILinkedErrorResponse):
+    public abstract check(data: string, context: ICommandContext, error: ILinkedErrorResponse):
         Promise<V|undefined>;
 
     /**

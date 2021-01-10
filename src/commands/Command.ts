@@ -336,7 +336,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
      * Executes the command.
      * @param context Context of the execution.
      */
-    public abstract async execute(context: IExecutionContext<T>): Promise<void>;
+    public abstract execute(context: IExecutionContext<T>): Promise<void>;
 
     /**
      * Gets the localized full name for the given language.
