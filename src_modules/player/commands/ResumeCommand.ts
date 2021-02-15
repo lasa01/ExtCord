@@ -9,6 +9,7 @@ export class ResumeCommand extends Command<[]> {
                 allowedPrivileges: ["everyone"],
                 author: "extcord",
                 description: "Resume the player",
+                globalAliases: ["resume"],
                 name: "resume",
             },
             [],

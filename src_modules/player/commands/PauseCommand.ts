@@ -9,6 +9,7 @@ export class PauseCommand extends Command<[]> {
                 allowedPrivileges: ["everyone"],
                 author: "extcord",
                 description: "Pause the player",
+                globalAliases: ["pause"],
                 name: "pause",
             },
             [],

@@ -19,6 +19,7 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
                 allowedPrivileges: ["everyone"],
                 author: "extcord",
                 description: "Play some music",
+                globalAliases: ["play", "p"],
                 name: "play",
             },
             [

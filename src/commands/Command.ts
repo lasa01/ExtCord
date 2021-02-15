@@ -32,8 +32,12 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
     public localizedDescription: SimplePhrase;
     /** A list of aliases for the command in default language. */
     public aliases: string[];
+    /** A list of global aliases for the command in default language. */
+    public globalAliases: string[];
     /** Localized aliases for the command. */
     public localizedAliases: ListPhrase;
+    /** Localized global aliases for the command. */
+    public localizedGlobalAliases: ListPhrase;
     /** The module the command is from, if any. */
     public from?: Module;
     /** The name of the author of the command. */
@@ -75,9 +79,14 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
             name: "description",
         }, info.description);
         this.aliases = Array.isArray(info.aliases) ? info.aliases : info.aliases ? info.aliases[DEFAULT_LANGUAGE] : [];
+        this.globalAliases = Array.isArray(info.globalAliases) ?
+            info.globalAliases : info.globalAliases ? info.globalAliases[DEFAULT_LANGUAGE] : [];
         this.localizedAliases = new ListPhrase({
             name: "aliases",
         }, info.aliases);
+        this.localizedGlobalAliases = new ListPhrase({
+            name: "globalAliases",
+        }, info.globalAliases);
         if (info.author instanceof Module) {
             this.from = info.author;
             this.author = this.from.author;
@@ -142,6 +151,8 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
      */
     public registerParent(parent: Command<any>) {
         this.parent = parent;
+        // Global aliases are only needed if this is a subcommand
+        this.phraseGroup.addPhrases(this.localizedGlobalAliases);
     }
 
     /** Unregisters the command for a previously registered parent. */
@@ -168,6 +179,9 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
             } else {
                 Logger.warn(`Command specified a nonexistent privilege ${name}`);
             }
+        }
+        if (this.parent === undefined && this.globalAliases.length !== 0) {
+            Logger.warn(`Global aliases registered for a non-subcommand "${this.name}". Use aliases instead.`);
         }
     }
 
@@ -376,11 +390,23 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
 
     /**
      * Gets a map of localized aliases for the given language.
-     * @param languageThe language to use.
+     * @param language The language to use.
      */
     public getAliases(language: string): { [key: string]: Command<any> } {
         const aliases: { [key: string]: Command<any> } = {};
         for (const alias of this.localizedAliases.get(language)) {
+            aliases[alias] = this;
+        }
+        return aliases;
+    }
+
+    /**
+     * Gets a map of localized global aliases for the given language.
+     * @param language The language to use.
+     */
+    public getGlobalAliases(language: string): { [key: string]: Command<any> } {
+        const aliases: { [key: string]: Command<any> } = {};
+        for (const alias of this.localizedGlobalAliases.get(language)) {
             aliases[alias] = this;
         }
         return aliases;
@@ -433,9 +459,15 @@ export interface ICommandInfo {
     /**
      * Specifies default aliases for the command.
      * Can be either an array, in which case they are assumed to be in [[DEFAULT_LANGUAGE]],
-     * or an objectm in which case the keys are languages and the values are associated localized aliases.
+     * or an object in which case the keys are languages and the values are associated localized aliases.
      */
     aliases?: string[] | Record<string, string[]>;
+    /**
+     * Specifies default global aliases for the command.
+     * Can be either an array, in which case they are assumed to be in [[DEFAULT_LANGUAGE]],
+     * or an object in which case the keys are languages and the values are associated localized global aliases.
+     */
+    globalAliases?: string[] | Record<string, string[]>;
     /**
      * Specifies the privileges that are allowed to execute this command by default.
      * Both privilege instances and names can be used.

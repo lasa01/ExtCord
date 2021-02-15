@@ -289,6 +289,9 @@ export class Commands extends EventEmitter {
             for (const [alias, aliasCommand] of Object.entries(command.getAliases(language))) {
                 map.set(alias, aliasCommand);
             }
+            for (const [alias, aliasCommand] of Object.entries(command.getGlobalAliases(language))) {
+                map.set(alias, aliasCommand);
+            }
         }
         this.languageCommandsMap.set(language, map);
         return map;

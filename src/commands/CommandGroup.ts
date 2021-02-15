@@ -80,6 +80,18 @@ export class CommandGroup
     }
 
     /**
+     * Gets a map of localized global aliases for the given language.
+     * @param language The language to use.
+     */
+    public getGlobalAliases(language: string): { [key: string]: Command<any> } {
+        let aliases = super.getGlobalAliases(language);
+        for (const child of this.subcommands()) {
+            aliases = Object.assign(aliases, child.getGlobalAliases(language));
+        }
+        return aliases;
+    }
+
+    /**
      * Associate the specified subcommands with the command group.
      * @param subcommands Subcommands to add.
      */

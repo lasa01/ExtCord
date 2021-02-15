@@ -12,6 +12,7 @@ export class StopCommand extends Command<[]> {
                 allowedPrivileges: ["everyone"],
                 author: "extcord",
                 description: "Stop the player",
+                globalAliases: ["stop"],
                 name: "stop",
             },
             [],

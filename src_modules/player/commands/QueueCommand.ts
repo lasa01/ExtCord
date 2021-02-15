@@ -13,6 +13,7 @@ export class QueueCommand extends Command<[]> {
                 allowedPrivileges: ["everyone"],
                 author: "extcord",
                 description: "Show the player queue",
+                globalAliases: ["queue", "q"],
                 name: "queue",
             },
             [],

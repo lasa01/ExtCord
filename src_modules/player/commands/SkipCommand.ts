@@ -13,6 +13,7 @@ export class SkipCommand extends Command<[]> {
                 allowedPrivileges: ["everyone"],
                 author: "extcord",
                 description: "Skip the current song",
+                globalAliases: ["skip", "s"],
                 name: "skip",
             },
             [],

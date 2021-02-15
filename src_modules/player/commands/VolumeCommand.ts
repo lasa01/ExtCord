@@ -10,6 +10,7 @@ export class VolumeCommand extends Command<[IntArgument<false>]> {
                 allowedPrivileges: ["everyone"],
                 author: "extcord",
                 description: "Change the volume",
+                globalAliases: ["volume", "v"],
                 name: "volume",
             },
             [
