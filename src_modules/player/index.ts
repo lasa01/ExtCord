@@ -75,7 +75,7 @@ export default class PlayerModule extends Module {
         dispatcher.once("finish", () => {
             this.dispatchers.delete(dispatcher);
             const newItem = queue.dequeue();
-            queue.playing = item;
+            queue.playing = newItem;
             if (newItem) {
                 this.play(context, connection, newItem).catch((err) => {
                     queue.playing = undefined;
