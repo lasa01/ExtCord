@@ -55,7 +55,7 @@ export class CommandGroup
      */
     public updateFullName() {
         super.updateFullName();
-        for (const [, child] of this.children) {
+        for (const child of this.subcommands()) {
             child.updateFullName();
         }
     }
@@ -66,7 +66,7 @@ export class CommandGroup
      */
     public registerSelf(bot: Bot) {
         super.registerSelf(bot);
-        for (const [, child] of this.children) {
+        for (const child of this.subcommands()) {
             child.registerSelf(bot);
         }
         if (this.defaultSubcommand) {
@@ -164,7 +164,10 @@ export class CommandGroup
                     description: this.localizedDescription,
                 },
                 Array.from(this.children.values()).map(
-                    (sub) => ({ description: sub.localizedDescription, usage: sub.getShortUsage(context.language)}),
+                    (sub) => ({
+                        description: sub.localizedDescription,
+                        usage: sub.getShortUsage(context.language, context.prefix),
+                    }),
                 ),
             );
         }
@@ -210,13 +213,13 @@ export class CommandGroup
         this.languageCommandsMap.set(language, map);
     }
 
-    public getShortUsage(language: string): string {
+    public getShortUsage(language: string, prefix: string): string {
         if (this.shortUsageCache.has(language)) {
             return this.shortUsageCache.get(language)!;
         }
         let usage = "";
         for (const [, command] of this.children) {
-            usage += (usage === "" ? "" : "\n") + command.getShortUsage(language);
+            usage += (usage === "" ? "" : "\n") + command.getShortUsage(language, prefix);
         }
         this.shortUsageCache.set(language, usage);
         return usage;
@@ -229,8 +232,30 @@ export class CommandGroup
                 description: this.localizedDescription,
             },
             Array.from(this.children.values()).map(
-                (sub) => ({ description: sub.localizedDescription, usage: sub.getShortUsage(context.language)}),
+                (sub) => ({
+                    description: sub.localizedDescription,
+                    usage: sub.getShortUsage(context.language, context.prefix),
+                }),
             ),
         );
+    }
+
+    /**
+     * Iterates over the direct subcommands of this command group.
+     */
+    public* subcommands(): Generator<Command<any>, void, undefined> {
+        yield* this.children.values();
+    }
+
+    /**
+     * Recursively iterates over all the subcommands of this command group and subcommands.
+     */
+    public* recurseSubcommands(): Generator<Command<any>, void, undefined> {
+        for (const child of this.subcommands()) {
+            yield child;
+            if (child instanceof CommandGroup) {
+                yield* child.recurseSubcommands();
+            }
+        }
     }
 }

@@ -264,7 +264,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
         const maxArgs = this.arguments.length;
         if (rawArguments.length < this.minArguments) {
             await context.respond(CommandPhrases.tooFewArguments, {
-                commandUsage: this.getShortUsage(context.language),
+                commandUsage: this.getShortUsage(context.language, context.prefix),
                 // TODO can be defined for the Command instance
                 required: (this.minArguments === maxArgs) ? maxArgs.toString() : `${this.minArguments} - ${maxArgs}`,
                 supplied: rawArguments.length.toString(),
@@ -276,7 +276,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
             // This allows one argument to optionally have spaces
             if (this.combineIndex === undefined) {
                 await context.respond(CommandPhrases.tooManyArguments, {
-                    commandUsage: this.getShortUsage(context.language),
+                    commandUsage: this.getShortUsage(context.language, context.prefix),
                     // TODO can be defined for the Command instance
                     required: (this.minArguments === maxArgs) ?
                         maxArgs.toString() : `${this.minArguments} - ${maxArgs}`,
@@ -321,7 +321,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
                 return context.respond(CommandPhrases.invalidArgument, {
                     argument: argument.name,
                     argumentUsage: argument.getUsage(context.language),
-                    commandUsage: this.getShortUsage(context.language),
+                    commandUsage: this.getShortUsage(context.language, context.prefix),
                     reason: errorStuff ?? "",
                     supplied: rawArgument,
                 });
@@ -365,14 +365,14 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
      * Gets the localized usage string for the given language.
      * @param language The language to use.
      */
-    public getUsage(language: string): string {
+    public getUsage(language: string, prefix: string): string {
         if (this.usageCache.has(language)) {
             return this.usageCache.get(language)!;
         }
         const usage = CommandPhrases.commandUsage.format(language, {
             argumentsUsage: this.arguments.map((arg) => arg.getUsage(language)).join("\n"),
             description: this.localizedDescription,
-            shortUsage: this.getShortUsage(language),
+            shortUsage: this.getShortUsage(language, prefix),
         });
         this.usageCache.set(language, usage);
         return usage;
@@ -382,10 +382,10 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
      * Gets the localized short usage string for the given language.
      * @param language The language to use.
      */
-    public getShortUsage(language: string): string {
+    public getShortUsage(language: string, prefix: string): string {
         const args = this.arguments.map((arg) => arg.getUsageName(language));
         args.unshift(this.getUsageName(language));
-        return "`" + args.join(" ") + "`";
+        return "`" + prefix + args.join(" ") + "`";
     }
 
     /**
@@ -419,7 +419,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
     public respondHelp(context: ICommandContext) {
         return context.respond(CommandPhrases.commandHelp, {
             command: this.getUsageName(context.language),
-            usage: this.getUsage(context.language),
+            usage: this.getUsage(context.language, context.prefix),
         });
     }
 }

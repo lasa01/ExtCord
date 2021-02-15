@@ -1,6 +1,7 @@
 import { DynamicFieldMessagePhrase } from "../../language/phrase/DynamicFieldMessagePhrase";
 import { CommandArgument } from "../arguments/CommandArgument";
 import { Command } from "../Command";
+import { CommandGroup } from "../CommandGroup";
 import { SimpleCommand } from "../SimpleCommand";
 
 const helpPhrase = new DynamicFieldMessagePhrase(
@@ -57,17 +58,24 @@ export const helpCommand = new SimpleCommand(
             description: string,
             usage: string,
         }> = new Map();
+        const processedCommands = new Set();
         for (const [name, command] of map) {
-            if (!commands.has(command)) {
+            if (!processedCommands.has(command)) {
                 commands.set(command, {
                     aliases: "none",
                     description: command.localizedDescription.get(context.language),
-                    usage: command.getShortUsage(context.language),
+                    usage: command.getShortUsage(context.language, context.prefix),
                 });
+                processedCommands.add(command);
+                if (command instanceof CommandGroup) {
+                    for (const subcommand of command.recurseSubcommands()) {
+                        processedCommands.add(subcommand);
+                    }
+                }
             }
-            if (name !== command.localizedName.get(context.language)) {
+            if (commands.has(command) && name !== command.localizedName.get(context.language)) {
                 const c = commands.get(command)!;
-                c.aliases = (c.aliases === "none" ? `\`${name}\`` : `${c.aliases}, \`${name}\``);
+                c.aliases = (c.aliases === "none" ? `\`${context.prefix}${name}\`` : `${c.aliases}, \`${context.prefix}${name}\``);
             }
         }
         const stuff = { guild: context.message.guild.guild.name };
