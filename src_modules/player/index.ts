@@ -5,6 +5,7 @@ import { StreamDispatcher, VoiceConnection } from "discord.js";
 
 import { Bot, CommandGroup, ICommandContext, IExtendedGuild, Logger, Module } from "../..";
 
+import { LyricsCommand } from "./commands/LyricsCommand";
 import { PauseCommand } from "./commands/PauseCommand";
 import { PlayCommand } from "./commands/PlayCommand";
 import { QueueCommand } from "./commands/QueueCommand";
@@ -43,6 +44,7 @@ export default class PlayerModule extends Module {
             new StopCommand(this),
             new VolumeCommand(),
             new QueueCommand(this),
+            new LyricsCommand(this),
         );
         this.musicCommand.addPhrases(...phrases);
         this.registerCommand(this.musicCommand);

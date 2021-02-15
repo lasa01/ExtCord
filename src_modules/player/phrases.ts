@@ -262,6 +262,31 @@ export const musicQueuePhrase = new DynamicFieldMessagePhrase(
     },
 );
 
+export const musicLyricsPhrase = new MessagePhrase(
+    {
+        description: "Shown when lyrics are requested",
+        name: "musicLyrics",
+    },
+    "Lyrics for `{title}`:\n{lyrics}",
+    {
+        author: {
+            name: "{author}",
+        },
+        description: "{lyrics}",
+        thumbnailUrl: "{thumbnailUrl}",
+        timestamp: false,
+        title: "Lyrics for {title}",
+        url: "{url}",
+    },
+    {
+        author: "The author of the lyrics",
+        lyrics: "The lyrics",
+        thumbnailUrl: "The url of the thumbnail",
+        title: "Title of the lyrics",
+        url: "The url of the lyrics",
+    },
+);
+
 export const phrases = [
     musicNoVoicePhrase, musicNotFoundPhrase, musicNotPlayingPhrase,
     musicPausePhrase, musicPlayPhrase, musicSearchingPhrase,
