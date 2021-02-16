@@ -5,8 +5,8 @@ import { musicNotFoundPhrase, musicNoVoicePhrase, musicSearchingPhrase } from ".
 import { IQueueItemDetails, PlayerQueueItem } from "../queue/PlayerQueueItem";
 
 import { Guild, VoiceChannel, VoiceConnection } from "discord.js";
-import { Readable } from "stream";
 import ytdl = require("ytdl-core");
+import ytpl = require("ytpl");
 import ytsr = require("ytsr");
 
 export class PlayCommand extends Command<[StringArgument<false>]> {
@@ -44,16 +44,16 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
         const url = context.arguments[0];
         const guild = context.message.message.guild!;
 
-        const [connection, queueItem] = await Promise.all([
+        const [connection, queueItems] = await Promise.all([
             this.getConnection(guild, voiceChannel),
             this.getQueueItem(url, context),
         ]);
 
-        if (!queueItem) {
+        if (!queueItems) {
             return;
         }
 
-        return this.player.playOrEnqueue(context, connection, queueItem);
+        return this.player.playOrEnqueue(context, connection, queueItems);
     }
 
     private async getConnection(guild: Guild, voiceChannel: VoiceChannel): Promise<VoiceConnection> {
@@ -64,10 +64,8 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
         }
     }
 
-    private async getQueueItem(query: string, context: ICommandContext): Promise<PlayerQueueItem|void> {
+    private async getQueueItem(query: string, context: ICommandContext): Promise<PlayerQueueItem[]|void> {
         let url: string;
-        let ytdlResult: Readable | undefined;
-        let itemDetails: IQueueItemDetails;
         let respondPromise: Promise<void> | undefined;
 
         if (!Util.isValidUrl(query)) {
@@ -89,7 +87,7 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
                 return context.respond(musicNotFoundPhrase, { search: query });
             }
             url = resultUrl;
-            itemDetails = {
+            const itemDetails = {
                 author: resultItem.author?.name ?? "",
                 authorIconUrl: resultItem.author?.avatars[0].url ?? "",
                 authorUrl: resultItem.author?.url ?? "",
@@ -98,25 +96,34 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
                 title: resultItem.title,
                 url: resultItem.url,
             };
+            return [new PlayerQueueItem(itemDetails)];
         } else {
             url = query;
-            ytdlResult = ytdl(url, { filter: "audioonly" });
-            itemDetails = await new Promise((resolve, reject) => {
-                ytdlResult!.once("info", (video: ytdl.videoInfo, format: ytdl.videoFormat) => {
-                    resolve({
-                        author: video.videoDetails.author.name,
-                        authorIconUrl: video.videoDetails.author.avatar,
-                        authorUrl: video.videoDetails.author.channel_url,
-                        duration: video.videoDetails.lengthSeconds,
-                        thumbnailUrl: video.videoDetails.thumbnail.thumbnails[0].url,
-                        title: video.videoDetails.title,
-                        url: video.videoDetails.video_url,
-                    });
-                });
-                ytdlResult!.once("error", (err) => reject(err));
-            });
+            try {
+                const playlist = await ytpl(url);
+                return Promise.all(playlist.items.map(async (item) => await this.getQueueItemFromUrl(item.url)));
+            } catch {
+                return [await this.getQueueItemFromUrl(url)];
+            }
         }
+    }
 
+    private async getQueueItemFromUrl(url: string): Promise<PlayerQueueItem> {
+        const ytdlResult = ytdl(url, { filter: "audioonly" });
+        const itemDetails: IQueueItemDetails = await new Promise((resolve, reject) => {
+            ytdlResult!.once("info", (video: ytdl.videoInfo, format: ytdl.videoFormat) => {
+                resolve({
+                    author: video.videoDetails.author.name,
+                    authorIconUrl: video.videoDetails.author.thumbnails?.[0].url ?? "",
+                    authorUrl: video.videoDetails.author.channel_url,
+                    duration: video.videoDetails.lengthSeconds,
+                    thumbnailUrl: video.videoDetails.thumbnails[0].url,
+                    title: video.videoDetails.title,
+                    url: video.videoDetails.video_url,
+                });
+            });
+            ytdlResult!.once("error", (err) => reject(err));
+        });
         return new PlayerQueueItem(itemDetails, ytdlResult);
     }
 }

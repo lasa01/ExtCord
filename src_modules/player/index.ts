@@ -1,5 +1,5 @@
 // extcord module
-// requires ffmpeg-static ytdl-core ytsr
+// requires ffmpeg-static ytdl-core ytsr ytpl
 
 import { StreamDispatcher, VoiceConnection } from "discord.js";
 
@@ -13,7 +13,7 @@ import { ResumeCommand } from "./commands/ResumeCommand";
 import { SkipCommand } from "./commands/SkipCommand";
 import { StopCommand } from "./commands/StopCommand";
 import { VolumeCommand } from "./commands/VolumeCommand";
-import { musicEnqueuePhrase, musicPlayPhrase, phrases } from "./phrases";
+import { musicEmptyPlaylistPhrase, musicEnqueueListPhrase, musicEnqueuePhrase, musicPlayPhrase, phrases } from "./phrases";
 import { PlayerQueue } from "./queue/PlayerQueue";
 import { PlayerQueueItem } from "./queue/PlayerQueueItem";
 
@@ -89,12 +89,35 @@ export default class PlayerModule extends Module {
         return context.respond(musicPlayPhrase, item.details);
     }
 
-    public async playOrEnqueue(context: ICommandContext, connection: VoiceConnection, item: PlayerQueueItem) {
+    public async playOrEnqueue(context: ICommandContext, connection: VoiceConnection, items: PlayerQueueItem[]) {
+        if (items.length === 0) {
+            return context.respond(musicEmptyPlaylistPhrase, {});
+        }
+        const queue = this.getQueue(context.message.guild);
         if (connection.dispatcher) {
-            this.getQueue(context.message.guild).enqueue(item);
-            return context.respond(musicEnqueuePhrase, item.details);
+            for (const item of items) {
+                queue.enqueue(item);
+            }
+            if (items.length === 1) {
+                return context.respond(musicEnqueuePhrase, items[0].details);
+            } else {
+                return context.respond(musicEnqueueListPhrase, {});
+            }
         } else {
-            return this.play(context, connection, item);
+            let first = true;
+            for (const item of items) {
+                if (first) {
+                    await this.play(context, connection, items[0]);
+                    first = false;
+                } else {
+                    queue.enqueue(item);
+                }
+            }
+            if (items.length === 2) {
+                return context.respond(musicEnqueuePhrase, items[1].details);
+            } else if (items.length > 2) {
+                return context.respond(musicEnqueueListPhrase, {});
+            }
         }
     }
 

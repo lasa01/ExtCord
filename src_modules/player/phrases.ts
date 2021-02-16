@@ -58,6 +58,19 @@ export const musicEnqueuePhrase = new MessagePhrase(
     },
 );
 
+export const musicEnqueueListPhrase = new MessagePhrase(
+    {
+        description: "Shown when a playlist is queued",
+        name: "musicEnqueueList",
+    },
+    "Queued playlist.",
+    {
+        timestamp: false,
+        title: "Queued playlist",
+    },
+    {},
+);
+
 export const musicSearchingPhrase = new MessagePhrase(
     {
         description: "Shown when searching for a song",
@@ -128,6 +141,20 @@ export const musicNotPlayingPhrase = new MessagePhrase(
         description: "Nothing is playing.",
         timestamp: false,
         title: "Nothing is playing",
+    },
+    {},
+);
+
+export const musicEmptyPlaylistPhrase = new MessagePhrase(
+    {
+        description: "Shown when trying to play an empty playlist",
+        name: "musicEmptyPlaylist",
+    },
+    "The playlist  is empty.",
+    {
+        description: "The playlist is empty.",
+        timestamp: false,
+        title: "Empty playlist",
     },
     {},
 );
@@ -291,5 +318,6 @@ export const phrases = [
     musicNoVoicePhrase, musicNotFoundPhrase, musicNotPlayingPhrase,
     musicPausePhrase, musicPlayPhrase, musicSearchingPhrase,
     musicWrongVoicePhrase, musicStopPhrase, musicVolumePhrase,
-    musicEnqueuePhrase, musicSkipPhrase, musicQueuePhrase,
+    musicEnqueuePhrase, musicEnqueueListPhrase, musicSkipPhrase,
+    musicQueuePhrase, musicLyricsPhrase, musicEmptyPlaylistPhrase,
 ];
