@@ -13,7 +13,8 @@
             "console": "integratedTerminal",
             "sourceMaps": true,
             "outFiles": [
-                "${workspaceFolder}/dist/**/*.js"
+                "${workspaceFolder}/dist/**/*.js",
+                "${workspaceFolder}/modules/**/*.js"
             ]
         }
     ]
