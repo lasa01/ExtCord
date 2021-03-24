@@ -314,10 +314,25 @@ export const musicLyricsPhrase = new MessagePhrase(
     },
 );
 
+export const musicClearPhrase = new MessagePhrase(
+    {
+        description: "Shown when the music queue is cleared",
+        name: "musicClear",
+    },
+    "Queue cleared.",
+    {
+        description: "Queue cleared.",
+        timestamp: false,
+        title: "Cleared",
+    },
+    {},
+);
+
 export const phrases = [
     musicNoVoicePhrase, musicNotFoundPhrase, musicNotPlayingPhrase,
     musicPausePhrase, musicPlayPhrase, musicSearchingPhrase,
     musicWrongVoicePhrase, musicStopPhrase, musicVolumePhrase,
     musicEnqueuePhrase, musicEnqueueListPhrase, musicSkipPhrase,
     musicQueuePhrase, musicLyricsPhrase, musicEmptyPlaylistPhrase,
+    musicClearPhrase,
 ];
