@@ -1,7 +1,7 @@
 // extcord module
 // requires ffmpeg-static ytdl-core ytsr ytpl
 
-import { StreamDispatcher, VoiceConnection } from "discord.js";
+import { Guild, StreamDispatcher, VoiceConnection, VoiceState } from "discord.js";
 
 import { Bot, CommandGroup, ICommandContext, IExtendedGuild, Logger, Module } from "../..";
 
@@ -22,6 +22,7 @@ export default class PlayerModule extends Module {
     private guildQueues: Map<string, PlayerQueue>;
     private dispatchers: Set<StreamDispatcher>;
     private connections: Set<VoiceConnection>;
+    private voiceStateUpdateHandler: ((oldState: VoiceState, newState: VoiceState) => void) | undefined;
 
     constructor(bot: Bot) {
         super(bot, "extcord", "player");
@@ -49,6 +50,7 @@ export default class PlayerModule extends Module {
         this.musicCommand.addPhrases(...phrases);
         this.registerCommand(this.musicCommand);
         bot.once("stop", () => this.onStop());
+        bot.on("ready", () => this.onReady());
     }
 
     public getQueue(guild: IExtendedGuild): PlayerQueue {
@@ -62,8 +64,8 @@ export default class PlayerModule extends Module {
         return queue;
     }
 
-    public clearQueue(guild: IExtendedGuild) {
-        this.guildQueues.get(guild.guild.id)?.clear();
+    public clearQueue(guild: Guild) {
+        this.guildQueues.get(guild.id)?.clear();
     }
 
     public async play(context: ICommandContext, connection: VoiceConnection, item: PlayerQueueItem) {
@@ -119,6 +121,43 @@ export default class PlayerModule extends Module {
                 return context.respond(musicEnqueueListPhrase, {});
             }
         }
+    }
+
+    public disconnect(guild: Guild) {
+        if (guild.voice?.connection) {
+            if (guild.voice.connection.dispatcher) {
+                this.clearQueue(guild);
+                guild.voice.connection.dispatcher.destroy();
+            }
+            guild.voice.connection.disconnect();
+        }
+    }
+
+    private onVoiceStateUpdate(oldState: VoiceState, newState: VoiceState) {
+        const botMember = oldState.channel?.members.get(this.bot.client!.user!.id);
+        if (botMember === undefined) {
+            return;
+        }
+        if (newState.channel !== null) {
+            return;
+        }
+        const channel = oldState.channel!;
+        if (channel.members.size === 1) {
+            this.bot.client!.setTimeout(() => {
+                if (channel.members.size === 1) {
+                    this.disconnect(botMember.guild);
+                }
+            }, 5000);
+        }
+    }
+
+    private onReady() {
+        if (this.voiceStateUpdateHandler !== undefined) {
+            this.bot.client!.removeListener("voiceStateUpdate", this.voiceStateUpdateHandler);
+        }
+        this.voiceStateUpdateHandler =
+            (oldState: VoiceState, newState: VoiceState) => this.onVoiceStateUpdate(oldState, newState);
+        this.bot.client!.on("voiceStateUpdate", this.voiceStateUpdateHandler);
     }
 
     private onStop() {

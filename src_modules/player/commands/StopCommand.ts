@@ -32,11 +32,7 @@ export class StopCommand extends Command<[]> {
         if (guild.voice.channel !== voiceChannel) {
             return context.respond(musicWrongVoicePhrase, {});
         }
-        if (guild.voice.connection.dispatcher) {
-            this.player.clearQueue(context.message.guild);
-            guild.voice.connection.dispatcher.destroy();
-        }
-        guild.voice.connection.disconnect();
+        this.player.disconnect(context.message.guild.guild);
         return context.respond(musicStopPhrase, {});
     }
 }

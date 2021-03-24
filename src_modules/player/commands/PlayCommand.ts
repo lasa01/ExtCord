@@ -114,10 +114,10 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
             ytdlResult!.once("info", (video: ytdl.videoInfo, format: ytdl.videoFormat) => {
                 resolve({
                     author: video.videoDetails.author.name,
-                    authorIconUrl: video.videoDetails.author.thumbnails?.[0].url ?? "",
+                    authorIconUrl: video.videoDetails.author.avatar,
                     authorUrl: video.videoDetails.author.channel_url,
                     duration: video.videoDetails.lengthSeconds,
-                    thumbnailUrl: video.videoDetails.thumbnails[0].url,
+                    thumbnailUrl: video.videoDetails.thumbnail.thumbnails[0]?.url ?? "",
                     title: video.videoDetails.title,
                     url: video.videoDetails.video_url,
                 });
