@@ -25,6 +25,12 @@ Yargs.usage("Usage: $0 <command> [options]")
             Logger.error(err.stack ?? err);
             bot.stop();
         });
+        process.once("SIGINT", () => {
+            bot.stop();
+        });
+        process.once("SIGTERM", () => {
+            bot.stop();
+        });
         if (argv.interactive) {
             bot.setInteractive(process.stdin);
         }
