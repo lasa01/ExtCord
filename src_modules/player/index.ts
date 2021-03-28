@@ -11,6 +11,7 @@ import { PauseCommand } from "./commands/PauseCommand";
 import { PlayCommand } from "./commands/PlayCommand";
 import { QueueCommand } from "./commands/QueueCommand";
 import { ResumeCommand } from "./commands/ResumeCommand";
+import { SeekCommand } from "./commands/SeekCommand";
 import { SkipCommand } from "./commands/SkipCommand";
 import { StopCommand } from "./commands/StopCommand";
 import { VolumeCommand } from "./commands/VolumeCommand";
@@ -48,6 +49,7 @@ export default class PlayerModule extends Module {
             new QueueCommand(this),
             new LyricsCommand(this),
             new ClearCommand(this),
+            new SeekCommand(this),
         );
         this.musicCommand.addPhrases(...phrases);
         this.registerCommand(this.musicCommand);
@@ -70,9 +72,12 @@ export default class PlayerModule extends Module {
         this.guildQueues.get(guild.id)?.clear();
     }
 
-    public async play(context: ICommandContext, connection: VoiceConnection, item: PlayerQueueItem) {
+    public async play(context: ICommandContext, connection: VoiceConnection, item: PlayerQueueItem, seek: number = 0) {
         const queue = this.getQueue(context.message.guild);
-        const dispatcher = connection.play(await item.getStream());
+        const dispatcher = connection.play(await item.getStream(), {
+            seek,
+        });
+        queue.dispatcher = dispatcher;
         queue.playing = item;
 
         this.dispatchers.add(dispatcher);
@@ -82,15 +87,41 @@ export default class PlayerModule extends Module {
             this.dispatchers.delete(dispatcher);
             const newItem = queue.dequeue();
             queue.playing = newItem;
+            queue.dispatcher = undefined;
             if (newItem) {
                 this.play(context, connection, newItem).catch((err) => {
                     queue.playing = undefined;
+                    queue.dispatcher = undefined;
                     Logger.error(`Error advancing player queue: ${err}`);
                 });
             }
         });
 
         return context.respond(musicPlayPhrase, item.details);
+    }
+
+    public async seek(context: ICommandContext, connection: VoiceConnection, seek: number) {
+        const queue = this.getQueue(context.message.guild);
+        if (queue.playing === undefined) {
+            throw new Error("Nothing is playing");
+        }
+        const dispatcher = connection.play(await queue.playing.getStream(), {
+            seek,
+        });
+        queue.dispatcher = dispatcher;
+        dispatcher.once("finish", () => {
+            this.dispatchers.delete(dispatcher);
+            const newItem = queue.dequeue();
+            queue.playing = newItem;
+            queue.dispatcher = undefined;
+            if (newItem) {
+                this.play(context, connection, newItem).catch((err) => {
+                    queue.playing = undefined;
+                    queue.dispatcher = undefined;
+                    Logger.error(`Error advancing player queue: ${err}`);
+                });
+            }
+        });
     }
 
     public async playOrEnqueue(context: ICommandContext, connection: VoiceConnection, items: PlayerQueueItem[]) {

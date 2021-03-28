@@ -328,11 +328,25 @@ export const musicClearPhrase = new MessagePhrase(
     {},
 );
 
+export const musicSeekPhrase = new MessagePhrase(
+    {
+        description: "Shown when the player is seeked",
+        name: "musicSeek",
+    },
+    "Seeked to {seconds} s.",
+    {
+        description: "Seeked to {seconds} s.",
+        timestamp: false,
+        title: "Seeked",
+    },
+    {},
+);
+
 export const phrases = [
     musicNoVoicePhrase, musicNotFoundPhrase, musicNotPlayingPhrase,
     musicPausePhrase, musicPlayPhrase, musicSearchingPhrase,
     musicWrongVoicePhrase, musicStopPhrase, musicVolumePhrase,
     musicEnqueuePhrase, musicEnqueueListPhrase, musicSkipPhrase,
     musicQueuePhrase, musicLyricsPhrase, musicEmptyPlaylistPhrase,
-    musicClearPhrase,
+    musicClearPhrase, musicSeekPhrase,
 ];
