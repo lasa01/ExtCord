@@ -62,7 +62,7 @@ export class Permissions {
     private memberPermissionsMap: Map<number, Map<string, boolean>>;
     private memberFullPermissionsMap: Map<number, Map<string, boolean>>;
     private privileges: Map<string, PermissionPrivilege>;
-    private customPrivileges: Map<string, Map<string, CustomPrivilege|undefined>>;
+    private customPrivileges: Map<string, Map<string, CustomPrivilege | undefined>>;
     private privilegePhraseGroup: PhraseGroup;
     private phrases: Phrase[];
     private phraseGroup?: PhraseGroup;
@@ -192,7 +192,7 @@ export class Permissions {
         this.configEntry = new ConfigEntryGroup({
             description: "Permissions configuration",
             name: "permissions",
-        }, [ this.privilegeDirConfigEntry, this.hostIdConfigEntry ]);
+        }, [this.privilegeDirConfigEntry, this.hostIdConfigEntry]);
         config.registerEntry(this.configEntry);
     }
 
@@ -461,11 +461,11 @@ export class Permissions {
         // The "@everyone" role has same id as the guild
         if (role.entity.roleId === role.entity.guildId) {
             // Add default privileges to role privilege database for the "@everyone" role
-                if (!rolePrivileges.some((rolePriv) => rolePriv.name === this.everyonePrivilege.name)) {
-                    missingPrivilegeEntities.push(this.repos.rolePrivilege.create({
-                        name: this.everyonePrivilege.name,
-                        role: role.entity,
-                    }));
+            if (!rolePrivileges.some((rolePriv) => rolePriv.name === this.everyonePrivilege.name)) {
+                missingPrivilegeEntities.push(this.repos.rolePrivilege.create({
+                    name: this.everyonePrivilege.name,
+                    role: role.entity,
+                }));
             }
         }
         if (role.role.permissions.has(DiscordPermissions.FLAGS.ADMINISTRATOR!)) {
@@ -515,7 +515,7 @@ export class Permissions {
             member: member.entity,
         });
         const missingPrivilegeEntities: MemberPrivilegeEntity[] = [];
-        if (member.member.hasPermission(DiscordPermissions.FLAGS.ADMINISTRATOR!)) {
+        if (member.member.permissions.has(DiscordPermissions.FLAGS.ADMINISTRATOR!)) {
             if (!memberPrivileges.some((memberPriv) => memberPriv.name === this.adminPrivilege.name)) {
                 missingPrivilegeEntities.push(this.repos.memberPrivilege.create({
                     member: member.entity,
@@ -567,20 +567,22 @@ export class Permissions {
         }
         this.ensureRepo();
         const map: Map<string, boolean> = new Map();
-        const roles = (await this.repos.role.find({ relations: ["guild"], where: {
-            guild: member.entity.guild,
-            roleId: In(member.member.roles.cache.map((role) => role.id)),
-        }}))
-        .sort((a, b) => {
-            const dA = member.member.roles.cache.get(a.roleId)!;
-            const dB = member.member.roles.cache.get(b.roleId)!;
-            return Role.comparePositions(dA, dB);
-        }).map((roleEntity) => ({ role: member.member.roles.cache.get(roleEntity.roleId)!, entity: roleEntity }));
+        const roles = (await this.repos.role.find({
+            relations: ["guild"], where: {
+                guild: member.entity.guild,
+                roleId: In(member.member.roles.cache.map((role) => role.id)),
+            },
+        }))
+            .sort((a, b) => {
+                const dA = member.member.roles.cache.get(a.roleId)!;
+                const dB = member.member.roles.cache.get(b.roleId)!;
+                return Role.comparePositions(dA, dB);
+            }).map((roleEntity) => ({ role: member.member.roles.cache.get(roleEntity.roleId)!, entity: roleEntity }));
 
         if (!roles.some((role) => role.role.id === role.role.guild.id)) {
             // Ensure "@everyone" role is in database
             const everyoneRole = member.member.guild.roles.everyone;
-            roles.push({ role: everyoneRole, entity: await this.repos.role.getEntity(everyoneRole)});
+            roles.push({ role: everyoneRole, entity: await this.repos.role.getEntity(everyoneRole) });
         }
 
         for (const role of roles) {

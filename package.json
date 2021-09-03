@@ -26,7 +26,7 @@
   },
   "homepage": "https://github.com/lasa01/ExtCord#readme",
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=16.0.0"
   },
   "bin": {
     "extcord": "./bin/extcord"
@@ -45,21 +45,22 @@
   },
   "dependencies": {
     "@discordjs/opus": "^0.3.3",
-    "bufferutil": "^4.0.2",
-    "discord.js": "^12.5.1",
-    "erlpack": "github:discord/erlpack",
+    "@discordjs/voice": "^0.6.0",
+    "bufferutil": "^4.0.3",
+    "discord.js": "^13.1.0",
+    "erlpack": "^0.1.3",
     "fs-extra": "^7.0.1",
     "hjson": "^3.2.1",
     "mysql": "^2.18.1",
     "node-fetch": "^2.6.1",
     "reflect-metadata": "^0.1.13",
     "sodium": "^3.0.2",
-    "sqlite3": "^4.2.0",
+    "sqlite3": "^5.0.2",
     "string-format": "^2.0.0",
     "typeorm": "^0.2.29",
-    "utf-8-validate": "^5.0.3",
+    "utf-8-validate": "^5.0.5",
     "winston": "^3.3.3",
-    "yargs": "^12.0.5",
+    "yargs": "^17.1.1",
     "zlib-sync": "^0.1.7"
   },
   "devDependencies": {
@@ -67,21 +68,21 @@
     "@types/fs-extra": "^5.1.0",
     "@types/hjson": "^2.4.2",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^14.14.6",
+    "@types/node": "^16.7.10",
     "@types/node-fetch": "^2.5.8",
     "@types/string-format": "^2.0.0",
     "@types/ws": "^7.2.9",
-    "@types/yargs": "^12.0.19",
+    "@types/yargs": "^17.0.2",
     "chai": "^4.2.0",
     "ffmpeg-static": "^4.2.7",
     "mocha": "^6.2.3",
     "rimraf": "^3.0.2",
     "ts-node": "^8.10.2",
     "tslint": "^5.20.1",
-    "typedoc": "^0.19.2",
-    "typescript": "^4.0.5",
-    "ytdl-core": "^4.0.3",
-    "ytpl": "^2.0.5",
-    "ytsr": "^3.2.1"
+    "typedoc": "^0.21.9",
+    "typescript": "^4.4.2",
+    "ytdl-core": "^4.9.1",
+    "ytpl": "^2.2.3",
+    "ytsr": "^3.5.3"
   }
 }

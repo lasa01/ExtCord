@@ -1,11 +1,11 @@
-import { StreamDispatcher } from "discord.js";
+import { PlayerSubscription } from "@discordjs/voice";
 import { IExtendedGuild } from "../../../dist";
 import { PlayerQueueItem } from "./PlayerQueueItem";
 
 export class PlayerQueue {
     public guild: IExtendedGuild;
     public playing?: PlayerQueueItem;
-    public dispatcher?: StreamDispatcher;
+    public subscription?: PlayerSubscription;
     public readonly queue: PlayerQueueItem[];
 
     public constructor(guild: IExtendedGuild) {

@@ -43,7 +43,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
     /** The name of the author of the command. */
     public author: string;
     /** Bitflag for the Discord permissions the command requires. */
-    public discordPermissions: number;
+    public discordPermissions: bigint;
     /** An array of the arguments of the command. */
     public arguments: T;
     /** A computed minimum number of arguments the command requires. */
@@ -93,7 +93,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
         } else {
             this.author = info.author;
         }
-        this.discordPermissions = info.discordPermissions ?? 0;
+        this.discordPermissions = info.discordPermissions ?? BigInt(0);
         this.argPhraseGroup = new PhraseGroup({
             name: "arguments",
         });
@@ -239,17 +239,13 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
         let startTime = process.hrtime();
         Logger.debug(`(command ${this.name}) Command: ${context.command}`);
         const needBit = this.discordPermissions;
-        if (needBit !== 0) {
-            const botBit = context.botPermissions.bitfield;
-            // Bitwise XOR the permissions to get permissions which one has, other doesn't
-            // Then bitwise AND with needBit to get permissions that are different which are also needed
-            // Result is bot's missing permissions
+        if (needBit !== BigInt(0)) {
+            // Get bot's missing permissions
             // tslint:disable-next-line:no-bitwise
-            const missingPermissions = (needBit ^ botBit) & needBit;
-            // Admin overrides permissions, needs to be checked
-            if (missingPermissions !== 0 && !context.botPermissions.has(DiscordPermissions.FLAGS.ADMINISTRATOR!)) {
+            const missingPermissions = context.botPermissions.missing(needBit);
+            if (missingPermissions.length !== 0) {
                 return context.respond(CommandPhrases.botNoPermission, {
-                    permissions: new DiscordPermissions(missingPermissions).toArray(false).join(", "),
+                    permissions: missingPermissions.join(", "),
                 });
             }
         }
@@ -289,12 +285,12 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
         let rawIndex = 0;
         let rawArgument: string;
         let argument: Argument<any, boolean, any>;
-        let errorStuff: LinkedErrorArgs<Record<string, string>>|SimplePhrase|undefined;
+        let errorStuff: LinkedErrorArgs<Record<string, string>> | SimplePhrase | undefined;
         const errorResponseFn: ILinkedErrorResponse =
-        <U extends Record<string, string>>(phrase: TemplatePhrase<U>|SimplePhrase, stuff?: U): undefined => {
-            errorStuff = stuff ? [phrase as TemplatePhrase<U>, stuff] : phrase;
-            return;
-        };
+            <U extends Record<string, string>>(phrase: TemplatePhrase<U> | SimplePhrase, stuff?: U): undefined => {
+                errorStuff = stuff ? [phrase as TemplatePhrase<U>, stuff] : phrase;
+                return;
+            };
         for (const index of this.arguments.keys()) {
             argument = this.arguments[index];
             rawArgument = rawArguments[rawIndex];
@@ -335,7 +331,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
             await this.execute({
                 ...context, arguments: parsed as unknown as ArgumentsParseReturns<T>, rawArguments,
             });
-        } catch (err) {
+        } catch (err: any) {
             const error = err.stack ?? err.toString();
             await context.respond(CommandPhrases.executionError, { error });
             Logger.error(`(command ${this.name}) An unexpected error occured: ${error}`);
@@ -472,9 +468,9 @@ export interface ICommandInfo {
      * Specifies the privileges that are allowed to execute this command by default.
      * Both privilege instances and names can be used.
      */
-    allowedPrivileges?: Array<string|PermissionPrivilege>;
+    allowedPrivileges?: Array<string | PermissionPrivilege>;
     /** Bitflag for the Discord permissions the command requires. */
-    discordPermissions?: number;
+    discordPermissions?: bigint;
 }
 
 /**
@@ -484,8 +480,8 @@ export interface ICommandInfo {
  */
 type ArgumentsParseReturns<T extends ReadonlyArray<Argument<any, boolean, any>>> = {
     [P in keyof T]: T[P] extends Argument<infer U, infer V, any> ?
-        V extends false ? U : U|undefined
-        : never
+    V extends false ? U : U | undefined
+    : never
 };
 
 /**

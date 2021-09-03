@@ -314,6 +314,52 @@ export const musicLyricsPhrase = new MessagePhrase(
     },
 );
 
+export const musicLyricsNotFoundPhrase = new MessagePhrase(
+    {
+        description: "Shown when requested lyrics are not found",
+        name: "musicLyricsNotFound",
+    },
+    "Could not find lyrics for `{title}`",
+    {
+        description: "Could not find lyrics for `{title}`",
+        timestamp: false,
+        title: "Lyrics not found",
+    },
+    {
+        title: "Title of the lyrics",
+    },
+);
+
+export const musicLyricsErrorPhrase = new MessagePhrase(
+    {
+        description: "Shown when requested lyrics could not be fetched",
+        name: "musicLyricsError",
+    },
+    "Lyrics provider had problems fetching lyrics for `{title}`",
+    {
+        description: "The lyrics provider had problems fetching lyrics for `{title}`",
+        timestamp: false,
+        title: "Could not fetch lyrics",
+    },
+    {
+        title: "Title of the lyrics",
+    },
+);
+
+export const musicLyricsRateLimitedPhrase = new MessagePhrase(
+    {
+        description: "Shown when the lyrics request gets rate limited",
+        name: "musicLyricsRateLimited",
+    },
+    "Too many lyrics requests",
+    {
+        description: "Try again later",
+        timestamp: false,
+        title: "Too many lyrics requests",
+    },
+    {},
+);
+
 export const musicClearPhrase = new MessagePhrase(
     {
         description: "Shown when the music queue is cleared",
@@ -339,7 +385,25 @@ export const musicSeekPhrase = new MessagePhrase(
         timestamp: false,
         title: "Seeked",
     },
-    {},
+    {
+        seconds: "seconds",
+    },
+);
+
+export const musicErrorPhrase = new MessagePhrase(
+    {
+        description: "Shown when the player encounters an error",
+        name: "musicError",
+    },
+    "Music playing failed: `{error}`",
+    {
+        description: "Music playing failed: `{error}`",
+        timestamp: false,
+        title: "Music playing failed",
+    },
+    {
+        error: "the error that was encountered",
+    },
 );
 
 export const phrases = [
@@ -347,6 +411,7 @@ export const phrases = [
     musicPausePhrase, musicPlayPhrase, musicSearchingPhrase,
     musicWrongVoicePhrase, musicStopPhrase, musicVolumePhrase,
     musicEnqueuePhrase, musicEnqueueListPhrase, musicSkipPhrase,
-    musicQueuePhrase, musicLyricsPhrase, musicEmptyPlaylistPhrase,
-    musicClearPhrase, musicSeekPhrase,
+    musicQueuePhrase, musicLyricsPhrase, musicLyricsErrorPhrase,
+    musicLyricsNotFoundPhrase, musicLyricsRateLimitedPhrase, musicEmptyPlaylistPhrase,
+    musicClearPhrase, musicSeekPhrase, musicErrorPhrase,
 ];

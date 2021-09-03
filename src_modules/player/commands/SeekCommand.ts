@@ -1,5 +1,6 @@
 import { Command, IExecutionContext, IntArgument } from "../../..";
 
+import { getVoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import PlayerModule from "..";
 import { musicNotPlayingPhrase, musicNoVoicePhrase, musicSeekPhrase, musicWrongVoicePhrase } from "../phrases";
 
@@ -35,14 +36,19 @@ export class SeekCommand extends Command<[IntArgument<false>]> {
         if (!voiceChannel) {
             return context.respond(musicNoVoicePhrase, {});
         }
+
         const guild = context.message.guild.guild;
-        if (!guild.voice?.connection || !guild.voice.connection.dispatcher) {
+        const connection = getVoiceConnection(guild.id);
+
+        if (connection?.state.status !== VoiceConnectionStatus.Ready || !connection.state.subscription) {
             return context.respond(musicNotPlayingPhrase, {});
         }
-        if (guild.voice.channel !== voiceChannel) {
+
+        if (!voiceChannel.members.get(context.bot.client!.user!.id)) {
             return context.respond(musicWrongVoicePhrase, {});
         }
-        this.player.seek(context, guild.voice.connection, context.arguments[0]);
+
+        this.player.seek(context, connection, context.arguments[0], voiceChannel.bitrate);
         return context.respond(musicSeekPhrase, {
             seconds: context.arguments[0].toString(),
         });

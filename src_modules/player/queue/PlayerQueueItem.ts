@@ -1,3 +1,4 @@
+import { AudioResource, createAudioResource } from "@discordjs/voice";
 import { Readable } from "stream";
 import ytdl = require("ytdl-core");
 
@@ -15,6 +16,7 @@ export class PlayerQueueItem {
     public readonly details: IQueueItemDetails;
     public readonly url: string;
     private ytdlResult?: Readable;
+    private resource?: AudioResource;
 
     public constructor(details: IQueueItemDetails, ytdlResult?: Readable) {
         this.details = details;
@@ -22,7 +24,17 @@ export class PlayerQueueItem {
         this.ytdlResult = ytdlResult;
     }
 
-    public async getStream(): Promise<Readable> {
-        return this.ytdlResult ?? ytdl(this.url, { filter: "audioonly" });
+    public async getResource(): Promise<AudioResource> {
+        if (this.resource) {
+            return this.resource;
+        }
+
+        const stream = await this.getStream();
+        this.resource = createAudioResource(stream, { inlineVolume: true });
+        return this.resource;
+    }
+
+    private async getStream(): Promise<Readable> {
+        return this.ytdlResult ?? ytdl(this.url, { filter: "audioonly", highWaterMark: 32 * 1024 * 1024 });
     }
 }

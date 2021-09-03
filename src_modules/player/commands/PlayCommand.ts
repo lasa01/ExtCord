@@ -1,10 +1,11 @@
-import { Command, ICommandContext, IExecutionContext, StringArgument, Util } from "../../..";
+import { Bot, Command, ICommandContext, IExecutionContext, StringArgument, Util } from "../../..";
 
 import PlayerModule from "..";
 import { musicNotFoundPhrase, musicNoVoicePhrase, musicSearchingPhrase } from "../phrases";
 import { IQueueItemDetails, PlayerQueueItem } from "../queue/PlayerQueueItem";
 
-import { Guild, VoiceChannel, VoiceConnection } from "discord.js";
+import { entersState, getVoiceConnection, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
+import { Guild, VoiceChannel } from "discord.js";
 import ytdl = require("ytdl-core");
 import ytpl = require("ytpl");
 import ytsr = require("ytsr");
@@ -38,14 +39,14 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
 
     public async execute(context: IExecutionContext<[StringArgument<false>]>) {
         const voiceChannel = context.message.member.member.voice.channel;
-        if (!voiceChannel) {
+        if (!(voiceChannel instanceof VoiceChannel)) {
             return context.respond(musicNoVoicePhrase, {});
         }
         const url = context.arguments[0];
         const guild = context.message.message.guild!;
 
         const [connection, queueItems] = await Promise.all([
-            this.getConnection(guild, voiceChannel),
+            this.getConnection(context.bot, guild, voiceChannel),
             this.getQueueItem(url, context),
         ]);
 
@@ -53,18 +54,39 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
             return;
         }
 
-        return this.player.playOrEnqueue(context, connection, queueItems);
+        return this.player.playOrEnqueue(context, connection, queueItems, voiceChannel.bitrate);
     }
 
-    private async getConnection(guild: Guild, voiceChannel: VoiceChannel): Promise<VoiceConnection> {
-        if (guild.voice?.channel === voiceChannel && guild.voice.connection) {
-            return guild.voice.connection;
+    private async getConnection(bot: Bot, guild: Guild, voiceChannel: VoiceChannel): Promise<VoiceConnection> {
+        const connection = getVoiceConnection(guild.id);
+
+        if (connection && voiceChannel.members.get(bot.client!.user!.id)) {
+            return connection;
         } else {
-            return voiceChannel.join();
+            const newConnection = joinVoiceChannel({
+                adapterCreator: voiceChannel.guild.voiceAdapterCreator,
+                channelId: voiceChannel.id,
+                guildId: voiceChannel.guild.id,
+            });
+
+            newConnection.on(VoiceConnectionStatus.Disconnected, async (oldState, newState) => {
+                try {
+                    await Promise.race([
+                        entersState(newConnection, VoiceConnectionStatus.Signalling, 5_000),
+                        entersState(newConnection, VoiceConnectionStatus.Connecting, 5_000),
+                    ]);
+                    // Seems to be reconnecting to a new channel - ignore disconnect
+                } catch (error) {
+                    // Seems to be a real disconnect which SHOULDN'T be recovered from
+                    newConnection.destroy();
+                }
+            });
+
+            return newConnection;
         }
     }
 
-    private async getQueueItem(query: string, context: ICommandContext): Promise<PlayerQueueItem[]|void> {
+    private async getQueueItem(query: string, context: ICommandContext): Promise<PlayerQueueItem[] | void> {
         let url: string;
         let respondPromise: Promise<void> | undefined;
 
@@ -109,7 +131,7 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
     }
 
     private async getQueueItemFromUrl(url: string): Promise<PlayerQueueItem> {
-        const ytdlResult = ytdl(url, { filter: "audioonly" });
+        const ytdlResult = ytdl(url, { filter: "audioonly", highWaterMark: 32 * 1024 * 1024 });
         const itemDetails: IQueueItemDetails = await new Promise((resolve, reject) => {
             ytdlResult!.once("info", (video: ytdl.videoInfo, format: ytdl.videoFormat) => {
                 resolve({

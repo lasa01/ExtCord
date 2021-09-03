@@ -1,3 +1,4 @@
+import { getVoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import { Command, IExecutionContext } from "../../..";
 
 import { musicNotPlayingPhrase, musicNoVoicePhrase, musicPausePhrase, musicWrongVoicePhrase } from "../phrases";
@@ -21,14 +22,19 @@ export class PauseCommand extends Command<[]> {
         if (!voiceChannel) {
             return context.respond(musicNoVoicePhrase, {});
         }
+
         const guild = context.message.guild.guild;
-        if (!guild.voice?.connection || !guild.voice.connection.dispatcher) {
+        const connection = getVoiceConnection(guild.id);
+
+        if (connection?.state.status !== VoiceConnectionStatus.Ready || !connection.state.subscription) {
             return context.respond(musicNotPlayingPhrase, {});
         }
-        if (guild.voice.channel !== voiceChannel) {
+
+        if (!voiceChannel.members.get(context.bot.client!.user!.id)) {
             return context.respond(musicWrongVoicePhrase, {});
         }
-        guild.voice.connection.dispatcher.pause();
+
+        connection.state.subscription.player.pause();
         return context.respond(musicPausePhrase, {});
     }
 }

@@ -1,4 +1,4 @@
-import { Message, Permissions as DiscordPermissions } from "discord.js";
+import { GuildChannel, Message, Permissions as DiscordPermissions } from "discord.js";
 import { EventEmitter } from "events";
 import { readdir } from "fs-extra";
 import { resolve } from "path";
@@ -95,7 +95,7 @@ export class Commands extends EventEmitter {
         }, this.bot.database, "!");
         this.configEntry = new ConfigEntryGroup({
             name: "commands",
-        }, [ this.prefixConfigEntry ]);
+        }, [this.prefixConfigEntry]);
     }
 
     /**
@@ -104,7 +104,14 @@ export class Commands extends EventEmitter {
      */
     public async message(discordMessage: Message) {
         const startTime = process.hrtime();
-        if (!discordMessage.guild || !discordMessage.member || discordMessage.author.bot) { return; } // For now
+        if (
+            !discordMessage.guild
+            || !discordMessage.member
+            || !(discordMessage.channel instanceof GuildChannel)
+            || discordMessage.author.bot
+        ) {
+            return; // For now
+        }
         // TODO this somewhere else, will be needed elsewhere
         this.ensureRepo();
         const member = await this.repos.member.getEntity(discordMessage.member);
@@ -143,7 +150,7 @@ export class Commands extends EventEmitter {
         }
         const language = await this.bot.languages.getLanguage(message.guild);
         const botPermissions = discordMessage.guild.me!.permissionsIn(discordMessage.channel);
-        if (!botPermissions.has(DiscordPermissions.FLAGS.SEND_MESSAGES!)) {
+        if (!botPermissions.has(DiscordPermissions.FLAGS.SEND_MESSAGES)) {
             // Send private message telling the bot can't send messages
             return discordMessage.author.send(CommandPhrases.botNoSendPermission.get(language));
         }
@@ -158,26 +165,25 @@ export class Commands extends EventEmitter {
         const useMentions = await this.bot.languages.useMentionsConfigEntry.guildGet(message.guild);
         // TODO maybe don't need a new function every time
         const respond: LinkedResponse = async (phrase, stuff, fieldStuff) => {
-                let content: string;
-                let options;
-                if (useEmbeds) {
-                    content = "";
-                    options = {
-                        embed: phrase instanceof DynamicFieldMessagePhrase ?
-                            phrase.formatEmbed(language, stuff, fieldStuff) :
-                            phrase.formatEmbed(language, stuff),
-                    };
-                } else {
-                    content = phrase instanceof DynamicFieldMessagePhrase ?
-                        phrase.format(language, stuff, fieldStuff) : phrase.format(language, stuff);
-                    options = {};
-                }
-                if (useMentions) {
-                    await message.message.reply(content, options);
-                } else {
-                    await message.message.channel.send(content, options);
-                }
-            };
+            let options;
+            if (useEmbeds) {
+                options = {
+                    embeds: [phrase instanceof DynamicFieldMessagePhrase ?
+                        phrase.formatEmbed(language, stuff, fieldStuff) :
+                        phrase.formatEmbed(language, stuff)],
+                };
+            } else {
+                options = {
+                    content: phrase instanceof DynamicFieldMessagePhrase ?
+                        phrase.format(language, stuff, fieldStuff) : phrase.format(language, stuff),
+                };
+            }
+            if (useMentions) {
+                await message.message.reply(options);
+            } else {
+                await message.message.channel.send(options);
+            }
+        };
         // TODO Optimise promise concurrency
         const commandInstance = await this.getCommandInstance(message.guild, language, command);
         if (!commandInstance) {
@@ -208,7 +214,7 @@ export class Commands extends EventEmitter {
      * @param language The language to use.
      * @param command The name of the command/alias to resolve.
      */
-        public async getCommandInstance(guild: IExtendedGuild, language: string, command: string) {
+    public async getCommandInstance(guild: IExtendedGuild, language: string, command: string) {
         return (await this.getGuildCommandsMap(guild, language)).get(command);
     }
 
@@ -447,7 +453,7 @@ export class Commands extends EventEmitter {
         }, Object.values(CommandPhrases));
         this.phraseGroup = new PhraseGroup({
             name: "commands",
-        }, [ this.argumentsGroup, this.commandPhraseGroup, this.phrasesGroup ]);
+        }, [this.argumentsGroup, this.commandPhraseGroup, this.phrasesGroup]);
         this.bot.languages.registerPhrase(this.phraseGroup);
     }
 
@@ -468,7 +474,7 @@ export class Commands extends EventEmitter {
             // Skip files that aren't javascript
             if (!path.endsWith(".js")) { continue; }
             let required = require(path);
-            if (typeof(required) === "function") {
+            if (typeof (required) === "function") {
                 required = required(this.bot);
             }
             for (const value of Object.values(required)) {
@@ -535,8 +541,8 @@ export type LinkedResponse =
         T extends Record<string, string>,
         U extends Record<string, string>,
         V extends Record<string, string>
-    >
-    (
+        >
+        (
         phrase: MessagePhrase<T> | DynamicFieldMessagePhrase<T, U>,
         stuff: TemplateStuff<T, V>, fieldStuff?: TemplateStuffs<U, V>,
     ) => Promise<void>;

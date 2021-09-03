@@ -1,3 +1,4 @@
+import { AudioPlayerStatus, getVoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import { Command, IExecutionContext, IntArgument } from "../../..";
 
 import { musicNotPlayingPhrase, musicNoVoicePhrase, musicVolumePhrase, musicWrongVoicePhrase } from "../phrases";
@@ -32,14 +33,23 @@ export class VolumeCommand extends Command<[IntArgument<false>]> {
         if (!voiceChannel) {
             return context.respond(musicNoVoicePhrase, {});
         }
+
         const guild = context.message.guild.guild;
-        if (!guild.voice?.connection || !guild.voice.connection.dispatcher) {
+        const connection = getVoiceConnection(guild.id);
+
+        if (
+            connection?.state.status !== VoiceConnectionStatus.Ready
+            || !connection.state.subscription
+            || connection.state.subscription.player.state.status !== AudioPlayerStatus.Playing
+        ) {
             return context.respond(musicNotPlayingPhrase, {});
         }
-        if (guild.voice.channel !== voiceChannel) {
+
+        if (!voiceChannel.members.get(context.bot.client!.user!.id)) {
             return context.respond(musicWrongVoicePhrase, {});
         }
-        guild.voice.connection.dispatcher.setVolume(context.arguments[0] / 100);
+
+        connection.state.subscription.player.state.resource.volume?.setVolume(context.arguments[0] / 100);
         return context.respond(musicVolumePhrase, {
             volume: context.arguments[0].toString(),
         });

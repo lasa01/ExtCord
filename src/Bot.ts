@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import { createInterface, ReadLine } from "readline";
 
-import { Client } from "discord.js";
+import { Client, Intents } from "discord.js";
 import { transports } from "winston";
 
 import { Commands } from "./commands/Commands";
@@ -57,6 +57,8 @@ export class Bot extends EventEmitter {
     public languages: Languages;
     /** The module handler of the bot. */
     public modules: Modules;
+    /** The Discord gateway intents the bot needs to function */
+    public intents: Intents;
     private configEntries: {
         loggerGroup?: ConfigEntryGroup, clientGroup?: ConfigEntryGroup,
         logger: {
@@ -65,7 +67,6 @@ export class Bot extends EventEmitter {
         },
         client: {
             messageCacheLifetime: NumberConfigEntry,
-            messageCacheMaxSize: NumberConfigEntry,
             messageCacheSweepInterval: NumberConfigEntry,
             token: StringConfigEntry,
         },
@@ -84,10 +85,6 @@ export class Bot extends EventEmitter {
                     description: "How long a message should stay in the cache (in seconds, 0 for forever)",
                     name: "messageCacheLifetime",
                 }, 0),
-                messageCacheMaxSize: new NumberConfigEntry({
-                    description: "Maximum number of messages to cache per channel (-1 for unlimited)",
-                    name: "messageCacheMaxSize",
-                }, 200),
                 messageCacheSweepInterval: new NumberConfigEntry({
                     description: "How frequently to remove messages from the cache (in seconds, 0 for never)",
                     name: "messageCacheSweepInterval",
@@ -130,6 +127,11 @@ export class Bot extends EventEmitter {
         this.commands.registerDatabase();
         this.modules = new Modules(this);
         this.modules.registerConfig();
+
+        this.intents = new Intents();
+        this.intents.add(Intents.FLAGS.GUILDS);
+        this.intents.add(Intents.FLAGS.GUILD_MESSAGES);
+        this.intents.add(Intents.FLAGS.DIRECT_MESSAGES);
     }
 
     /** Starts the bot. */
@@ -149,7 +151,7 @@ export class Bot extends EventEmitter {
                         this.configEntries.logger.loglevel.get() : Logger.get().level,
                     transports: [
                         new transports.Console(),
-                        new transports.File( { filename: this.configEntries.logger.file.get() } ),
+                        new transports.File({ filename: this.configEntries.logger.file.get() }),
                     ],
                 });
                 await this.commands.registerCommands();
@@ -165,16 +167,17 @@ export class Bot extends EventEmitter {
                 Logger.debug(this.languages.getStatus());
             } else if (stage === 1) {
                 await this.database.connect();
+
                 this.client = new Client({
+                    intents: this.intents,
                     messageCacheLifetime: this.configEntries.client.messageCacheLifetime.get(),
-                    messageCacheMaxSize: this.configEntries.client.messageCacheMaxSize.get(),
                     messageSweepInterval: this.configEntries.client.messageCacheSweepInterval.get(),
                 });
                 Logger.info("Connecting to Discord");
                 await this.client.login(this.configEntries.client.token.get());
                 Logger.info(`Logged in as "${this.client.user!.username}" (id ${this.client.user!.id})`);
                 this.emit("ready");
-                this.client.on("message", async (message) => {
+                this.client.on("messageCreate", async (message) => {
                     await this.commands.message(message);
                 });
             }

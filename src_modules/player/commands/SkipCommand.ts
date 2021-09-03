@@ -1,5 +1,6 @@
 import { Command, IExecutionContext } from "../../..";
 
+import { getVoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import PlayerModule from "..";
 import { musicNotPlayingPhrase, musicNoVoicePhrase, musicSkipPhrase, musicWrongVoicePhrase } from "../phrases";
 
@@ -28,16 +29,19 @@ export class SkipCommand extends Command<[]> {
         }
 
         const guild = context.message.guild.guild;
+        const connection = getVoiceConnection(guild.id);
         const playing = this.player.getQueue(context.message.guild).playing;
-        if (!guild.voice?.connection || !guild.voice.connection.dispatcher || !playing) {
+
+        if (connection?.state.status !== VoiceConnectionStatus.Ready || !connection.state.subscription || !playing) {
             return context.respond(musicNotPlayingPhrase, {});
         }
-        if (guild.voice.channel !== voiceChannel) {
+
+        if (!voiceChannel.members.get(context.bot.client!.user!.id)) {
             return context.respond(musicWrongVoicePhrase, {});
         }
 
         const respondPromise = context.respond(musicSkipPhrase, playing.details);
-        guild.voice.connection.dispatcher.end();
+        connection.state.subscription.player.stop();
         await respondPromise;
     }
 }

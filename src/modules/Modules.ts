@@ -132,7 +132,7 @@ export class Modules extends EventEmitter {
                     continue;
                 }
                 await this.loadModule(loaded);
-            } catch (error) {
+            } catch (error: any) {
                 Logger.error(`Error loading module ${path}: ${error.stack ?? error}`);
             }
         }
@@ -185,7 +185,7 @@ export class Modules extends EventEmitter {
                 rej(err);
             });
             child.once("close", (code, signal) => {
-                res(code);
+                res(code || 0);
             });
         });
         if (exitCode !== 0) {
@@ -198,7 +198,7 @@ export class Modules extends EventEmitter {
         this.configEntry = new ConfigEntryGroup({
             description: "Modules configuration",
             name: "modules",
-        }, [ this.moduleDirConfigEntry ]);
+        }, [this.moduleDirConfigEntry]);
         this.bot.config.registerEntry(this.configEntry);
     }
 }
