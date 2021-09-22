@@ -1,3 +1,4 @@
+import { CommandInteractionOption } from "discord.js";
 import { PermissionPrivilege } from "../../permissions/PermissionPrivilege";
 import { ILinkedErrorResponse } from "../Command";
 import { CommandPhrases } from "../CommandPhrases";
@@ -20,8 +21,8 @@ export class PrivilegeArgument<T extends boolean> extends Argument<PermissionPri
     }
 
     public async check(data: string, context: ICommandContext, error: ILinkedErrorResponse):
-        Promise<PermissionPrivilege|undefined> {
-        const p = await context.bot.permissions.getPrivilege(context.message.guild.entity, data);
+        Promise<PermissionPrivilege | undefined> {
+        const p = await context.bot.permissions.getPrivilege(context.guild.entity, data);
         if (!p) {
             return error(CommandPhrases.invalidPrivilegeArgument);
         }
@@ -29,6 +30,30 @@ export class PrivilegeArgument<T extends boolean> extends Argument<PermissionPri
     }
 
     public parse(data: string, context: ICommandContext, passed: PermissionPrivilege): PermissionPrivilege {
+        return passed;
+    }
+
+    public async checkOption(
+        data: CommandInteractionOption,
+        context: ICommandContext,
+        error: ILinkedErrorResponse,
+    ): Promise<PermissionPrivilege | undefined> {
+        if (typeof data.value !== "string") {
+            return error(CommandPhrases.invalidPermissionArgument);
+        }
+
+        const p = await context.bot.permissions.getPrivilege(context.guild.entity, data.value);
+        if (!p) {
+            return error(CommandPhrases.invalidPrivilegeArgument);
+        }
+        return p;
+    }
+
+    public parseOption(
+        data: CommandInteractionOption,
+        context: ICommandContext,
+        passed: PermissionPrivilege,
+    ): PermissionPrivilege {
         return passed;
     }
 }

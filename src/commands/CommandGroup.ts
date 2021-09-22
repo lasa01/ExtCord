@@ -3,10 +3,9 @@ import { DEFAULT_LANGUAGE } from "../language/Languages";
 import { Phrase } from "../language/phrase/Phrase";
 import { PhraseGroup } from "../language/phrase/PhraseGroup";
 import { PermissionGroup } from "../permissions/PermissionGroup";
-import { PermissionPrivilege } from "../permissions/PermissionPrivilege";
 import { IExtendedGuild } from "../util/Types";
 import { BuiltInArguments } from "./arguments/BuiltinArguments";
-import { Command, ICommandInfo, IExecutionContext } from "./Command";
+import { AnyCommand, Command, ICommandInfo, IExecutionContext } from "./Command";
 import { CommandPhrases } from "./CommandPhrases";
 import { ICommandContext } from "./Commands";
 
@@ -14,15 +13,14 @@ import { ICommandContext } from "./Commands";
  * A parent command that does not do anything by itself but has subcommands.
  * @category Command
  */
-export class CommandGroup
-    extends Command<[typeof BuiltInArguments.subcommand, typeof BuiltInArguments.subcommandArguments]> {
+export class CommandGroup extends Command<[typeof BuiltInArguments.subcommand]> {
     /** The subcommands of the command group. */
-    public children: Map<string, Command<any>>;
+    public children: Map<string, AnyCommand>;
     /** The default subcommand that is called when no subcommand is specified, if any. */
     public defaultSubcommand?: string;
     protected subPhraseGroup: PhraseGroup;
-    private languageCommandsMap: Map<string, Map<string, Command<any>>>;
-    private guildCommandsMap: Map<string, Map<string, Command<any>>>;
+    private languageCommandsMap: Map<string, Map<string, AnyCommand>>;
+    private guildCommandsMap: Map<string, Map<string, AnyCommand>>;
 
     /**
      * Creates a new command group.
@@ -30,8 +28,8 @@ export class CommandGroup
      * @param defaultSubcommand Defines the name of the default subcommand to call when no subcommand is specified.
      * @param children Defines subcommands for the command group.
      */
-    constructor(info: ICommandInfo, defaultSubcommand?: string, children?: ReadonlyArray<Command<any>>) {
-        super(info, [ BuiltInArguments.subcommand, BuiltInArguments.subcommandArguments ],
+    constructor(info: ICommandInfo, defaultSubcommand?: string, children?: ReadonlyArray<AnyCommand>) {
+        super(info, [BuiltInArguments.subcommand],
             new PermissionGroup({
                 description: `Gives the permission for the command group ${info.name}`,
                 name: typeof info.name === "string" ? info.name : info.name[DEFAULT_LANGUAGE],
@@ -83,7 +81,7 @@ export class CommandGroup
      * Gets a map of localized global aliases for the given language.
      * @param language The language to use.
      */
-    public getGlobalAliases(language: string): { [key: string]: Command<any> } {
+    public getGlobalAliases(language: string): { [key: string]: AnyCommand } {
         let aliases = super.getGlobalAliases(language);
         for (const child of this.subcommands()) {
             aliases = Object.assign(aliases, child.getGlobalAliases(language));
@@ -95,7 +93,7 @@ export class CommandGroup
      * Associate the specified subcommands with the command group.
      * @param subcommands Subcommands to add.
      */
-    public addSubcommands(...subcommands: Array<Command<any>>) {
+    public addSubcommands(...subcommands: AnyCommand[]) {
         for (const subcommand of subcommands) {
             if (this.children.has(subcommand.name)) {
                 throw new Error(`The subcommand ${subcommand.name} is already registered`);
@@ -111,7 +109,7 @@ export class CommandGroup
      * Remove the specified associated subcommands from the group.
      * @param subcommands Subcommands to remove.
      */
-    public removeSubcommands(...subcommands: Array<Command<any>>) {
+    public removeSubcommands(...subcommands: AnyCommand[]) {
         for (const subcommand of subcommands) {
             if (this.children.has(subcommand.name)) {
                 this.children.delete(subcommand.name);
@@ -143,20 +141,21 @@ export class CommandGroup
      * This either invokes the specific subcommand or responds with an error if the subcommand isn't found.
      * @param context Context of the execution.
      */
-    public async execute(
-        context: IExecutionContext<[typeof BuiltInArguments.subcommand, typeof BuiltInArguments.subcommandArguments]>) {
-        const subcommand = context.arguments[0] ?? this.defaultSubcommand;
+    public async execute(context: IExecutionContext<[typeof BuiltInArguments.subcommand]>) {
+        const subcommandData = context.arguments[0];
+        const subcommand = subcommandData?.subcommand ?? this.defaultSubcommand;
         if (subcommand) {
-            const subcommandInstance = this.getCommandInstance(context.message.guild, context.language, subcommand);
+            const subcommandInstance = this.getCommandInstance(context.guild, context.language, subcommand);
+
             if (!subcommandInstance) {
                 await context.respond(CommandPhrases.invalidSubcommand, { subcommand });
                 return;
             }
+
             await subcommandInstance.command({
                 ...context,
                 command: context.command + " " + subcommand,
-                passed: context.arguments[1] ?? "",
-            });
+            }, subcommandData?.args ?? "");
         } else {
             await context.respond(CommandPhrases.commandGroupHelp,
                 {
@@ -203,7 +202,7 @@ export class CommandGroup
      * @param language The language to use.
      */
     public createLanguageCommmandsMap(language: string) {
-        const map: Map<string, Command<any>> = new Map();
+        const map: Map<string, AnyCommand> = new Map();
         for (const [, command] of this.children) {
             map.set(command.localizedName.get(language), command);
             for (const [alias, aliasCommand] of Object.entries(command.getAliases(language))) {
@@ -243,14 +242,14 @@ export class CommandGroup
     /**
      * Iterates over the direct subcommands of this command group.
      */
-    public* subcommands(): Generator<Command<any>, void, undefined> {
+    public * subcommands(): Generator<AnyCommand, void, undefined> {
         yield* this.children.values();
     }
 
     /**
      * Recursively iterates over all the subcommands of this command group and subcommands.
      */
-    public* recurseSubcommands(): Generator<Command<any>, void, undefined> {
+    public * recurseSubcommands(): Generator<AnyCommand, void, undefined> {
         for (const child of this.subcommands()) {
             yield child;
             if (child instanceof CommandGroup) {

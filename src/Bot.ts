@@ -177,8 +177,13 @@ export class Bot extends EventEmitter {
                 await this.client.login(this.configEntries.client.token.get());
                 Logger.info(`Logged in as "${this.client.user!.username}" (id ${this.client.user!.id})`);
                 this.emit("ready");
+
                 this.client.on("messageCreate", async (message) => {
                     await this.commands.message(message);
+                });
+
+                this.client.on("interactionCreate", async (interaction) => {
+                    await this.commands.interaction(interaction);
                 });
             }
         }

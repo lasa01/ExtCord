@@ -23,14 +23,14 @@ export class QueueCommand extends Command<[]> {
     }
 
     public async execute(context: IExecutionContext<[]>) {
-        const voiceChannel = context.message.member.member.voice.channel;
+        const voiceChannel = context.member.member.voice.channel;
         if (!voiceChannel) {
             return context.respond(musicNoVoicePhrase, {});
         }
 
-        const guild = context.message.guild.guild;
+        const guild = context.guild.guild;
         const connection = getVoiceConnection(guild.id);
-        const queue = this.player.getQueue(context.message.guild);
+        const queue = this.player.getQueue(context.guild);
 
         if (
             connection?.state.status !== VoiceConnectionStatus.Ready

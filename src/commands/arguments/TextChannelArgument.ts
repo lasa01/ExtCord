@@ -1,4 +1,4 @@
-import { TextChannel } from "discord.js";
+import { CommandInteractionOption, TextChannel } from "discord.js";
 
 import { ILinkedErrorResponse } from "../Command";
 import { CommandPhrases } from "../CommandPhrases";
@@ -23,12 +23,12 @@ export class TextChannelArgument<T extends boolean> extends Argument<TextChannel
     }
 
     public async check(data: string, context: ICommandContext, error: ILinkedErrorResponse):
-        Promise<TextChannel|undefined> {
+        Promise<TextChannel | undefined> {
         const match = MENTION_REGEX.exec(data);
         if (!match) {
             return error(CommandPhrases.invalidChannelArgument);
         }
-        const channel = context.message.guild.guild.channels.cache.get(match[1]);
+        const channel = context.guild.guild.channels.cache.get(match[1]);
         if (!channel) {
             return error(CommandPhrases.invalidChannelMentionArgument);
         }
@@ -39,6 +39,21 @@ export class TextChannelArgument<T extends boolean> extends Argument<TextChannel
     }
 
     public parse(data: string, context: ICommandContext, passed: TextChannel): TextChannel {
+        return passed;
+    }
+
+    public async checkOption(
+        data: CommandInteractionOption,
+        context: ICommandContext,
+        error: ILinkedErrorResponse,
+    ): Promise<TextChannel | undefined> {
+        if (!(data.channel instanceof TextChannel)) {
+            return error(CommandPhrases.invalidTextChannelArgument);
+        }
+        return data.channel;
+    }
+
+    public parseOption(data: CommandInteractionOption, context: ICommandContext, passed: TextChannel): TextChannel {
         return passed;
     }
 }

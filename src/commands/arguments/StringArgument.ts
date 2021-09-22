@@ -1,3 +1,4 @@
+import { CommandInteractionOption } from "discord.js";
 import { ILinkedErrorResponse } from "../Command";
 import { ICommandContext } from "../Commands";
 import { Argument, IArgumentInfo } from "./Argument";
@@ -9,7 +10,7 @@ import { Argument, IArgumentInfo } from "./Argument";
  */
 export class StringArgument<T extends boolean> extends Argument<string, T, true> {
     private customCheck: (data: string, context: ICommandContext, error: ILinkedErrorResponse)
-        => Promise<true|undefined>;
+        => Promise<true | undefined>;
 
     /**
      * Creates a new string argument.
@@ -18,18 +19,33 @@ export class StringArgument<T extends boolean> extends Argument<string, T, true>
      * @param allowSpaces Allows the argument to contain spaces.
      * @param check A custom function for checking the argument validity.
      */
-    constructor(info: IArgumentInfo, optional: T, allowSpaces = false,
-                check?: (data: string, context: ICommandContext, error: ILinkedErrorResponse)
-                    => Promise<true|undefined>) {
+    constructor(
+        info: IArgumentInfo,
+        optional: T,
+        allowSpaces = false,
+        check?: (data: string, context: ICommandContext, error: ILinkedErrorResponse) => Promise<true | undefined>,
+    ) {
         super(info, optional, allowSpaces);
         this.customCheck = check ?? (async () => true);
     }
 
-    public async check(data: string, context: ICommandContext, error: ILinkedErrorResponse): Promise<true|undefined> {
+    public async check(data: string, context: ICommandContext, error: ILinkedErrorResponse): Promise<true | undefined> {
         return await this.customCheck(data, context, error) || undefined;
     }
 
     public parse(data: string): string {
         return data;
+    }
+
+    public async checkOption(
+        data: CommandInteractionOption,
+        context: ICommandContext,
+        error: ILinkedErrorResponse,
+    ): Promise<true | undefined> {
+        return await this.customCheck(data.value?.toString() ?? "", context, error) || undefined;
+    }
+
+    public parseOption(data: CommandInteractionOption, context: ICommandContext, passed: true): string {
+        return data.value?.toString() ?? "";
     }
 }

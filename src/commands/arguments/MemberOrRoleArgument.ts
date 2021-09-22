@@ -1,3 +1,5 @@
+import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from "@discordjs/builders";
+import { CommandInteractionOption, GuildMember, Role } from "discord.js";
 import { Database } from "../../database/Database";
 import { MemberRepository } from "../../database/repo/MemberRepository";
 import { RoleRepository } from "../../database/repo/RoleRepository";
@@ -16,7 +18,7 @@ const ROLE_MENTION_REGEX = /^<@&(\d+)>$/;
  * @category Command Argument
  */
 export class MemberOrRoleArgument<T extends boolean>
-        extends Argument<Promise<IExtendedMember | IExtendedRole>, T, [boolean, string]> {
+    extends Argument<Promise<IExtendedMember | IExtendedRole>, T, [boolean, string]> {
     public memberRepo?: MemberRepository;
     public roleRepo?: RoleRepository;
 
@@ -31,9 +33,9 @@ export class MemberOrRoleArgument<T extends boolean>
     }
 
     public async check(data: string, context: ICommandContext, error: ILinkedErrorResponse):
-            Promise<[boolean, string]|undefined> {
+        Promise<[boolean, string] | undefined> {
         if (data === "@everyone") {
-            return [true, context.message.guild.guild.id];
+            return [true, context.guild.guild.id];
         }
         let match = MEMBER_MENTION_REGEX.exec(data);
         if (!match) {
@@ -42,13 +44,13 @@ export class MemberOrRoleArgument<T extends boolean>
                 return error(CommandPhrases.invalidMemberOrRoleArgument);
             }
             const id = match[1];
-            if (!await context.message.guild.guild.roles.fetch(id)) {
+            if (!await context.guild.guild.roles.fetch(id)) {
                 return error(CommandPhrases.invalidRoleMentionArgument);
             }
             return [true, id];
         } else {
             const id = match[1];
-            if (!await context.message.guild.guild.members.fetch(id)) {
+            if (!await context.guild.guild.members.fetch(id)) {
                 return error(CommandPhrases.invalidMemberMentionArgument);
             }
             return [false, id];
@@ -56,22 +58,52 @@ export class MemberOrRoleArgument<T extends boolean>
     }
 
     public async parse(data: string, context: ICommandContext, passed: [boolean, string]):
-            Promise<IExtendedMember | IExtendedRole> {
+        Promise<IExtendedMember | IExtendedRole> {
         this.ensureRepo(context.bot.database);
         const [isRole, id] = passed;
         if (isRole) {
-            const role = context.message.guild.guild.roles.cache.get(id)!;
+            const role = context.guild.guild.roles.cache.get(id)!;
             return {
                 entity: await this.roleRepo.getEntity(role),
                 role,
             };
         } else {
-            const member = context.message.guild.guild.members.cache.get(id)!;
+            const member = context.guild.guild.members.cache.get(id)!;
             return {
                 entity: await this.memberRepo.getEntity(member),
                 member,
             };
         }
+    }
+
+    public async checkOption(
+        data: CommandInteractionOption,
+        context: ICommandContext,
+        error: ILinkedErrorResponse,
+    ): Promise<[boolean, string] | undefined> {
+        if (data.member instanceof GuildMember) {
+            return [false, data.member.id];
+        }
+        if (data.role instanceof Role) {
+            return [false, data.role.id];
+        }
+        return error(CommandPhrases.invalidMemberOrRoleArgument);
+    }
+
+    public async parseOption(
+        data: CommandInteractionOption,
+        context: ICommandContext,
+        passed: [boolean, string],
+    ): Promise<IExtendedMember | IExtendedRole> {
+        return this.parse("", context, passed);
+    }
+
+    public addIntoSlashCommand(builder: SlashCommandBuilder | SlashCommandSubcommandBuilder, language: string) {
+        builder.addMentionableOption((option) =>
+            option.setName(this.localizedName.get(language))
+                .setDescription(this.localizedDescription.get(language))
+                .setRequired(!this.optional),
+        );
     }
 
     private ensureRepo(database: Database): asserts this is this & {

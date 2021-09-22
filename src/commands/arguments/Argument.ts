@@ -1,7 +1,9 @@
+import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from "@discordjs/builders";
+import { CommandInteractionOption } from "discord.js";
 import { DEFAULT_LANGUAGE } from "../../language/Languages";
 import { PhraseGroup } from "../../language/phrase/PhraseGroup";
 import { SimplePhrase } from "../../language/phrase/SimplePhrase";
-import { Command, ILinkedErrorResponse } from "../Command";
+import { AnyCommand, Command, ILinkedErrorResponse } from "../Command";
 import { CommandPhrases } from "../CommandPhrases";
 import { ICommandContext } from "../Commands";
 
@@ -46,7 +48,7 @@ export abstract class Argument<T, U extends boolean, V> {
         }, info.description);
         this.phraseGroup = new PhraseGroup({
             name: this.name,
-        }, [ this.localizedDescription, this.localizedName ]);
+        }, [this.localizedDescription, this.localizedName]);
         this.allowCombining = allowCombining;
         this.optional = optional;
         this.registered = false;
@@ -57,7 +59,7 @@ export abstract class Argument<T, U extends boolean, V> {
      * Registers the argument to the given command.
      * @param command The command to register the argument to.
      */
-    public registerSelf(command: Command<any>) {
+    public registerSelf(command: AnyCommand) {
         if (!this.registered) {
             command.addArgPhrases(this.phraseGroup);
             this.registered = true;
@@ -94,6 +96,14 @@ export abstract class Argument<T, U extends boolean, V> {
         return usage;
     }
 
+    public addIntoSlashCommand(builder: SlashCommandBuilder | SlashCommandSubcommandBuilder, language: string) {
+        builder.addStringOption((option) =>
+            option.setName(this.localizedName.get(language))
+                .setDescription(this.localizedDescription.get(language))
+                .setRequired(!this.optional),
+        );
+    }
+
     /**
      * Checks the argument for errors, and passes the returned data to [[parse]].
      * @param data The raw passed argument string, trimmed of whitespace.
@@ -101,7 +111,7 @@ export abstract class Argument<T, U extends boolean, V> {
      * @param error A function to call and return when the argument is invalid.
      */
     public abstract check(data: string, context: ICommandContext, error: ILinkedErrorResponse):
-        Promise<V|undefined>;
+        Promise<V | undefined>;
 
     /**
      * Parses the argument and returns the result. Can use passed data from [[check]].
@@ -110,6 +120,23 @@ export abstract class Argument<T, U extends boolean, V> {
      * @param passed The passed data from [[check]].
      */
     public abstract parse(data: string, context: ICommandContext, passed: V): T;
+
+    /**
+     * Checks the argument for errors, and passes the returned data to [[parse]].
+     * @param data The option.
+     * @param context The context associated with the command being called.
+     * @param error A function to call and return when the argument is invalid.
+     */
+    public abstract checkOption(data: CommandInteractionOption, context: ICommandContext, error: ILinkedErrorResponse):
+        Promise<V | undefined>;
+
+    /**
+     * Parses the argument and returns the result. Can use passed data from [[check]].
+     * @param data The option.
+     * @param context The context associated with the command being called.
+     * @param passed The passed data from [[check]].
+     */
+    public abstract parseOption(data: CommandInteractionOption, context: ICommandContext, passed: V): T;
 }
 
 /**

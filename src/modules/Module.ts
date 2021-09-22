@@ -1,5 +1,5 @@
 import { Bot } from "../Bot";
-import { Command } from "../commands/Command";
+import { AnyCommand, Command } from "../commands/Command";
 import { ConfigEntry } from "../config/entry/ConfigEntry";
 import { ConfigEntryGroup } from "../config/entry/ConfigEntryGroup";
 import { Phrase } from "../language/phrase/Phrase";
@@ -18,7 +18,7 @@ export abstract class Module {
     public name: string;
     protected bot: Bot;
     protected configEntries: ConfigEntry[];
-    protected commands: Array<Command<any>>;
+    protected commands: AnyCommand[];
     protected permissions: Permission[];
     protected phrases: Phrase[];
     private configEntryGroup: ConfigEntryGroup;
@@ -101,13 +101,13 @@ export abstract class Module {
         this.configEntries.splice(this.configEntries.indexOf(entry), 1);
     }
 
-    protected registerCommand(command: Command<any>) {
+    protected registerCommand(command: AnyCommand) {
         this.bot.commands.registerCommand(command);
         this.commandsPhraseGroup.addPhrases(command.phraseGroup);
         this.commands.push(command);
     }
 
-    protected unregisterCommand(command: Command<any>) {
+    protected unregisterCommand(command: AnyCommand) {
         this.bot.commands.unregisterCommand(command);
         this.commandsPhraseGroup.removePhrases(command.phraseGroup);
         this.commands.splice(this.commands.indexOf(command), 1);

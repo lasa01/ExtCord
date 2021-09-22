@@ -1,4 +1,5 @@
-import { Command, ILinkedErrorResponse } from "../Command";
+import { CommandInteractionOption } from "discord.js";
+import { AnyCommand, Command, ILinkedErrorResponse } from "../Command";
 import { CommandPhrases } from "../CommandPhrases";
 import { ICommandContext } from "../Commands";
 import { Argument, IArgumentInfo } from "./Argument";
@@ -8,7 +9,7 @@ import { Argument, IArgumentInfo } from "./Argument";
  * @typeparam T A boolean representing whether the argument is optional.
  * @category Command Argument
  */
-export class CommandArgument<T extends boolean> extends Argument<Command<any>, T, Command<any>> {
+export class CommandArgument<T extends boolean> extends Argument<AnyCommand, T, AnyCommand> {
     /**
      * Creates a new command argument.
      * @param info Defines basic argument parameters.
@@ -20,16 +21,42 @@ export class CommandArgument<T extends boolean> extends Argument<Command<any>, T
     }
 
     public async check(data: string, context: ICommandContext, error: ILinkedErrorResponse):
-        Promise<Command<any>|undefined> {
+        Promise<AnyCommand | undefined> {
         const c = this.allowCombining ?
-            await context.bot.commands.getCommandInstanceRecursive(context.message.guild, context.language, data) :
-            await context.bot.commands.getCommandInstance(context.message.guild, context.language, data);
+            await context.bot.commands.getCommandInstanceRecursive(context.guild, context.language, data) :
+            await context.bot.commands.getCommandInstance(context.guild, context.language, data);
+
         if (!c) {
             return error(CommandPhrases.invalidCommandArgument);
         }
+
         return c;
     }
-    public parse(data: string, context: ICommandContext, passed: Command<any>): Command<any> {
+
+    public parse(data: string, context: ICommandContext, passed: AnyCommand): AnyCommand {
+        return passed;
+    }
+
+    public async checkOption(
+        data: CommandInteractionOption,
+        context: ICommandContext,
+        error: ILinkedErrorResponse,
+    ): Promise<AnyCommand | undefined> {
+        if (typeof data.value !== "string") {
+            return error(CommandPhrases.invalidCommandArgument);
+        }
+
+        const c = this.allowCombining ?
+            await context.bot.commands.getCommandInstanceRecursive(context.guild, context.language, data.value) :
+            await context.bot.commands.getCommandInstance(context.guild, context.language, data.value);
+        if (!c) {
+            return error(CommandPhrases.invalidCommandArgument);
+        }
+
+        return c;
+    }
+
+    public parseOption(data: CommandInteractionOption, context: ICommandContext, passed: AnyCommand): AnyCommand {
         return passed;
     }
 }

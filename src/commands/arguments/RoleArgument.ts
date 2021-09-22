@@ -1,3 +1,5 @@
+import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from "@discordjs/builders";
+import { CommandInteractionOption, Role } from "discord.js";
 import { Database } from "../../database/Database";
 import { RoleRepository } from "../../database/repo/RoleRepository";
 import { IExtendedRole } from "../../util/Types";
@@ -25,16 +27,20 @@ export class RoleArgument<T extends boolean> extends Argument<Promise<IExtendedR
         super(info, optional, false);
     }
 
-    public async check(data: string, context: ICommandContext, error: ILinkedErrorResponse): Promise<string|undefined> {
+    public async check(
+        data: string,
+        context: ICommandContext,
+        error: ILinkedErrorResponse,
+    ): Promise<string | undefined> {
         if (data === "@everyone") {
-            return context.message.guild.guild.id;
+            return context.guild.guild.id;
         }
         const match = MENTION_REGEX.exec(data);
         if (!match) {
             return error(CommandPhrases.invalidRoleArgument);
         }
         const id = match[1];
-        if (!await context.message.guild.guild.roles.fetch(id)) {
+        if (!await context.guild.guild.roles.fetch(id)) {
             return error(CommandPhrases.invalidRoleMentionArgument);
         }
         return id;
@@ -42,11 +48,39 @@ export class RoleArgument<T extends boolean> extends Argument<Promise<IExtendedR
 
     public async parse(data: string, context: ICommandContext, passed: string): Promise<IExtendedRole> {
         this.ensureRepo(context.bot.database);
-        const role = context.message.guild.guild.roles.cache.get(passed)!;
+        const role = context.guild.guild.roles.cache.get(passed)!;
         return {
             entity: await this.repo.getEntity(role),
             role,
         };
+    }
+
+    public addIntoSlashCommand(builder: SlashCommandBuilder | SlashCommandSubcommandBuilder, language: string) {
+        builder.addRoleOption((option) =>
+            option.setName(this.localizedName.get(language))
+                .setDescription(this.localizedDescription.get(language))
+                .setRequired(!this.optional),
+        );
+    }
+
+    public async checkOption(
+        data: CommandInteractionOption,
+        context: ICommandContext,
+        error: ILinkedErrorResponse,
+    ): Promise<string | undefined> {
+        if (!(data.role instanceof Role)) {
+            return error(CommandPhrases.invalidRoleArgument);
+        }
+
+        return data.role.id;
+    }
+
+    public parseOption(
+        data: CommandInteractionOption,
+        context: ICommandContext,
+        passed: string,
+    ): Promise<IExtendedRole> {
+        return this.parse("", context, passed);
     }
 
     private ensureRepo(database: Database): asserts this is this & { repo: RoleRepository } {

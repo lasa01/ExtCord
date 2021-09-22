@@ -22,12 +22,12 @@ export class StopCommand extends Command<[]> {
     }
 
     public async execute(context: IExecutionContext<[]>) {
-        const voiceChannel = context.message.member.member.voice.channel;
+        const voiceChannel = context.member.member.voice.channel;
         if (!voiceChannel) {
             return context.respond(musicNoVoicePhrase, {});
         }
 
-        const guild = context.message.guild.guild;
+        const guild = context.guild.guild;
         const connection = getVoiceConnection(guild.id);
 
         if (connection?.state.status !== VoiceConnectionStatus.Ready || !connection.state.subscription) {
@@ -38,7 +38,7 @@ export class StopCommand extends Command<[]> {
             return context.respond(musicWrongVoicePhrase, {});
         }
 
-        this.player.disconnect(context.message.guild.guild);
+        this.player.disconnect(context.guild.guild);
         return context.respond(musicStopPhrase, {});
     }
 }

@@ -63,7 +63,7 @@ const prefixSetCommand = new SimpleCommand(
     async (context) => {
         const prefix = context.arguments[0];
         if (context.prefix !== prefix) {
-            await context.bot.commands.prefixConfigEntry.guildSet(context.message.guild, prefix);
+            await context.bot.commands.prefixConfigEntry.guildSet(context.guild, prefix);
         }
         await context.respond(prefixSetPhrase, { prefix });
     },

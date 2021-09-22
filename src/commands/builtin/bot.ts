@@ -18,6 +18,20 @@ const botReloadPhrase = new MessagePhrase(
     {},
 );
 
+const botUpdateCommandsPhrase = new MessagePhrase(
+    {
+        description: "Shown when the bot commands are updated into a guild",
+        name: "botUpdateCommands",
+    },
+    "Slash commands updated.",
+    {
+        description: "The guild's slash commands were updated.",
+        timestamp: false,
+        title: "Slash commands updated",
+    },
+    {},
+);
+
 const botSendPhrase = new MessagePhrase(
     {
         description: "Shown when a message is sent as the bot",
@@ -45,6 +59,20 @@ const botReloadCommand = new SimpleCommand(
     async (context) => {
         await context.bot.reload();
         await context.respond(botReloadPhrase, {});
+    },
+);
+
+const botUpdateCommandsCommand = new SimpleCommand(
+    {
+        allowedPrivileges: ["host"],
+        author: "extcord",
+        description: "Update the guild's slash commands",
+        name: "update-commands",
+    },
+    [] as const,
+    async (context) => {
+        await context.bot.commands.deploySlashCommands(context.guild, context.language);
+        await context.respond(botUpdateCommandsPhrase, {});
     },
 );
 
@@ -89,5 +117,5 @@ export const botCommand = new CommandGroup(
     },
 );
 
-botCommand.addSubcommands(botReloadCommand, botSendCommand);
-botCommand.addPhrases(botReloadPhrase, botSendPhrase);
+botCommand.addSubcommands(botReloadCommand, botUpdateCommandsCommand, botSendCommand);
+botCommand.addPhrases(botReloadPhrase, botUpdateCommandsPhrase, botSendPhrase);

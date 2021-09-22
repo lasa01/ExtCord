@@ -1,3 +1,5 @@
+import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from "@discordjs/builders";
+import { CommandInteractionOption } from "discord.js";
 import { Database } from "../../database/Database";
 import { UserRepository } from "../../database/repo/UserRepository";
 import { IExtendedUser } from "../../util/Types";
@@ -25,7 +27,11 @@ export class UserArgument<T extends boolean> extends Argument<Promise<IExtendedU
         super(info, optional, false);
     }
 
-    public async check(data: string, context: ICommandContext, error: ILinkedErrorResponse): Promise<string|undefined> {
+    public async check(
+        data: string,
+        context: ICommandContext,
+        error: ILinkedErrorResponse,
+    ): Promise<string | undefined> {
         const match = MENTION_REGEX.exec(data);
         if (!match) {
             return error(CommandPhrases.invalidUserArgument);
@@ -44,6 +50,34 @@ export class UserArgument<T extends boolean> extends Argument<Promise<IExtendedU
             entity: await this.repo.getEntity(user),
             user,
         };
+    }
+
+    public async checkOption(
+        data: CommandInteractionOption,
+        context: ICommandContext,
+        error: ILinkedErrorResponse,
+    ): Promise<string | undefined> {
+        if (data.user === undefined) {
+            return error(CommandPhrases.invalidUserArgument);
+        }
+
+        return data.user.id;
+    }
+
+    public parseOption(
+        data: CommandInteractionOption,
+        context: ICommandContext,
+        passed: string,
+    ): Promise<IExtendedUser> {
+        return this.parse("", context, passed);
+    }
+
+    public addIntoSlashCommand(builder: SlashCommandBuilder | SlashCommandSubcommandBuilder, language: string) {
+        builder.addUserOption((option) =>
+            option.setName(this.localizedName.get(language))
+                .setDescription(this.localizedDescription.get(language))
+                .setRequired(!this.optional),
+        );
     }
 
     private ensureRepo(database: Database): asserts this is this & { repo: UserRepository } {

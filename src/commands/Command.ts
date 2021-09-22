@@ -1,3 +1,4 @@
+import { CommandInteractionOption, CommandInteractionOptionResolver } from "discord.js";
 import { Bot } from "../Bot";
 import { DEFAULT_LANGUAGE } from "../language/Languages";
 import { ListPhrase } from "../language/phrase/ListPhrase";
@@ -14,7 +15,7 @@ import { Argument } from "./arguments/Argument";
 import { CommandPhrases } from "./CommandPhrases";
 import { ICommandContext } from "./Commands";
 
-import { Permissions as DiscordPermissions } from "discord.js";
+export type AnyCommand = Command<ReadonlyArray<Argument<any, boolean, any>>>;
 
 /**
  * A generic abstract base class for all commands.
@@ -51,7 +52,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
     /** The full name of the command, including possible parents, seperated by spaces. */
     public fullName: string;
     /** The parent command the command is a subcommand of, if any. */
-    public parent?: Command<any>;
+    public parent?: AnyCommand;
     /** The phrase group of the command for registration purposes. */
     public phraseGroup: PhraseGroup;
     /** A computed index of [[arguments]] where combining extra arguments should happen. */
@@ -149,7 +150,7 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
      * Registers the command for the specified parent.
      * @param parent The parent to register the command for.
      */
-    public registerParent(parent: Command<any>) {
+    public registerParent(parent: Command<ReadonlyArray<Argument<any, boolean, any>>>) {
         this.parent = parent;
         // Global aliases are only needed if this is a subcommand
         this.phraseGroup.addPhrases(this.localizedGlobalAliases);
@@ -235,13 +236,16 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
      * This ensures permissions, parses the arguments and executes the command.
      * @param context Context of the command.
      */
-    public async command(context: ICommandContext): Promise<void> {
+    public async command(
+        context: ICommandContext,
+        passed: string | ReadonlyArray<CommandInteractionOption>,
+    ): Promise<void> {
         let startTime = process.hrtime();
         Logger.debug(`(command ${this.name}) Command: ${context.command}`);
+
         const needBit = this.discordPermissions;
         if (needBit !== BigInt(0)) {
             // Get bot's missing permissions
-            // tslint:disable-next-line:no-bitwise
             const missingPermissions = context.botPermissions.missing(needBit);
             if (missingPermissions.length !== 0) {
                 return context.respond(CommandPhrases.botNoPermission, {
@@ -249,87 +253,32 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
                 });
             }
         }
-        if (!await this.canExecute(context.message.member)) {
+
+        if (!await this.canExecute(context.member)) {
             await context.respond(CommandPhrases.noPermission, { permission: this.defaultPermission.fullName });
             return;
         }
-        // Set to an empty array if the string is empty,
-        // since the split function would return an array with an empty string, and we don't want that
-        const rawArguments = context.passed === "" ? [] : context.passed.split(" ");
-        Logger.debug(`(command ${this.name}) Arguments: ${rawArguments.join(", ")}`);
-        const maxArgs = this.arguments.length;
-        if (rawArguments.length < this.minArguments) {
-            await context.respond(CommandPhrases.tooFewArguments, {
-                commandUsage: this.getShortUsage(context.language, context.prefix),
-                // TODO can be defined for the Command instance
-                required: (this.minArguments === maxArgs) ? maxArgs.toString() : `${this.minArguments} - ${maxArgs}`,
-                supplied: rawArguments.length.toString(),
-            });
+
+        let parsed;
+
+        if (typeof passed === "string") {
+            parsed = await this.parseTextArguments(context, passed);
+        } else {
+            parsed = await this.parseOptionArguments(context, passed);
+        }
+
+        if (parsed === undefined) {
             return;
         }
-        if (rawArguments.length > maxArgs) {
-            // Combine extra arguments if it is allowed
-            // This allows one argument to optionally have spaces
-            if (this.combineIndex === undefined) {
-                await context.respond(CommandPhrases.tooManyArguments, {
-                    commandUsage: this.getShortUsage(context.language, context.prefix),
-                    // TODO can be defined for the Command instance
-                    required: (this.minArguments === maxArgs) ?
-                        maxArgs.toString() : `${this.minArguments} - ${maxArgs}`,
-                    supplied: rawArguments.length.toString(),
-                });
-                return;
-            }
-        }
-        const parsed: any[] = [];
-        let rawIndex = 0;
-        let rawArgument: string;
-        let argument: Argument<any, boolean, any>;
-        let errorStuff: LinkedErrorArgs<Record<string, string>> | SimplePhrase | undefined;
-        const errorResponseFn: ILinkedErrorResponse =
-            <U extends Record<string, string>>(phrase: TemplatePhrase<U> | SimplePhrase, stuff?: U): undefined => {
-                errorStuff = stuff ? [phrase as TemplatePhrase<U>, stuff] : phrase;
-                return;
-            };
-        for (const index of this.arguments.keys()) {
-            argument = this.arguments[index];
-            rawArgument = rawArguments[rawIndex];
-            if (rawArgument === undefined) {
-                // Argument must be optional here, since argument amount handling catches the problem
-                // if the argument is not optional and there are not enough arguments
-                parsed.push(undefined);
-                continue;
-            }
-            if (rawArguments.length > maxArgs && index === this.combineIndex) {
-                const diff = rawArguments.length - this.arguments.length;
-                for (let i = 0; i < diff; i++) {
-                    rawIndex++;
-                    rawArgument += " " + rawArguments[rawIndex];
-                }
-            }
-            const passed = await argument.check(rawArgument, context, errorResponseFn);
-            if (passed !== undefined) {
-                parsed.push(await argument.parse(rawArgument, context, passed));
-                rawIndex++;
-            } else if (argument.optional) {
-                parsed.push(undefined);
-            } else {
-                return context.respond(CommandPhrases.invalidArgument, {
-                    argument: argument.name,
-                    argumentUsage: argument.getUsage(context.language),
-                    commandUsage: this.getShortUsage(context.language, context.prefix),
-                    reason: errorStuff ?? "",
-                    supplied: rawArgument,
-                });
-            }
-        }
+
         let timeDiff = process.hrtime(startTime);
         let timeString = ((timeDiff[0] * 1e9 + timeDiff[1]) / 1000000).toFixed(3);
         Logger.debug(`(command ${this.name}) Argument parsing took ${timeString} ms`);
+
         startTime = process.hrtime();
         try {
             await this.execute({
-                ...context, arguments: parsed as unknown as ArgumentsParseReturns<T>, rawArguments,
+                ...context, arguments: parsed,
             });
         } catch (err: any) {
             const error = err.stack ?? err.toString();
@@ -388,8 +337,8 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
      * Gets a map of localized aliases for the given language.
      * @param language The language to use.
      */
-    public getAliases(language: string): { [key: string]: Command<any> } {
-        const aliases: { [key: string]: Command<any> } = {};
+    public getAliases(language: string): { [key: string]: AnyCommand } {
+        const aliases: { [key: string]: AnyCommand } = {};
         for (const alias of this.localizedAliases.get(language)) {
             aliases[alias] = this;
         }
@@ -400,8 +349,8 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
      * Gets a map of localized global aliases for the given language.
      * @param language The language to use.
      */
-    public getGlobalAliases(language: string): { [key: string]: Command<any> } {
-        const aliases: { [key: string]: Command<any> } = {};
+    public getGlobalAliases(language: string): { [key: string]: AnyCommand } {
+        const aliases: { [key: string]: AnyCommand } = {};
         for (const alias of this.localizedGlobalAliases.get(language)) {
             aliases[alias] = this;
         }
@@ -418,6 +367,136 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
             usage: this.getUsage(context.language, context.prefix),
         });
     }
+
+    protected async parseTextArguments(
+        context: ICommandContext,
+        passed: string,
+    ): Promise<ArgumentsParseReturns<T> | undefined> {
+        // Set to an empty array if the string is empty,
+        // since the split function would return an array with an empty string, and we don't want that
+        const rawArguments = passed === "" ? [] : passed.split(" ");
+        Logger.debug(`(command ${this.name}) Arguments: ${rawArguments.join(", ")}`);
+        const maxArgs = this.arguments.length;
+        if (rawArguments.length < this.minArguments) {
+            await context.respond(CommandPhrases.tooFewArguments, {
+                commandUsage: this.getShortUsage(context.language, context.prefix),
+                // TODO can be defined for the Command instance
+                required: (this.minArguments === maxArgs) ? maxArgs.toString() : `${this.minArguments} - ${maxArgs}`,
+                supplied: rawArguments.length.toString(),
+            });
+            return;
+        }
+        if (rawArguments.length > maxArgs) {
+            // Combine extra arguments if it is allowed
+            // This allows one argument to optionally have spaces
+            if (this.combineIndex === undefined) {
+                await context.respond(CommandPhrases.tooManyArguments, {
+                    commandUsage: this.getShortUsage(context.language, context.prefix),
+                    // TODO can be defined for the Command instance
+                    required: (this.minArguments === maxArgs) ?
+                        maxArgs.toString() : `${this.minArguments} - ${maxArgs}`,
+                    supplied: rawArguments.length.toString(),
+                });
+                return;
+            }
+        }
+        const parsed: any[] = [];
+        let rawIndex = 0;
+        let rawArgument: string;
+        let argument: Argument<any, boolean, any>;
+        let errorStuff: LinkedErrorArgs<Record<string, string>> | SimplePhrase | undefined;
+        const errorResponseFn: ILinkedErrorResponse =
+            <U extends Record<string, string>>(phrase: TemplatePhrase<U> | SimplePhrase, stuff?: U): undefined => {
+                errorStuff = stuff ? [phrase as TemplatePhrase<U>, stuff] : phrase;
+                return;
+            };
+        for (const index of this.arguments.keys()) {
+            argument = this.arguments[index];
+            rawArgument = rawArguments[rawIndex];
+            if (rawArgument === undefined) {
+                // Argument must be optional here, since argument amount handling catches the problem
+                // if the argument is not optional and there are not enough arguments
+                parsed.push(undefined);
+                continue;
+            }
+            if (rawArguments.length > maxArgs && index === this.combineIndex) {
+                const diff = rawArguments.length - this.arguments.length;
+                for (let i = 0; i < diff; i++) {
+                    rawIndex++;
+                    rawArgument += " " + rawArguments[rawIndex];
+                }
+            }
+            const checkedData = await argument.check(rawArgument, context, errorResponseFn);
+            if (checkedData !== undefined) {
+                parsed.push(await argument.parse(rawArgument, context, checkedData));
+                rawIndex++;
+            } else if (argument.optional) {
+                parsed.push(undefined);
+            } else {
+                await context.respond(CommandPhrases.invalidArgument, {
+                    argument: argument.name,
+                    argumentUsage: argument.getUsage(context.language),
+                    commandUsage: this.getShortUsage(context.language, context.prefix),
+                    reason: errorStuff ?? "",
+                    supplied: rawArgument,
+                });
+                return;
+            }
+        }
+
+        return parsed as unknown as ArgumentsParseReturns<T>;
+    }
+
+    protected async parseOptionArguments(
+        context: ICommandContext,
+        passed: ReadonlyArray<CommandInteractionOption>,
+    ): Promise<ArgumentsParseReturns<T> | undefined> {
+        let errorStuff: LinkedErrorArgs<Record<string, string>> | SimplePhrase | undefined;
+        const errorResponseFn: ILinkedErrorResponse =
+            <U extends Record<string, string>>(phrase: TemplatePhrase<U> | SimplePhrase, stuff?: U): undefined => {
+                errorStuff = stuff ? [phrase as TemplatePhrase<U>, stuff] : phrase;
+                return;
+            };
+
+        const parsed: any[] = [];
+
+        for (const index of this.arguments.keys()) {
+            const maxArgs = this.arguments.length;
+
+            const argument = this.arguments[index];
+            const option = passed[index];
+
+            if (option === undefined) {
+                if (!argument.optional) {
+                    await context.respond(CommandPhrases.tooFewArguments, {
+                        commandUsage: this.getShortUsage(context.language, context.prefix),
+                        // TODO can be defined for the Command instance
+                        required: (this.minArguments === maxArgs) ? maxArgs.toString() : `${this.minArguments} - ${maxArgs}`,
+                        supplied: passed.length.toString(),
+                    });
+                    return;
+                }
+            } else {
+                const checkedData = await argument.checkOption(option, context, errorResponseFn);
+                if (checkedData !== undefined) {
+                    parsed.push(await argument.parseOption(option, context, checkedData));
+                } else if (argument.optional) {
+                    parsed.push(undefined);
+                } else {
+                    await context.respond(CommandPhrases.invalidArgument, {
+                        argument: argument.name,
+                        argumentUsage: argument.getUsage(context.language),
+                        commandUsage: this.getShortUsage(context.language, context.prefix),
+                        reason: errorStuff ?? "",
+                        supplied: option.value?.toString() ?? "",
+                    });
+                    return;
+                }
+            }
+        }
+
+        return parsed as unknown as ArgumentsParseReturns<T>;
+    }
 }
 
 /**
@@ -427,8 +506,6 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
  * @typeparam T Array of types of the arguments for the command associated with this context.
  */
 export interface IExecutionContext<T extends ReadonlyArray<Argument<any, boolean, any>>> extends ICommandContext {
-    /** Array of the raw passed argument strings before parsing. */
-    rawArguments: string[];
     /** Array of the arguments after parsing. */
     arguments: ArgumentsParseReturns<T>;
 }
@@ -478,7 +555,7 @@ export interface ICommandInfo {
  * @typeparam T The type of the arguments.
  * @category Command
  */
-type ArgumentsParseReturns<T extends ReadonlyArray<Argument<any, boolean, any>>> = {
+export type ArgumentsParseReturns<T extends ReadonlyArray<Argument<any, boolean, any>>> = {
     [P in keyof T]: T[P] extends Argument<infer U, infer V, any> ?
     V extends false ? U : U | undefined
     : never

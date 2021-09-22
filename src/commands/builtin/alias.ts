@@ -77,7 +77,7 @@ const aliasSetCommand = new SimpleCommand(
         ),
     ] as const,
     async (context) => {
-        const guild = context.message.guild;
+        const guild = context.guild;
         const language = context.language;
         await context.bot.commands.setAlias(
             guild,
@@ -110,7 +110,7 @@ const aliasRemoveCommand = new SimpleCommand(
     ] as const,
     async (context) => {
         const alias = context.arguments[0];
-        await context.bot.commands.removeAlias(context.message.guild, context.language, alias);
+        await context.bot.commands.removeAlias(context.guild, context.language, alias);
         await context.respond(aliasRemovePhrase, { alias });
     },
 );
@@ -124,7 +124,7 @@ const aliasListCommand = new SimpleCommand(
     },
     [],
     async (context) => {
-        const map = await context.bot.commands.getGuildCommandsMap(context.message.guild, context.language);
+        const map = await context.bot.commands.getGuildCommandsMap(context.guild, context.language);
         const aliasMap: Record<string, string[]> = {};
         for (const [alias, command] of map) {
             const localizedName = command.localizedName.get(context.language);
@@ -140,7 +140,7 @@ const aliasListCommand = new SimpleCommand(
             aliases: Object.entries(aliasMap)
                 .map(([command, list]) => `${command}: \`${list.join(", ")}\``)
                 .join("\n"),
-            guild: context.message.guild.guild.name,
+            guild: context.guild.guild.name,
         });
     },
 );

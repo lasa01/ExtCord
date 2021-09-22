@@ -1,3 +1,4 @@
+import { CommandInteractionOption } from "discord.js";
 import { Permission } from "../../permissions/Permission";
 import { ILinkedErrorResponse } from "../Command";
 import { CommandPhrases } from "../CommandPhrases";
@@ -20,7 +21,7 @@ export class PermissionArgument<T extends boolean> extends Argument<Permission, 
     }
 
     public async check(data: string, context: ICommandContext, error: ILinkedErrorResponse):
-        Promise<Permission|undefined> {
+        Promise<Permission | undefined> {
         const p = context.bot.permissions.get(data);
         if (!p) {
             return error(CommandPhrases.invalidPermissionArgument);
@@ -29,6 +30,27 @@ export class PermissionArgument<T extends boolean> extends Argument<Permission, 
     }
 
     public parse(data: string, context: ICommandContext, passed: Permission): Permission {
+        return passed;
+    }
+
+    public async checkOption(
+        data: CommandInteractionOption,
+        context: ICommandContext,
+        error: ILinkedErrorResponse,
+    ): Promise<Permission | undefined> {
+        if (typeof data.value !== "string") {
+            return error(CommandPhrases.invalidPermissionArgument);
+        }
+
+        const p = context.bot.permissions.get(data.value);
+        if (!p) {
+            return error(CommandPhrases.invalidPermissionArgument);
+        }
+        return p;
+
+    }
+
+    public parseOption(data: CommandInteractionOption, context: ICommandContext, passed: Permission): Permission {
         return passed;
     }
 }

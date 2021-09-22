@@ -1,4 +1,4 @@
-import { StringArgument } from "./StringArgument";
+import { SubcommandArgument } from "./SubcommandArgument";
 
 /**
  * Built-in arguments used in other places
@@ -6,13 +6,8 @@ import { StringArgument } from "./StringArgument";
  */
 export const BuiltInArguments = {
     /** Built-in argument for command group subcommands */
-    subcommand: new StringArgument({
-            description: "the subcommand to call",
-            name: "subcommand",
-        }, true),
-    /** Built-in argument for command group subcommand arguments */
-    subcommandArguments: new StringArgument({
-            description: "arguments for the subcommand",
-            name: "arguments",
-    }, true, true),
+    subcommand: new SubcommandArgument({
+        description: "the subcommand to call",
+        name: "subcommand",
+    }),
 };

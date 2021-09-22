@@ -149,7 +149,7 @@ const permissionListCommand = new SimpleCommand(
         const rawTarget = context.arguments[0];
         let target: IExtendedMember | IExtendedRole;
         if (!rawTarget) {
-            target = context.message.member;
+            target = context.member;
         } else {
             target = await rawTarget;
         }
@@ -247,7 +247,7 @@ const permissionGrantCommand = new SimpleCommand(
     ] as const,
     async (context) => {
         const [target, permission] = context.arguments;
-        if (!await context.bot.permissions.checkMemberPermission(permission, context.message.member)) {
+        if (!await context.bot.permissions.checkMemberPermission(permission, context.member)) {
             return context.respond(permissionNoPermissionPhrase, {
                 permission: permission.fullName,
             });
@@ -293,7 +293,7 @@ const permissionDenyCommand = new SimpleCommand(
     ] as const,
     async (context) => {
         const [target, permission] = context.arguments;
-        if (!await context.bot.permissions.checkMemberPermission(permission, context.message.member)) {
+        if (!await context.bot.permissions.checkMemberPermission(permission, context.member)) {
             return context.respond(permissionNoPermissionPhrase, {
                 permission: permission.fullName,
             });
@@ -339,7 +339,7 @@ const permissionRemoveCommand = new SimpleCommand(
     ] as const,
     async (context) => {
         const [target, permission] = context.arguments;
-        if (!await context.bot.permissions.checkMemberPermission(permission, context.message.member)) {
+        if (!await context.bot.permissions.checkMemberPermission(permission, context.member)) {
             return context.respond(permissionNoPermissionPhrase, {
                 permission: permission.fullName,
             });

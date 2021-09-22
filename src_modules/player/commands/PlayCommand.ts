@@ -38,12 +38,12 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
     }
 
     public async execute(context: IExecutionContext<[StringArgument<false>]>) {
-        const voiceChannel = context.message.member.member.voice.channel;
+        const voiceChannel = context.member.member.voice.channel;
         if (!(voiceChannel instanceof VoiceChannel)) {
             return context.respond(musicNoVoicePhrase, {});
         }
         const url = context.arguments[0];
-        const guild = context.message.message.guild!;
+        const guild = context.guild.guild;
 
         const [connection, queueItems] = await Promise.all([
             this.getConnection(context.bot, guild, voiceChannel),

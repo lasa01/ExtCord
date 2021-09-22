@@ -1,3 +1,5 @@
+import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from "@discordjs/builders";
+import { CommandInteractionOption } from "discord.js";
 import { ILinkedErrorResponse } from "../Command";
 import { CommandPhrases } from "../CommandPhrases";
 import { ICommandContext } from "../Commands";
@@ -27,7 +29,11 @@ export class IntArgument<T extends boolean> extends Argument<number, T, number> 
         this.max = max;
     }
 
-    public async check(data: string, context: ICommandContext, error: ILinkedErrorResponse): Promise<number|undefined> {
+    public async check(
+        data: string,
+        context: ICommandContext,
+        error: ILinkedErrorResponse,
+    ): Promise<number | undefined> {
         const int = parseInt(data, 10);
         if (isNaN(int)) {
             return error(CommandPhrases.invalidIntegerArgument);
@@ -43,5 +49,36 @@ export class IntArgument<T extends boolean> extends Argument<number, T, number> 
 
     public parse(data: string, context: ICommandContext, passed: number): number {
         return passed;
+    }
+
+    public async checkOption(
+        data: CommandInteractionOption,
+        context: ICommandContext,
+        error: ILinkedErrorResponse,
+    ): Promise<number | undefined> {
+        if (typeof data.value !== "number") {
+            return error(CommandPhrases.invalidNumberArgument);
+        }
+
+        if (this.min > data.value) {
+            return error(CommandPhrases.tooSmallArgument, { min: this.min.toString() });
+        }
+        if (this.max < data.value) {
+            return error(CommandPhrases.tooBigArgument, { max: this.max.toString() });
+        }
+
+        return data.value;
+    }
+
+    public parseOption(data: CommandInteractionOption, context: ICommandContext, passed: number): number {
+        return passed;
+    }
+
+    public addIntoSlashCommand(builder: SlashCommandBuilder | SlashCommandSubcommandBuilder, language: string) {
+        builder.addIntegerOption((option) =>
+            option.setName(this.localizedName.get(language))
+                .setDescription(this.localizedDescription.get(language))
+                .setRequired(!this.optional),
+        );
     }
 }

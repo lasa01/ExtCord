@@ -23,14 +23,14 @@ export class SkipCommand extends Command<[]> {
     }
 
     public async execute(context: IExecutionContext<[]>) {
-        const voiceChannel = context.message.member.member.voice.channel;
+        const voiceChannel = context.member.member.voice.channel;
         if (!voiceChannel) {
             return context.respond(musicNoVoicePhrase, {});
         }
 
-        const guild = context.message.guild.guild;
+        const guild = context.guild.guild;
         const connection = getVoiceConnection(guild.id);
-        const playing = this.player.getQueue(context.message.guild).playing;
+        const playing = this.player.getQueue(context.guild).playing;
 
         if (connection?.state.status !== VoiceConnectionStatus.Ready || !connection.state.subscription || !playing) {
             return context.respond(musicNotPlayingPhrase, {});

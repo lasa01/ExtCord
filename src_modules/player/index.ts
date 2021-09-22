@@ -98,7 +98,7 @@ export default class PlayerModule extends Module {
     }
 
     public async seek(context: ICommandContext, connection: VoiceConnection, bitrate: number, seek: number) {
-        const queue = this.getQueue(context.message.guild);
+        const queue = this.getQueue(context.guild);
         if (queue.playing === undefined) {
             throw new Error("Nothing is playing");
         }
@@ -117,7 +117,7 @@ export default class PlayerModule extends Module {
         if (items.length === 0) {
             return context.respond(musicEmptyPlaylistPhrase, {});
         }
-        const queue = this.getQueue(context.message.guild);
+        const queue = this.getQueue(context.guild);
         if (
             connection.state.status === VoiceConnectionStatus.Ready
             && connection.state.subscription
@@ -167,7 +167,7 @@ export default class PlayerModule extends Module {
         subscription?: PlayerSubscription,
         seek: number = 0,
     ) {
-        const queue = this.getQueue(context.message.guild);
+        const queue = this.getQueue(context.guild);
 
         if (subscription === undefined) {
             const player = createAudioPlayer();

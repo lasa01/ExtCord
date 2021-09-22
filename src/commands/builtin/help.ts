@@ -1,6 +1,6 @@
 import { DynamicFieldMessagePhrase } from "../../language/phrase/DynamicFieldMessagePhrase";
 import { CommandArgument } from "../arguments/CommandArgument";
-import { Command } from "../Command";
+import { AnyCommand, Command } from "../Command";
 import { CommandGroup } from "../CommandGroup";
 import { SimpleCommand } from "../SimpleCommand";
 
@@ -52,8 +52,8 @@ export const helpCommand = new SimpleCommand(
         if (commandArg) {
             return commandArg.respondHelp(context);
         }
-        const map = await context.bot.commands.getGuildCommandsMap(context.message.guild, context.language);
-        const commands: Map<Command<any>, {
+        const map = await context.bot.commands.getGuildCommandsMap(context.guild, context.language);
+        const commands: Map<AnyCommand, {
             aliases: string,
             description: string,
             usage: string,
@@ -78,7 +78,7 @@ export const helpCommand = new SimpleCommand(
                 c.aliases = (c.aliases === "none" ? `\`${context.prefix}${name}\`` : `${c.aliases}, \`${context.prefix}${name}\``);
             }
         }
-        const stuff = { guild: context.message.guild.guild.name };
+        const stuff = { guild: context.guild.guild.name };
         const fieldStuff = Array.from(commands.values());
         return context.respond(helpPhrase, stuff, fieldStuff);
     },

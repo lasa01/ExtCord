@@ -1,4 +1,7 @@
-import { GuildChannel, Message, Permissions as DiscordPermissions } from "discord.js";
+import { SlashCommandBuilder } from "@discordjs/builders";
+import { REST } from "@discordjs/rest";
+import { Routes } from "discord-api-types/v9";
+import { Guild, GuildChannel, GuildMember, Interaction, Message, Permissions as DiscordPermissions, TextChannel } from "discord.js";
 import { EventEmitter } from "events";
 import { readdir } from "fs-extra";
 import { resolve } from "path";
@@ -16,9 +19,9 @@ import { TemplateStuff } from "../language/phrase/TemplatePhrase";
 import { Permission } from "../permissions/Permission";
 import { PermissionGroup } from "../permissions/PermissionGroup";
 import { Logger } from "../util/Logger";
-import { IExtendedGuild, IExtendedMessage } from "../util/Types";
+import { IExtendedGuild, IExtendedMember, IExtendedMessage, IExtendedUser } from "../util/Types";
 import { BuiltInArguments } from "./arguments/BuiltinArguments";
-import { Command } from "./Command";
+import { AnyCommand, Command } from "./Command";
 import { CommandGroup } from "./CommandGroup";
 import { CommandPhrases } from "./CommandPhrases";
 import { GuildAliasEntity } from "./database/GuildAliasEntity";
@@ -27,27 +30,27 @@ import { GuildAliasEntity } from "./database/GuildAliasEntity";
 // tslint:disable-next-line:interface-name
 export interface Commands {
     /** @event */
-    addListener(event: "command", listener: (command: Command<any>, context: ICommandContext) => void): this;
+    addListener(event: "command", listener: (command: AnyCommand, context: ICommandContext) => void): this;
     /** @event */
     addListener(event: "message", listener: (message: IExtendedMessage) => void): this;
     /** @event */
-    emit(event: "command", command: Command<any>, context: ICommandContext): boolean;
+    emit(event: "command", command: AnyCommand, context: ICommandContext): boolean;
     /** @event */
     emit(event: "message", message: IExtendedMessage): boolean;
     /** @event */
-    on(event: "command", listener: (command: Command<any>, context: ICommandContext) => void): this;
+    on(event: "command", listener: (command: AnyCommand, context: ICommandContext) => void): this;
     /** @event */
     on(event: "message", listener: (message: IExtendedMessage) => void): this;
     /** @event */
-    once(event: "command", listener: (command: Command<any>, context: ICommandContext) => void): this;
+    once(event: "command", listener: (command: AnyCommand, context: ICommandContext) => void): this;
     /** @event */
     once(event: "message", listener: (message: IExtendedMessage) => void): this;
     /** @event */
-    prependListener(event: "command", listener: (command: Command<any>, context: ICommandContext) => void): this;
+    prependListener(event: "command", listener: (command: AnyCommand, context: ICommandContext) => void): this;
     /** @event */
     prependListener(event: "message", listener: (message: IExtendedMessage) => void): this;
     /** @event */
-    prependOnceListener(event: "command", listener: (command: Command<any>, context: ICommandContext) => void): this;
+    prependOnceListener(event: "command", listener: (command: AnyCommand, context: ICommandContext) => void): this;
     /** @event */
     prependOnceListener(event: "message", listener: (message: IExtendedMessage) => void): this;
 }
@@ -65,9 +68,9 @@ export class Commands extends EventEmitter {
         member: MemberRepository,
     };
     private bot: Bot;
-    private commands: Map<string, Command<any>>;
-    private languageCommandsMap: Map<string, Map<string, Command<any>>>;
-    private guildCommandsMap: Map<string, Map<string, Command<any>>>;
+    private commands: Map<string, AnyCommand>;
+    private languageCommandsMap: Map<string, Map<string, AnyCommand>>;
+    private guildCommandsMap: Map<string, Map<string, AnyCommand>>;
     private configEntry: ConfigEntryGroup;
     private permissions: Permission[];
     private permission?: Permission;
@@ -114,35 +117,36 @@ export class Commands extends EventEmitter {
         }
         // TODO this somewhere else, will be needed elsewhere
         this.ensureRepo();
-        const member = await this.repos.member.getEntity(discordMessage.member);
+        const discordMember = await this.repos.member.getEntity(discordMessage.member);
         const author = {
-            entity: member.user,
+            entity: discordMember.user,
             user: discordMessage.author,
         };
         const guild = {
-            entity: member.guild,
+            entity: discordMember.guild,
             guild: discordMessage.guild,
+        };
+        const member = {
+            entity: discordMember,
+            member: discordMessage.member,
         };
         const message: IExtendedMessage = {
             author,
             guild,
-            member: {
-                entity: member,
-                member: discordMessage.member,
-            },
+            member,
             message: discordMessage,
         };
         const prefix = await this.prefixConfigEntry.guildGet(message.guild);
         // TODO really doesn't need to be reassigned each call
-        const mention = `<@${message.message.client.user!.id}>`;
-        const mention2 = `<@!${message.message.client.user!.id}>`; // Discord, why?
+        const mention = `<@${discordMessage.client.user!.id}>`;
+        const mention2 = `<@!${discordMessage.client.user!.id}>`; // Discord, why?
         let text;
-        if (message.message.content.startsWith(prefix)) {
-            text = message.message.content.slice(prefix.length).trim();
-        } else if (message.message.content.startsWith(mention)) {
-            text = message.message.content.slice(mention.length).trim();
-        } else if (message.message.content.startsWith(mention2)) {
-            text = message.message.content.slice(mention2.length).trim();
+        if (discordMessage.content.startsWith(prefix)) {
+            text = discordMessage.content.slice(prefix.length).trim();
+        } else if (discordMessage.content.startsWith(mention)) {
+            text = discordMessage.content.slice(mention.length).trim();
+        } else if (discordMessage.content.startsWith(mention2)) {
+            text = discordMessage.content.slice(mention2.length).trim();
         } else {
             // This is a normal message
             this.emit("message", message);
@@ -179,9 +183,9 @@ export class Commands extends EventEmitter {
                 };
             }
             if (useMentions) {
-                await message.message.reply(options);
+                await discordMessage.reply(options);
             } else {
-                await message.message.channel.send(options);
+                await discordMessage.channel.send(options);
             }
         };
         // TODO Optimise promise concurrency
@@ -195,17 +199,127 @@ export class Commands extends EventEmitter {
             bot: this.bot,
             botPermissions,
             command,
+            guild,
             language,
+            member,
             message,
-            passed,
             prefix,
             respond,
+            user: author,
         };
         const timeDiff = process.hrtime(startTime);
         Logger.debug(`Command preprocessing took ${((timeDiff[0] * 1e9 + timeDiff[1]) / 1000000).toFixed(3)} ms`);
         Logger.debug(`Executing command ${command}`);
         this.emit("command", commandInstance, context);
-        await commandInstance.command(context);
+        await commandInstance.command(context, passed);
+    }
+
+    public async interaction(interaction: Interaction) {
+        const startTime = process.hrtime();
+
+        if (!interaction.isCommand()) {
+            return;
+        }
+
+        if (
+            !(interaction.guild instanceof Guild)
+            || !(interaction.member instanceof GuildMember)
+            || !(interaction.channel instanceof TextChannel)
+        ) {
+            return;
+        }
+
+        // TODO this somewhere else, will be needed elsewhere
+        this.ensureRepo();
+        const discordMember = await this.repos.member.getEntity(interaction.member);
+        const user = {
+            entity: discordMember.user,
+            user: interaction.member.user,
+        };
+        const guild = {
+            entity: discordMember.guild,
+            guild: interaction.guild,
+        };
+        const member = {
+            entity: discordMember,
+            member: interaction.member,
+        };
+
+        const language = await this.bot.languages.getLanguage(guild);
+        const botPermissions = interaction.guild.me!.permissionsIn(interaction.channel);
+
+        const command = interaction.commandName;
+
+        // TODO Could get both with one database query
+        const useEmbeds = await this.bot.languages.useEmbedsConfigEntry.guildGet(guild);
+        // TODO maybe don't need a new function every time
+        let first = true;
+        let timedOut = false;
+
+        setTimeout(() => { timedOut = true; }, 600000);
+
+        const respond: LinkedResponse = async (phrase, stuff, fieldStuff) => {
+            if (timedOut) {
+                // can't send responses like this forever
+                return;
+            }
+
+            let options;
+            if (useEmbeds) {
+                options = {
+                    embeds: [phrase instanceof DynamicFieldMessagePhrase ?
+                        phrase.formatEmbed(language, stuff, fieldStuff) :
+                        phrase.formatEmbed(language, stuff)],
+                };
+            } else {
+                options = {
+                    content: phrase instanceof DynamicFieldMessagePhrase ?
+                        phrase.format(language, stuff, fieldStuff) : phrase.format(language, stuff),
+                };
+            }
+            if (first) {
+                await interaction.reply(options);
+                first = false;
+            } else {
+                await interaction.followUp(options);
+            }
+        };
+        // TODO Optimise promise concurrency
+        const commandInstance = await this.getCommandInstance(guild, language, command);
+        if (!commandInstance) {
+            await respond(CommandPhrases.invalidCommand, { command });
+            return;
+        }
+
+        const context = {
+            bot: this.bot,
+            botPermissions,
+            command,
+            guild,
+            language,
+            member,
+            passed: interaction.options.data.flatMap((option) => {
+                const options = [option.value?.toString()];
+                if (option.options) {
+                    options.push(...option.options.flatMap((suboption) => {
+                        const suboptions = [suboption.value!.toString()];
+                        if (suboption.options) {
+                            suboptions.push(...suboption.options.map((o) => o.value!.toString()));
+                        }
+                        return suboptions;
+                    }));
+                }
+                return options;
+            }).join(" "),
+            prefix: "/",
+            respond,
+            user,
+        };
+        const timeDiff = process.hrtime(startTime);
+        Logger.debug(`Command preprocessing took ${((timeDiff[0] * 1e9 + timeDiff[1]) / 1000000).toFixed(3)} ms`);
+        Logger.debug(`Executing command ${command}`);
+        this.emit("command", commandInstance, context);
+        await commandInstance.command(context, interaction.options.data);
     }
 
     /**
@@ -289,7 +403,7 @@ export class Commands extends EventEmitter {
         if (this.languageCommandsMap.has(language)) {
             return this.languageCommandsMap.get(language)!;
         }
-        const map: Map<string, Command<any>> = new Map();
+        const map: Map<string, AnyCommand> = new Map();
         for (const [, command] of this.commands) {
             map.set(command.localizedName.get(language), command);
             for (const [alias, aliasCommand] of Object.entries(command.getAliases(language))) {
@@ -310,7 +424,7 @@ export class Commands extends EventEmitter {
      * @param alias The alias that is being set.
      * @param command The command the alias points to.
      */
-    public async setAlias(guild: IExtendedGuild, language: string, alias: string, command: Command<any>) {
+    public async setAlias(guild: IExtendedGuild, language: string, alias: string, command: AnyCommand) {
         if (alias.includes(" ")) {
             throw new Error("Trying to set an alias that contains spaces");
         }
@@ -365,7 +479,7 @@ export class Commands extends EventEmitter {
      * Registers a command to the command handler.
      * @param command The command to register.
      */
-    public registerCommand(command: Command<any>) {
+    public registerCommand(command: AnyCommand) {
         if (this.commands.has(command.name)) {
             throw new Error(`A command is already registered by the name ${command.name}`);
         }
@@ -379,7 +493,7 @@ export class Commands extends EventEmitter {
      * Unregister a command from the command handler.
      * @param command The command to unregister.
      */
-    public unregisterCommand(command: Command<any>) {
+    public unregisterCommand(command: AnyCommand) {
         this.unregisterPermission(command.getPermission());
         this.commands.delete(command.name);
     }
@@ -493,6 +607,75 @@ export class Commands extends EventEmitter {
         this.guildCommandsMap.clear();
     }
 
+    /** Gets a list of all slash commands that can be sent to Discord */
+    public getSlashCommands(language: string): object[] {
+        const commands = [];
+
+        for (const [, command] of this.commands) {
+            const builder = new SlashCommandBuilder();
+            builder.setName(command.localizedName.get(language));
+            builder.setDescription(command.localizedDescription.get(language));
+
+            if (command instanceof CommandGroup) {
+                for (const [, subcommand] of command.children) {
+                    if (subcommand instanceof CommandGroup) {
+                        builder.addSubcommandGroup((groupBuilder) => {
+                            groupBuilder.setName(subcommand.localizedName.get(language));
+                            groupBuilder.setDescription(subcommand.localizedDescription.get(language));
+
+                            for (const [, subsubcommand] of subcommand.children) {
+                                groupBuilder.addSubcommand((subcommandBuilder) => {
+                                    subcommandBuilder.setName(subsubcommand.localizedName.get(language));
+                                    subcommandBuilder.setDescription(subsubcommand.localizedDescription.get(language));
+
+                                    for (const argument of command.arguments) {
+                                        argument.addIntoSlashCommand(subcommandBuilder, language);
+                                    }
+
+                                    return subcommandBuilder;
+                                });
+                            }
+
+                            return groupBuilder;
+                        });
+                    } else {
+                        builder.addSubcommand((subcommandBuilder) => {
+                            subcommandBuilder.setName(subcommand.localizedName.get(language));
+                            subcommandBuilder.setDescription(subcommand.localizedDescription.get(language));
+
+                            for (const argument of subcommand.arguments) {
+                                argument.addIntoSlashCommand(subcommandBuilder, language);
+                            }
+
+                            return subcommandBuilder;
+                        });
+                    }
+                }
+
+                commands.push(builder.toJSON());
+                continue;
+            }
+
+            for (const argument of command.arguments) {
+                argument.addIntoSlashCommand(builder, language);
+            }
+
+            commands.push(builder.toJSON());
+        }
+
+        return commands;
+    }
+
+    public async deploySlashCommands(guild: IExtendedGuild, language: string) {
+        const client = this.bot.client!;
+        const rest = new REST({ version: "9" }).setToken(client.token!);
+
+        await rest.put(
+            Routes.applicationGuildCommands(client.user!.id, guild.guild.id),
+            { body: this.getSlashCommands(language) },
+        );
+    }
+
     /** Gets the current status string of the command handler. */
     public getStatus() {
         return `${this.commands.size} commands loaded: ${Array.from(this.commands.keys()).join(", ")}`;
@@ -514,21 +697,25 @@ export class Commands extends EventEmitter {
  * @category Command
  */
 export interface ICommandContext {
+    /** The user that triggered the command */
+    user: IExtendedUser;
     /** The bot that handles the command. */
     bot: Bot;
+    /** The guild the command came from */
+    guild: IExtendedGuild;
     /** The command prefix used for the command. */
     prefix: string;
+    /** The member that triggered the command */
+    member: IExtendedMember;
     /** The original message that triggered the command. */
-    message: IExtendedMessage;
+    message?: IExtendedMessage;
     /** The original command that was called. */
     command: string;
-    /** The raw string that contains the arguments for the command. */
-    passed: string;
     /** The language for the command. */
     language: string;
     /** The function to respond to the command with. */
     respond: LinkedResponse;
-    /** Bot permissions that are required for the command. */
+    /** Bot's permissions. */
     botPermissions: Readonly<DiscordPermissions>;
 }
 
