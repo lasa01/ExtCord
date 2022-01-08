@@ -6,7 +6,7 @@
 # ExtCord
 A modular Discord bot framework built on top of discord.js using TypeScript.
 Requires Node.js 16 or newer.
-SQLite and MariaDB/MySQL databases are supported by Sequelize ORM. Other databases supported by Sequelize may also work.
+SQLite and MariaDB/MySQL databases are supported by TypeORM. Other databases supported by TypeORM may also work.
 
 The commands can be invoked with both normal text messages and the new slash command system of Discord.
 The resulting bot is highly customizable by users:
