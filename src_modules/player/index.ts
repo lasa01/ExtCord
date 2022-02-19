@@ -174,14 +174,14 @@ export default class PlayerModule extends Module {
             subscription = connection.subscribe(player);
 
             player.on(AudioPlayerStatus.Idle, () => {
-                this.next_item(queue, context, connection, bitrate, subscription);
+                this.nextItem(queue, context, connection, bitrate, subscription);
             });
 
             player.on("error", (error) => {
                 context.respond(musicErrorPhrase, {
                     error: `${error.name}: ${error.message}`,
                 });
-                this.next_item(queue, context, connection, bitrate, subscription);
+                this.nextItem(queue, context, connection, bitrate, subscription);
             });
 
             if (typeof subscription === "undefined") {
@@ -201,7 +201,7 @@ export default class PlayerModule extends Module {
         queue.playing = item;
     }
 
-    private next_item(
+    private nextItem(
         queue: PlayerQueue,
         context: ICommandContext,
         connection: VoiceConnection,
