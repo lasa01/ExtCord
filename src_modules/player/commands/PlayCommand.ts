@@ -4,7 +4,7 @@ import PlayerModule from "..";
 import { musicNotFoundPhrase, musicNoVoicePhrase, musicSearchingPhrase } from "../phrases";
 import { IQueueItemDetails, PlayerQueueItem } from "../queue/PlayerQueueItem";
 
-import { entersState, getVoiceConnection, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
+import { getVoiceConnection, VoiceConnection } from "@discordjs/voice";
 import { Guild, VoiceChannel } from "discord.js";
 import ytdl = require("ytdl-core");
 import ytpl = require("ytpl");
@@ -63,26 +63,7 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
         if (connection && voiceChannel.members.get(bot.client!.user!.id)) {
             return connection;
         } else {
-            const newConnection = joinVoiceChannel({
-                adapterCreator: voiceChannel.guild.voiceAdapterCreator,
-                channelId: voiceChannel.id,
-                guildId: voiceChannel.guild.id,
-            });
-
-            newConnection.on(VoiceConnectionStatus.Disconnected, async (oldState, newState) => {
-                try {
-                    await Promise.race([
-                        entersState(newConnection, VoiceConnectionStatus.Signalling, 5_000),
-                        entersState(newConnection, VoiceConnectionStatus.Connecting, 5_000),
-                    ]);
-                    // Seems to be reconnecting to a new channel - ignore disconnect
-                } catch (error) {
-                    // Seems to be a real disconnect which SHOULDN'T be recovered from
-                    newConnection.destroy();
-                }
-            });
-
-            return newConnection;
+            return bot.joinVoice(voiceChannel);
         }
     }
 

@@ -66,6 +66,9 @@ export default class PlayerModule extends Module {
         this.registerCommand(this.musicCommand);
         bot.once("stop", () => this.onStop());
         bot.on("ready", () => this.onReady());
+        bot.on("joinVoice", (guild, options) => {
+            options.selfMute = false;
+        });
 
         bot.intents.add(Intents.FLAGS.GUILD_VOICE_STATES);
     }

@@ -1,7 +1,8 @@
 import { EventEmitter } from "events";
 import { createInterface, ReadLine } from "readline";
 
-import { Client, Intents } from "discord.js";
+import { Client, Guild, Intents, VoiceChannel } from "discord.js";
+import { entersState, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import { transports } from "winston";
 
 import { Commands } from "./commands/Commands";
@@ -22,19 +23,37 @@ export interface Bot {
     addListener(event: "ready" | "stop", listener: () => void): this;
 
     /** @event */
+    addListener(event: "joinVoice", listener: (guild: Guild, options: IVoiceJoinOptions) => void): this;
+
+    /** @event */
     emit(event: "ready" | "stop"): boolean;
+
+    /** @event */
+    emit(event: "joinVoice", guild: Guild, options: IVoiceJoinOptions): boolean;
 
     /** @event */
     on(event: "ready" | "stop", listener: () => void): this;
 
     /** @event */
+    on(event: "joinVoice", listener: (guild: Guild, options: IVoiceJoinOptions) => void): this;
+
+    /** @event */
     once(event: "ready" | "stop", listener: () => void): this;
+
+    /** @event */
+    once(event: "joinVoice", listener: (guild: Guild, options: IVoiceJoinOptions) => void): this;
 
     /** @event */
     prependListener(event: "ready" | "stop", listener: () => void): this;
 
     /** @event */
+    prependListener(event: "joinVoice", listener: (guild: Guild, options: IVoiceJoinOptions) => void): this;
+
+    /** @event */
     prependOnceListener(event: "ready" | "stop", listener: () => void): this;
+
+    /** @event */
+    prependOnceListener(event: "joinVoice", listener: (guild: Guild, options: IVoiceJoinOptions) => void): this;
 }
 
 /**
@@ -242,4 +261,47 @@ export class Bot extends EventEmitter {
         }
         await Promise.all(promises);
     }
+
+    /** Join a voice channel  */
+    public async joinVoice(voiceChannel: VoiceChannel, options?: Partial<IVoiceJoinOptions>): Promise<VoiceConnection> {
+        const baseOptions = {
+            adapterCreator: voiceChannel.guild.voiceAdapterCreator,
+            channelId: voiceChannel.id,
+            guildId: voiceChannel.guild.id,
+        };
+
+        const additionalOptions = Object.assign({
+            selfDeaf: true,
+            selfMute: true,
+        }, options);
+
+        this.emit("joinVoice", voiceChannel.guild, additionalOptions);
+
+        const newConnection = joinVoiceChannel(Object.assign(baseOptions, additionalOptions));
+
+        newConnection.on(VoiceConnectionStatus.Disconnected, async (oldState, newState) => {
+            try {
+                await Promise.race([
+                    entersState(newConnection, VoiceConnectionStatus.Signalling, 5_000),
+                    entersState(newConnection, VoiceConnectionStatus.Connecting, 5_000),
+                ]);
+                // Seems to be reconnecting to a new channel - ignore disconnect
+            } catch (error) {
+                // Seems to be a real disconnect which SHOULDN'T be recovered from
+                newConnection.destroy();
+            }
+        });
+
+        await entersState(newConnection, VoiceConnectionStatus.Ready, 10e3);
+
+        return newConnection;
+    }
+}
+
+/**
+ * Options for joining a voice channel.
+ */
+export interface IVoiceJoinOptions {
+    selfDeaf: boolean,
+    selfMute: boolean,
 }

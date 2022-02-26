@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
 import { REST } from "@discordjs/rest";
 import { Routes } from "discord-api-types/v9";
-import { Guild, GuildChannel, GuildMember, Interaction, Message, Permissions as DiscordPermissions, TextChannel } from "discord.js";
+import { FileOptions, Guild, GuildChannel, GuildMember, Interaction, Message, Permissions as DiscordPermissions, TextChannel } from "discord.js";
 import { EventEmitter } from "events";
 import { readdir } from "fs-extra";
 import { resolve } from "path";
@@ -167,9 +167,11 @@ export class Commands extends EventEmitter {
         // TODO Could get both with one database query
         const useEmbeds = await this.bot.languages.useEmbedsConfigEntry.guildGet(message.guild);
         const useMentions = await this.bot.languages.useMentionsConfigEntry.guildGet(message.guild);
+
         // TODO maybe don't need a new function every time
-        const respond: LinkedResponse = async (phrase, stuff, fieldStuff) => {
+        const respond: LinkedResponse = async (phrase, stuff, fieldStuff, extraOptions) => {
             let options;
+
             if (useEmbeds) {
                 options = {
                     embeds: [phrase instanceof DynamicFieldMessagePhrase ?
@@ -182,12 +184,16 @@ export class Commands extends EventEmitter {
                         phrase.format(language, stuff, fieldStuff) : phrase.format(language, stuff),
                 };
             }
+
+            options = Object.assign(options, extraOptions);
+
             if (useMentions) {
                 await discordMessage.reply(options);
             } else {
                 await discordMessage.channel.send(options);
             }
         };
+
         // TODO Optimise promise concurrency
         const commandInstance = await this.getCommandInstance(message.guild, language, command);
         if (!commandInstance) {
@@ -258,7 +264,7 @@ export class Commands extends EventEmitter {
 
         setTimeout(() => { timedOut = true; }, 600000);
 
-        const respond: LinkedResponse = async (phrase, stuff, fieldStuff) => {
+        const respond: LinkedResponse = async (phrase, stuff, fieldStuff, extraOptions) => {
             if (timedOut) {
                 // can't send responses like this forever
                 return;
@@ -277,6 +283,9 @@ export class Commands extends EventEmitter {
                         phrase.format(language, stuff, fieldStuff) : phrase.format(language, stuff),
                 };
             }
+
+            options = Object.assign(options, extraOptions);
+
             if (first) {
                 await interaction.reply(options);
                 first = false;
@@ -732,4 +741,13 @@ export type LinkedResponse =
         (
         phrase: MessagePhrase<T> | DynamicFieldMessagePhrase<T, U>,
         stuff: TemplateStuff<T, V>, fieldStuff?: TemplateStuffs<U, V>,
+        options?: IResponseOptions,
     ) => Promise<void>;
+
+/**
+ * Additional options for a response.
+ * @category Command
+ */
+export interface IResponseOptions {
+    files: FileOptions[],
+}
