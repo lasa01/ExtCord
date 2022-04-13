@@ -9,6 +9,8 @@ import { Guild, VoiceChannel } from "discord.js";
 import ytdl = require("ytdl-core");
 import ytpl = require("ytpl");
 import ytsr = require("ytsr");
+import fetch from "node-fetch";
+import { Readable } from "stream";
 
 export class PlayCommand extends Command<[StringArgument<false>]> {
     private player: PlayerModule;
@@ -98,6 +100,7 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
                 thumbnailUrl: resultItem.thumbnails[0].url ?? "",
                 title: resultItem.title,
                 url: resultItem.url,
+                urlIsYoutube: true,
             };
             return [new PlayerQueueItem(itemDetails)];
         } else {
@@ -112,21 +115,59 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
     }
 
     private async getQueueItemFromUrl(url: string): Promise<PlayerQueueItem> {
-        const ytdlResult = ytdl(url, { filter: "audioonly", highWaterMark: 32 * 1024 * 1024 });
-        const itemDetails: IQueueItemDetails = await new Promise((resolve, reject) => {
-            ytdlResult!.once("info", (video: ytdl.videoInfo, format: ytdl.videoFormat) => {
-                resolve({
-                    author: video.videoDetails.author.name,
-                    authorIconUrl: video.videoDetails.author.avatar,
-                    authorUrl: video.videoDetails.author.channel_url,
-                    duration: video.videoDetails.lengthSeconds,
-                    thumbnailUrl: video.videoDetails.thumbnail.thumbnails[0]?.url ?? "",
-                    title: video.videoDetails.title,
-                    url: video.videoDetails.video_url,
+        let ytdlResult: Readable | undefined = ytdl(url, { filter: "audioonly", highWaterMark: 32 * 1024 * 1024 });
+        let itemDetails: IQueueItemDetails;
+
+        try {
+            itemDetails = await new Promise((resolve, reject) => {
+                ytdlResult!.once("info", (video: ytdl.videoInfo, format: ytdl.videoFormat) => {
+                    resolve({
+                        author: video.videoDetails.author.name,
+                        authorIconUrl: video.videoDetails.author.avatar,
+                        authorUrl: video.videoDetails.author.channel_url,
+                        duration: video.videoDetails.lengthSeconds,
+                        thumbnailUrl: video.videoDetails.thumbnail.thumbnails[0]?.url ?? "",
+                        title: video.videoDetails.title,
+                        url: video.videoDetails.video_url,
+                        urlIsYoutube: true,
+                    });
                 });
+                ytdlResult!.once("error", (err) => reject(err));
             });
-            ytdlResult!.once("error", (err) => reject(err));
-        });
+        } catch {
+            ytdlResult = undefined;
+
+            // check if the url can be played directly
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error(`Request to '${url}' failed: ${response.status} ${response.statusText}`);
+            }
+
+            const contentType = response.headers.get("content-type");
+
+            if (!contentType) {
+                throw new Error(`Request to '${url}': content-type was not provided`);
+            }
+
+            if (!contentType.includes("audio") && !contentType.includes("video") && !contentType.includes("ogg")) {
+                throw new Error(`Request to '${url}': unsupported content-type ${contentType}`);
+            }
+
+            const urlObj = new URL(url);
+
+            itemDetails = {
+                author: urlObj.hostname,
+                authorIconUrl: "",
+                authorUrl: "",
+                duration: "?",
+                thumbnailUrl: "",
+                title: urlObj.pathname,
+                url,
+                urlIsYoutube: false,
+            };
+        }
+
         return new PlayerQueueItem(itemDetails, ytdlResult);
     }
 }

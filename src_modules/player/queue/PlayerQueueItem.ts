@@ -1,6 +1,7 @@
 import { AudioResource, createAudioResource } from "@discordjs/voice";
 import { Readable } from "stream";
 import ytdl = require("ytdl-core");
+import fetch from "node-fetch";
 
 export interface IQueueItemDetails {
     author: string;
@@ -10,6 +11,7 @@ export interface IQueueItemDetails {
     thumbnailUrl: string;
     title: string;
     url: string;
+    urlIsYoutube: boolean,
 }
 
 export class PlayerQueueItem {
@@ -35,6 +37,25 @@ export class PlayerQueueItem {
     }
 
     private async getStream(): Promise<Readable> {
-        return this.ytdlResult ?? ytdl(this.url, { filter: "audioonly", highWaterMark: 32 * 1024 * 1024 });
+        if (this.ytdlResult) {
+            return this.ytdlResult;
+        }
+
+        if (this.details.urlIsYoutube) {
+            return ytdl(this.url, { filter: "audioonly", highWaterMark: 32 * 1024 * 1024 });
+        }
+
+        // fetch url directly
+        const response = await fetch(this.url);
+
+        if (!response.ok) {
+            throw new Error(`Request to '${this.url}' failed: ${response.status} ${response.statusText}`);
+        }
+
+        if (response.body == null) {
+            throw new Error(`Request to '${this.url}' failed: no body`);
+        }
+
+        return response.body as unknown as Readable;
     }
 }
