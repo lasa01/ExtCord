@@ -5,7 +5,7 @@ import {
     AudioPlayerStatus, createAudioPlayer,
     getVoiceConnection, PlayerSubscription, VoiceConnection, VoiceConnectionStatus,
 } from "@discordjs/voice";
-import { Guild, Intents, VoiceState } from "discord.js";
+import { Guild, GatewayIntentBits, VoiceState } from "discord.js";
 
 import { Bot, CommandGroup, ICommandContext, IExtendedGuild, Logger, Module } from "../..";
 
@@ -70,7 +70,7 @@ export default class PlayerModule extends Module {
             options.selfMute = false;
         });
 
-        bot.intents.add(Intents.FLAGS.GUILD_VOICE_STATES);
+        bot.intents.push(GatewayIntentBits.GuildVoiceStates);
     }
 
     public getQueue(guild: IExtendedGuild): PlayerQueue {

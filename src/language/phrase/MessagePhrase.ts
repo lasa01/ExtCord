@@ -1,4 +1,4 @@
-import { MessageEmbed } from "discord.js";
+import { APIEmbedField, EmbedBuilder, EmbedData } from "discord.js";
 import format = require("string-format");
 
 import { DEFAULT_LANGUAGE } from "../Languages";
@@ -22,10 +22,10 @@ export class MessagePhrase<T extends Record<string, string>> extends TemplatePhr
      * @param templateDescription Descriptions of available placeholders. Keys are placeholders and values descriptions.
      */
     constructor(
-            info: IPhraseInfo,
-            defaultsText: Record<string, string> | string, defaultsEmbed: ILocalizedBaseEmbed | IBaseEmbed,
-            templateDescription: T,
-        ) {
+        info: IPhraseInfo,
+        defaultsText: Record<string, string> | string, defaultsEmbed: ILocalizedBaseEmbed | IBaseEmbed,
+        templateDescription: T,
+    ) {
         super(info, defaultsText, templateDescription);
         if (typeof defaultsEmbed.timestamp === "boolean") {
             defaultsEmbed = {
@@ -121,7 +121,7 @@ export class MessagePhrase<T extends Record<string, string>> extends TemplatePhr
                                 this.defaultsEmbed[language].fields![index].name :
                                 (this.defaultsEmbed[DEFAULT_LANGUAGE].fields &&
                                     this.defaultsEmbed[DEFAULT_LANGUAGE].fields![index]) ?
-                                this.defaultsEmbed[DEFAULT_LANGUAGE].fields![index].name : "";
+                                    this.defaultsEmbed[DEFAULT_LANGUAGE].fields![index].name : "";
                     } else {
                         this.templatesEmbed[language].fields![index].name = field.name;
                     }
@@ -131,7 +131,7 @@ export class MessagePhrase<T extends Record<string, string>> extends TemplatePhr
                                 this.defaultsEmbed[language].fields![index].value :
                                 (this.defaultsEmbed[DEFAULT_LANGUAGE].fields &&
                                     this.defaultsEmbed[DEFAULT_LANGUAGE].fields![index]) ?
-                                this.defaultsEmbed[DEFAULT_LANGUAGE].fields![index].value : "";
+                                    this.defaultsEmbed[DEFAULT_LANGUAGE].fields![index].value : "";
                     } else {
                         this.templatesEmbed[language].fields![index].value = field.value;
                     }
@@ -141,7 +141,7 @@ export class MessagePhrase<T extends Record<string, string>> extends TemplatePhr
                                 this.defaultsEmbed[language].fields![index].inline :
                                 (this.defaultsEmbed[DEFAULT_LANGUAGE].fields &&
                                     this.defaultsEmbed[DEFAULT_LANGUAGE].fields![index]) ?
-                                this.defaultsEmbed[DEFAULT_LANGUAGE].fields![index].inline : false;
+                                    this.defaultsEmbed[DEFAULT_LANGUAGE].fields![index].inline : false;
                     } else {
                         this.templatesEmbed[language].fields![index].inline = field.inline;
                     }
@@ -198,7 +198,7 @@ export class MessagePhrase<T extends Record<string, string>> extends TemplatePhr
      * @param language The language to use.
      * @param stuff The placeholder replacements to use.
      */
-    public formatEmbed<U extends Record<string, string>>(language: string, stuff?: TemplateStuff<T, U>): MessageEmbed {
+    public formatEmbed<U extends Record<string, string>>(language: string, stuff?: TemplateStuff<T, U>): EmbedBuilder {
         const processedStuff: { [key: string]: string } = {};
         if (stuff) {
             for (const [key, thing] of Object.entries(stuff)) {
@@ -212,7 +212,8 @@ export class MessagePhrase<T extends Record<string, string>> extends TemplatePhr
             }
         }
         const embed = this.defaultsEmbed[language];
-        let fields: IEmbedField[] | undefined;
+        let fields: APIEmbedField[] | undefined;
+
         if (embed.fields) {
             fields = [];
             for (const field of embed.fields) {
@@ -224,24 +225,27 @@ export class MessagePhrase<T extends Record<string, string>> extends TemplatePhr
             }
             fields = fields.slice(0, 25);
         }
-        return new MessageEmbed({
+
+        const embedData: EmbedData = {
             author: embed.author ? {
-                icon_url: embed.author.iconUrl ? format(embed.author.iconUrl, processedStuff) : undefined,
+                iconURL: embed.author.iconUrl ? format(embed.author.iconUrl, processedStuff) : undefined,
                 name: format(embed.author.name, processedStuff).substring(0, 256),
                 url: embed.author.url ? format(embed.author.url, processedStuff) : undefined,
             } : undefined,
             description: embed.description ? format(embed.description, processedStuff).substring(0, 2048) : undefined,
             fields,
             footer: embed.footer ? {
-                icon_url: embed.footer.iconUrl ? format(embed.footer.iconUrl, processedStuff) : undefined,
-                text: embed.footer.text ? format(embed.footer.text, processedStuff).substring(0, 2048) : undefined,
+                iconURL: embed.footer.iconUrl ? format(embed.footer.iconUrl, processedStuff) : undefined,
+                text: embed.footer.text ? format(embed.footer.text, processedStuff).substring(0, 2048) : "",
             } : undefined,
             image: embed.imageUrl ? { url: format(embed.imageUrl, processedStuff) } : undefined,
             thumbnail: embed.thumbnailUrl ? { url: format(embed.thumbnailUrl, processedStuff) } : undefined,
             timestamp: embed.timestamp ? new Date() : undefined,
             title: embed.title ? format(embed.title, processedStuff).substring(0, 256) : undefined,
             url: embed.url ? format(embed.url, processedStuff) : undefined,
-        });
+        };
+
+        return new EmbedBuilder(embedData);
     }
 }
 

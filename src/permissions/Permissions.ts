@@ -1,4 +1,4 @@
-import { Permissions as DiscordPermissions, Role } from "discord.js";
+import { PermissionFlagsBits, Permissions as DiscordPermissions, Role, RoleManager } from "discord.js";
 import { ensureDir, readdir, readFile, writeFile } from "fs-extra";
 import { resolve } from "path";
 import { In, Repository } from "typeorm";
@@ -468,7 +468,7 @@ export class Permissions {
                 }));
             }
         }
-        if (role.role.permissions.has(DiscordPermissions.FLAGS.ADMINISTRATOR!)) {
+        if (role.role.permissions.has(PermissionFlagsBits.Administrator!)) {
             if (!rolePrivileges.some((rolePriv) => rolePriv.name === this.adminPrivilege.name)) {
                 missingPrivilegeEntities.push(this.repos.rolePrivilege.create({
                     name: this.adminPrivilege.name,
@@ -515,7 +515,7 @@ export class Permissions {
             member: member.entity,
         });
         const missingPrivilegeEntities: MemberPrivilegeEntity[] = [];
-        if (member.member.permissions.has(DiscordPermissions.FLAGS.ADMINISTRATOR!)) {
+        if (member.member.permissions.has(PermissionFlagsBits.Administrator!)) {
             if (!memberPrivileges.some((memberPriv) => memberPriv.name === this.adminPrivilege.name)) {
                 missingPrivilegeEntities.push(this.repos.memberPrivilege.create({
                     member: member.entity,
@@ -576,7 +576,8 @@ export class Permissions {
             .sort((a, b) => {
                 const dA = member.member.roles.cache.get(a.roleId)!;
                 const dB = member.member.roles.cache.get(b.roleId)!;
-                return Role.comparePositions(dA, dB);
+
+                return member.member.guild.roles.comparePositions(dA, dB);
             }).map((roleEntity) => ({ role: member.member.roles.cache.get(roleEntity.roleId)!, entity: roleEntity }));
 
         if (!roles.some((role) => role.role.id === role.role.guild.id)) {

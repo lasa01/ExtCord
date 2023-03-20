@@ -2,7 +2,7 @@
 // requires ffmpeg-static
 
 import { getVoiceConnection } from "@discordjs/voice";
-import { Guild, Intents, VoiceState } from "discord.js";
+import { GatewayIntentBits, Guild, VoiceState } from "discord.js";
 
 import { Bot, CommandGroup, Module } from "../..";
 
@@ -49,7 +49,7 @@ export default class RecorderModule extends Module {
             options.selfDeaf = false;
         });
 
-        bot.intents.add(Intents.FLAGS.GUILD_VOICE_STATES);
+        bot.intents.push(GatewayIntentBits.GuildVoiceStates);
     }
 
     public getRecorder(guild: Guild): GuildRecorder {

@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import { createInterface, ReadLine } from "readline";
 
-import { Client, Guild, Intents, VoiceChannel } from "discord.js";
+import { Client, Guild, GatewayIntentBits, VoiceChannel } from "discord.js";
 import { entersState, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import { transports } from "winston";
 
@@ -77,7 +77,7 @@ export class Bot extends EventEmitter {
     /** The module handler of the bot. */
     public modules: Modules;
     /** The Discord gateway intents the bot needs to function */
-    public intents: Intents;
+    public intents: GatewayIntentBits[];
     private configEntries: {
         loggerGroup?: ConfigEntryGroup, clientGroup?: ConfigEntryGroup,
         logger: {
@@ -147,10 +147,7 @@ export class Bot extends EventEmitter {
         this.modules = new Modules(this);
         this.modules.registerConfig();
 
-        this.intents = new Intents();
-        this.intents.add(Intents.FLAGS.GUILDS);
-        this.intents.add(Intents.FLAGS.GUILD_MESSAGES);
-        this.intents.add(Intents.FLAGS.DIRECT_MESSAGES);
+        this.intents = [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.DirectMessages];
     }
 
     /** Starts the bot. */
@@ -189,8 +186,6 @@ export class Bot extends EventEmitter {
 
                 this.client = new Client({
                     intents: this.intents,
-                    messageCacheLifetime: this.configEntries.client.messageCacheLifetime.get(),
-                    messageSweepInterval: this.configEntries.client.messageCacheSweepInterval.get(),
                 });
                 Logger.info("Connecting to Discord");
                 await this.client.login(this.configEntries.client.token.get());

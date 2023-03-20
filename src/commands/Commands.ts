@@ -1,10 +1,10 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
 import { REST } from "@discordjs/rest";
-import { Routes } from "discord-api-types/v9";
-import { FileOptions, Guild, GuildChannel, GuildMember, Interaction, Message, Permissions as DiscordPermissions, TextChannel } from "discord.js";
+import { APIAttachment, Attachment, AttachmentBuilder, AttachmentPayload, BufferResolvable, Guild, GuildChannel, GuildMember, Interaction, JSONEncodable, Message, PermissionFlagsBits, Permissions as DiscordPermissions, PermissionsBitField, Routes, TextChannel } from "discord.js";
 import { EventEmitter } from "events";
 import { readdir } from "fs-extra";
 import { resolve } from "path";
+import { Stream } from "stream";
 
 import { Repository } from "typeorm";
 import { Bot } from "../Bot";
@@ -21,7 +21,7 @@ import { PermissionGroup } from "../permissions/PermissionGroup";
 import { Logger } from "../util/Logger";
 import { IExtendedGuild, IExtendedMember, IExtendedMessage, IExtendedUser } from "../util/Types";
 import { BuiltInArguments } from "./arguments/BuiltinArguments";
-import { AnyCommand, Command } from "./Command";
+import { AnyCommand, Command, IExecutionContext } from "./Command";
 import { CommandGroup } from "./CommandGroup";
 import { CommandPhrases } from "./CommandPhrases";
 import { GuildAliasEntity } from "./database/GuildAliasEntity";
@@ -153,8 +153,8 @@ export class Commands extends EventEmitter {
             return;
         }
         const language = await this.bot.languages.getLanguage(message.guild);
-        const botPermissions = discordMessage.guild.me!.permissionsIn(discordMessage.channel);
-        if (!botPermissions.has(DiscordPermissions.FLAGS.SEND_MESSAGES)) {
+        const botPermissions = discordMessage.guild.members.me!.permissionsIn(discordMessage.channel);
+        if (!botPermissions.has(PermissionFlagsBits.SendMessages)) {
             // Send private message telling the bot can't send messages
             return discordMessage.author.send(CommandPhrases.botNoSendPermission.get(language));
         }
@@ -252,7 +252,7 @@ export class Commands extends EventEmitter {
         };
 
         const language = await this.bot.languages.getLanguage(guild);
-        const botPermissions = interaction.guild.me!.permissionsIn(interaction.channel);
+        const botPermissions = interaction.guild.members.me!.permissionsIn(interaction.channel);
 
         const command = interaction.commandName;
 
@@ -725,7 +725,7 @@ export interface ICommandContext {
     /** The function to respond to the command with. */
     respond: LinkedResponse;
     /** Bot's permissions. */
-    botPermissions: Readonly<DiscordPermissions>;
+    botPermissions: Readonly<PermissionsBitField>;
 }
 
 /**
@@ -749,5 +749,12 @@ export type LinkedResponse =
  * @category Command
  */
 export interface IResponseOptions {
-    files: FileOptions[],
+    files: (
+        | BufferResolvable
+        | Stream
+        | JSONEncodable<APIAttachment>
+        | Attachment
+        | AttachmentBuilder
+        | AttachmentPayload
+    )[];
 }

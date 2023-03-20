@@ -9,7 +9,9 @@
             "request": "launch",
             "name": "Launch Program",
             "program": "${workspaceFolder}/dist/extcord.js",
-            "args": ["-vvi"],
+            "args": [
+                "-vvi"
+            ],
             "console": "integratedTerminal",
             "sourceMaps": true,
             "outFiles": [

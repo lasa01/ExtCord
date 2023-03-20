@@ -29,11 +29,11 @@ export class DynamicFieldMessagePhrase<T extends Record<string, string>, U exten
      * @param fieldTemplateDescription Descriptions of available placeholders for the dynamic fields.
      */
     constructor(
-            info: IPhraseInfo,
-            defaultsText: Record<string, string> | string, defaultsEmbed: ILocalizedBaseEmbed | IBaseEmbed,
-            defaultsFieldText: Record<string, string> | string, defaultsField: ILocalizedEmbedField | IEmbedField,
-            templateDescription: T, fieldTemplateDescription: U,
-        ) {
+        info: IPhraseInfo,
+        defaultsText: Record<string, string> | string, defaultsEmbed: ILocalizedBaseEmbed | IBaseEmbed,
+        defaultsFieldText: Record<string, string> | string, defaultsField: ILocalizedEmbedField | IEmbedField,
+        templateDescription: T, fieldTemplateDescription: U,
+    ) {
         super(info, defaultsText, defaultsEmbed, templateDescription);
         if (typeof defaultsFieldText === "string") {
             defaultsFieldText = {
@@ -93,7 +93,7 @@ export class DynamicFieldMessagePhrase<T extends Record<string, string>, U exten
         }
         if (!parsed.embed.dynamicFields__comment__ ||
             typeof parsed.embed.dynamicFields__comment__ !== "string") {
-            Object.defineProperty(parsed.embed, "dynamicFields__comment__", { enumerable: false, writable: true});
+            Object.defineProperty(parsed.embed, "dynamicFields__comment__", { enumerable: false, writable: true });
             parsed.embed.dynamicFields__comment__ = this.fieldDescription;
         }
         return [parsed, comment];
@@ -143,10 +143,12 @@ export class DynamicFieldMessagePhrase<T extends Record<string, string>, U exten
                             formattedFieldThing[key] = thing;
                         }
                     }
-                    embed.addField(format(template.name, formattedFieldThing),
-                        format(template.value, formattedFieldThing), template.inline);
+                    embed.addFields({
+                        name: format(template.name, formattedFieldThing),
+                        value: format(template.value, formattedFieldThing), inline: template.inline
+                    });
                 } else {
-                    embed.addField("", "");
+                    embed.addFields({ name: "", value: "" });
                 }
             }
         }
@@ -159,7 +161,7 @@ export class DynamicFieldMessagePhrase<T extends Record<string, string>, U exten
  * @category Language
  */
 export type TemplateStuffs<T extends Record<string, string>, U extends Record<string, string>>
-    = Array<TemplateStuff<T, U>|undefined>;
+    = Array<TemplateStuff<T, U> | undefined>;
 
 /**
  * Localized version of an embed field.

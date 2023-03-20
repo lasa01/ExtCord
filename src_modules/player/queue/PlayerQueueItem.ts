@@ -42,7 +42,12 @@ export class PlayerQueueItem {
         }
 
         if (this.details.urlIsYoutube) {
-            return ytdl(this.url, { filter: "audioonly", highWaterMark: 32 * 1024 * 1024 });
+            return ytdl(this.url, {
+                filter: "audioonly",
+                highWaterMark: 1 << 62,
+                liveBuffer: 1 << 62,
+                dlChunkSize: 0,
+            });
         }
 
         // fetch url directly
