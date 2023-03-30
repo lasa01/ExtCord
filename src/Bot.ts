@@ -147,7 +147,7 @@ export class Bot extends EventEmitter {
         this.modules = new Modules(this);
         this.modules.registerConfig();
 
-        this.intents = [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.DirectMessages];
+        this.intents = [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages];
     }
 
     /** Starts the bot. */
