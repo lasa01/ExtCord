@@ -70,7 +70,7 @@ export class Commands extends EventEmitter {
     private bot: Bot;
     private commands: Map<string, AnyCommand>;
     private languageCommandsMap: Map<string, Map<string, AnyCommand>>;
-    private guildCommandsMap: Map<string, Map<string, AnyCommand>>;
+    private guildCommandsMap: Map<[string, string], Map<string, AnyCommand>>;
     private configEntry: ConfigEntryGroup;
     private permissions: Permission[];
     private permission?: Permission;
@@ -369,8 +369,8 @@ export class Commands extends EventEmitter {
      * @param language The language to use.
      */
     public async getGuildCommandsMap(guild: IExtendedGuild, language: string) {
-        if (this.guildCommandsMap.has(guild.guild.id)) {
-            return this.guildCommandsMap.get(guild.guild.id)!;
+        if (this.guildCommandsMap.has([guild.guild.id, language])) {
+            return this.guildCommandsMap.get([guild.guild.id, language])!;
         }
         const map = new Map(this.getLanguageCommmandsMap(language));
         this.ensureRepo();
@@ -400,7 +400,7 @@ export class Commands extends EventEmitter {
             }
             map.set(alias.alias, currentCommand);
         }
-        this.guildCommandsMap.set(guild.guild.id, map);
+        this.guildCommandsMap.set([guild.guild.id, language], map);
         return map;
     }
 
