@@ -38,7 +38,7 @@ export class ListPhrase extends Phrase {
      * @param language The language to use.
      */
     public get(language: string) {
-        return this.templates[language];
+        return this.templates[language] ?? [];
     }
 
     public parse(language: string, data: any): [string[], string?] {
