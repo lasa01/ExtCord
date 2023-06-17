@@ -84,7 +84,7 @@
     "tslint": "^6.1.3",
     "typedoc": "^0.22.11",
     "typescript": "^4.5.5",
-    "ytdl-core": "^4.11.2",
+    "ytdl-core": "npm:@distube/ytdl-core@^4.11.10",
     "ytpl": "^2.2.3",
     "ytsr": "^3.5.3"
   }

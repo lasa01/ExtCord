@@ -1,5 +1,5 @@
 // extcord module
-// requires ffmpeg-static ytdl-core ytsr ytpl
+// requires ffmpeg-static ytdl-core@npm:@distube/ytdl-core ytsr ytpl
 
 import {
     AudioPlayerStatus, createAudioPlayer,
