@@ -6,7 +6,7 @@ import { IQueueItemDetails, PlayerQueueItem } from "../queue/PlayerQueueItem";
 
 import { getVoiceConnection, VoiceConnection } from "@discordjs/voice";
 import { Guild, VoiceChannel } from "discord.js";
-import ytdl = require("ytdl-core");
+import ytdl = require("@distube/ytdl-core");
 import ytpl = require("ytpl");
 import ytsr = require("ytsr");
 import fetch from "node-fetch";
