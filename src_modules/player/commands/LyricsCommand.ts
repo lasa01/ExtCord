@@ -56,7 +56,7 @@ export class LyricsCommand extends Command<[]> {
         }
 
         const playingTitle = queue.playing.details.title;
-        const response = await fetch(`https://some-random-api.ml/lyrics?title=${encodeURIComponent(playingTitle)}`, {
+        const response = await fetch(`https://some-random-api.com/lyrics?title=${encodeURIComponent(playingTitle)}`, {
             timeout: 10000,
         });
 
