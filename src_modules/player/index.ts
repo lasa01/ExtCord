@@ -73,7 +73,7 @@ export default class PlayerModule extends Module {
         return queue;
     }
 
-    public popQueue(guild: Guild) {
+    public popQueue(guild: Guild): PlayerQueueItem | undefined {
         const queue = this.guildQueues.get(guild.id);
         return queue?.pop();
     }
