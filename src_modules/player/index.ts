@@ -48,16 +48,6 @@ export default class PlayerModule extends Module {
             },
         );
         this.musicCommand.addSubcommands(
-            new PauseCommand(),
-            new PlayCommand(this),
-            new ResumeCommand(),
-            new SkipCommand(this),
-            new StopCommand(this),
-            new VolumeCommand(),
-            new QueueCommand(this),
-            new LyricsCommand(this),
-            new ClearCommand(this),
-            new SeekCommand(this),
             new PopCommand(this),
         );
         this.musicCommand.addPhrases(...phrases);
@@ -71,8 +61,15 @@ export default class PlayerModule extends Module {
         bot.intents.push(GatewayIntentBits.GuildVoiceStates);
     }
 
-    public popQueue(guild: Guild) {
-        return this.guildQueues.get(guild.id)?.pop();
+    public getQueue(guild: IExtendedGuild): PlayerQueue {
+        let queue = this.guildQueues.get(guild.guild.id);
+
+        if (queue === undefined) {
+            queue = new PlayerQueue(guild);
+            this.guildQueues.set(guild.guild.id, queue);
+        }
+
+        return queue;
     }
 
     public clearQueue(guild: Guild) {
