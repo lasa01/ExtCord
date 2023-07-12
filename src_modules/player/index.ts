@@ -9,8 +9,10 @@ import { Guild, GatewayIntentBits, VoiceState } from "discord.js";
 
 import { Bot, CommandGroup, ICommandContext, IExtendedGuild, Logger, Module } from "../..";
 
+
 import { ClearCommand } from "./commands/ClearCommand";
 import { LyricsCommand } from "./commands/LyricsCommand";
+import { PopCommand } from "./commands/PopCommand";
 import { PauseCommand } from "./commands/PauseCommand";
 import { PlayCommand } from "./commands/PlayCommand";
 import { QueueCommand } from "./commands/QueueCommand";
@@ -61,6 +63,7 @@ export default class PlayerModule extends Module {
             new LyricsCommand(this),
             new ClearCommand(this),
             new SeekCommand(this),
+            new PopCommand(this),
         );
         this.musicCommand.addPhrases(...phrases);
         this.registerCommand(this.musicCommand);
@@ -82,6 +85,11 @@ export default class PlayerModule extends Module {
         }
 
         return queue;
+    }
+
+    public popQueue(guild: Guild): PlayerQueueItem | undefined {
+        const queue = this.guildQueues.get(guild.id);
+        return queue?.pop();
     }
 
     public clearQueue(guild: Guild) {
