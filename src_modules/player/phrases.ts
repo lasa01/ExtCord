@@ -406,6 +406,34 @@ export const musicErrorPhrase = new MessagePhrase(
     },
 );
 
+export const musicPopPhrase = new MessagePhrase(
+    {
+        description: "Shown when the last item is removed from the queue",
+        name: "musicPop",
+    },
+    "Last item removed from the queue.",
+    {
+        description: "Last item removed from the queue.",
+        timestamp: false,
+        title: "Item removed",
+    },
+    {},
+);
+
+export const musicEmptyQueuePhrase = new MessagePhrase(
+    {
+        description: "Shown when the queue is empty",
+        name: "musicEmptyQueue",
+    },
+    "The queue is empty.",
+    {
+        description: "The queue is empty.",
+        timestamp: false,
+        title: "Empty queue",
+    },
+    {},
+);
+
 export const phrases = [
     musicNoVoicePhrase, musicNotFoundPhrase, musicNotPlayingPhrase,
     musicPausePhrase, musicPlayPhrase, musicSearchingPhrase,
@@ -414,4 +442,5 @@ export const phrases = [
     musicQueuePhrase, musicLyricsPhrase, musicLyricsErrorPhrase,
     musicLyricsNotFoundPhrase, musicLyricsRateLimitedPhrase, musicEmptyPlaylistPhrase,
     musicClearPhrase, musicSeekPhrase, musicErrorPhrase,
+    musicPopPhrase, musicEmptyQueuePhrase
 ];
