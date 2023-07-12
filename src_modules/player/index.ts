@@ -1,5 +1,3 @@
-// extcord module
-// requires ffmpeg-static @distube/ytdl-core ytsr ytpl
 import {
     AudioPlayerStatus, createAudioPlayer,
     getVoiceConnection, PlayerSubscription, VoiceConnection, VoiceConnectionStatus,
@@ -18,16 +16,7 @@ import { SeekCommand } from "./commands/SeekCommand";
 import { SkipCommand } from "./commands/SkipCommand";
 import { StopCommand } from "./commands/StopCommand";
 import { VolumeCommand } from "./commands/VolumeCommand";
-import {
-    musicEmptyPlaylistPhrase,
-    musicEnqueueListPhrase,
-    musicEnqueuePhrase,
-    musicErrorPhrase,
-    musicPlayPhrase,
-    phrases,
-} from "./phrases";
-import { PlayerQueue } from "./queue/PlayerQueue";
-import { PlayerQueueItem } from "./queue/PlayerQueueItem";
+import { LyricsCommand } from "./commands/LyricsCommand";
 
 export default class PlayerModule extends Module {
     public musicCommand: CommandGroup;
