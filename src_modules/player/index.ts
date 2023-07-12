@@ -1,5 +1,3 @@
-// extcord module
-// requires ffmpeg-static @distube/ytdl-core ytsr ytpl
 import {
     AudioPlayerStatus, createAudioPlayer,
     getVoiceConnection, PlayerSubscription, VoiceConnection, VoiceConnectionStatus,
@@ -50,6 +48,15 @@ export default class PlayerModule extends Module {
             },
         );
         this.musicCommand.addSubcommands(
+            new PauseCommand(),
+            new PlayCommand(this),
+            new ResumeCommand(),
+            new SkipCommand(this),
+            new StopCommand(this),
+            new VolumeCommand(),
+            new QueueCommand(this),
+            new ClearCommand(this),
+            new SeekCommand(this),
             new PopCommand(this),
         );
         this.musicCommand.addPhrases(...phrases);
