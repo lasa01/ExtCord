@@ -7,6 +7,7 @@ import { Guild, GatewayIntentBits, VoiceState } from "discord.js";
 import { Bot, CommandGroup, ICommandContext, IExtendedGuild, Logger, Module } from "../..";
 
 import { ClearCommand } from "./commands/ClearCommand";
+import { LyricsCommand } from "./commands/LyricsCommand";
 import { PopCommand } from "./commands/PopCommand";
 import { PauseCommand } from "./commands/PauseCommand";
 import { PlayCommand } from "./commands/PlayCommand";
