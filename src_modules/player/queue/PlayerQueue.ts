@@ -25,7 +25,7 @@ export class PlayerQueue {
         this.queue.length = 0;
     }
 
-    public pop() {
+    public pop(): PlayerQueueItem | undefined {
         return this.queue.pop();
     }
 }
