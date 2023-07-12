@@ -24,4 +24,8 @@ export class PlayerQueue {
     public clear() {
         this.queue.length = 0;
     }
+
+    public pop() {
+        return this.queue.pop();
+    }
 }
