@@ -1,6 +1,3 @@
-// extcord module
-// requires ffmpeg-static @distube/ytdl-core ytsr ytpl
-
 import {
     AudioPlayerStatus, createAudioPlayer,
     getVoiceConnection, PlayerSubscription, VoiceConnection, VoiceConnectionStatus,
@@ -10,7 +7,7 @@ import { Guild, GatewayIntentBits, VoiceState } from "discord.js";
 import { Bot, CommandGroup, ICommandContext, IExtendedGuild, Logger, Module } from "../..";
 
 import { ClearCommand } from "./commands/ClearCommand";
-import { LyricsCommand } from "./commands/LyricsCommand";
+import { PopCommand } from "./commands/PopCommand";
 import { PauseCommand } from "./commands/PauseCommand";
 import { PlayCommand } from "./commands/PlayCommand";
 import { QueueCommand } from "./commands/QueueCommand";
@@ -51,16 +48,7 @@ export default class PlayerModule extends Module {
             },
         );
         this.musicCommand.addSubcommands(
-            new PauseCommand(),
-            new PlayCommand(this),
-            new ResumeCommand(),
-            new SkipCommand(this),
-            new StopCommand(this),
-            new VolumeCommand(),
-            new QueueCommand(this),
-            new LyricsCommand(this),
-            new ClearCommand(this),
-            new SeekCommand(this),
+            new PopCommand(this),
         );
         this.musicCommand.addPhrases(...phrases);
         this.registerCommand(this.musicCommand);
@@ -73,15 +61,8 @@ export default class PlayerModule extends Module {
         bot.intents.push(GatewayIntentBits.GuildVoiceStates);
     }
 
-    public getQueue(guild: IExtendedGuild): PlayerQueue {
-        let queue = this.guildQueues.get(guild.guild.id);
-
-        if (queue === undefined) {
-            queue = new PlayerQueue(guild);
-            this.guildQueues.set(guild.guild.id, queue);
-        }
-
-        return queue;
+    public popQueue(guild: Guild) {
+        return this.guildQueues.get(guild.id)?.pop();
     }
 
     public clearQueue(guild: Guild) {
