@@ -1,11 +1,11 @@
 import { Command, IExecutionContext } from "../../..";
 import PlayerModule from "..";
 import { getVoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
-import { 
-    musicNoVoicePhrase, 
-    musicNotPlayingPhrase, 
-    musicWrongVoicePhrase, 
-    musicShufflePhrase 
+import {
+    musicNoVoicePhrase,
+    musicNotPlayingPhrase,
+    musicWrongVoicePhrase,
+    musicShufflePhrase
 } from "../phrases";
 
 export class ShuffleCommand extends Command<[]> {

@@ -1,10 +1,10 @@
+// extcord module
+// requires ffmpeg-static @distube/ytdl-core ytsr ytpl
+
 import {
     AudioPlayerStatus, createAudioPlayer,
     getVoiceConnection, PlayerSubscription, VoiceConnection, VoiceConnectionStatus,
 } from "@discordjs/voice";
-
-// extcord module
-// requires ffmpeg-static @distube/ytdl-core ytsr ytpl
 import { Guild, GatewayIntentBits, VoiceState } from "discord.js";
 
 import { Bot, CommandGroup, ICommandContext, IExtendedGuild, Logger, Module } from "../..";
@@ -96,6 +96,7 @@ export default class PlayerModule extends Module {
     public clearQueue(guild: Guild) {
         this.guildQueues.get(guild.id)?.clear();
     }
+
     public shuffleQueue(guild: Guild) {
         this.guildQueues.get(guild.id)?.shuffle();
     }
