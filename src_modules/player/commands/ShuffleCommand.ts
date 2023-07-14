@@ -1,20 +1,43 @@
-import { Command, CommandContext } from '../../../src/commands/command';
-import PlayerModule from '../index';
+import { Command, IExecutionContext } from "../../..";
+import PlayerModule from "..";
 
-export class ShuffleCommand extends Command {
-  constructor() {
-    super({
-      name: 'shuffle',
-      description: 'Shuffle the player queue',
-      module: 'player',
-    });
-  }
+export class ShuffleCommand extends Command<[]> {
+    private player: PlayerModule;
 
-  async execute(ctx: CommandContext) {
-    const player = await PlayerModule.get(ctx.bot, ctx.msg);
-    if (!player) return;
+    public constructor(player: PlayerModule) {
+        super(
+            {
+                allowedPrivileges: ["everyone"],
+                author: "extcord",
+                description: "Shuffle the player queue",
+                globalAliases: ["shuffle"],
+                name: "shuffle",
+            },
+            [],
+        );
+        this.player = player;
+    }
 
-    player.queue.shuffle();
-    await ctx.ok('player.shuffle.success');
-  }
+    public async execute(context: IExecutionContext<[]>) {
+        const voiceChannel = context.member.member.voice.channel;
+
+        if (!voiceChannel) {
+            return context.respond(musicNoVoicePhrase, {});
+        }
+
+        const guild = context.guild.guild;
+        const connection = getVoiceConnection(guild.id);
+
+        if (connection?.state.status !== VoiceConnectionStatus.Ready || !connection.state.subscription) {
+            return context.respond(musicNotPlayingPhrase, {});
+        }
+
+        if (!voiceChannel.members.get(context.bot.client!.user!.id)) {
+            return context.respond(musicWrongVoicePhrase, {});
+        }
+
+        this.player.shuffleQueue(guild);
+
+        return context.respond(musicShufflePhrase, {});
+    }
 }
