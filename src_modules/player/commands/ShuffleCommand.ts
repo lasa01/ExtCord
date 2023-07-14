@@ -1,5 +1,5 @@
-import { Command, CommandContext } from '../../../commands/command';
-import { PlayerModule } from '../index';
+import { Command, CommandContext } from '../../../src/commands/command';
+import PlayerModule from '../index';
 
 export class ShuffleCommand extends Command {
   constructor() {
