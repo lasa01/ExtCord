@@ -150,7 +150,7 @@ export const musicEmptyPlaylistPhrase = new MessagePhrase(
         description: "Shown when trying to play an empty playlist",
         name: "musicEmptyPlaylist",
     },
-    "The playlist  is empty.",
+    "The playlist is empty.",
     {
         description: "The playlist is empty.",
         timestamp: false,
@@ -434,6 +434,20 @@ export const musicEmptyQueuePhrase = new MessagePhrase(
     {},
 );
 
+export const musicShufflePhrase = new MessagePhrase(
+    {
+        description: "Shown when the queue is shuffled",
+        name: "musicShuffle",
+    },
+    "Queue shuffled.",
+    {
+        description: "Queue shuffled.",
+        timestamp: false,
+        title: "Shuffled",
+    },
+    {},
+);
+
 export const phrases = [
     musicNoVoicePhrase, musicNotFoundPhrase, musicNotPlayingPhrase,
     musicPausePhrase, musicPlayPhrase, musicSearchingPhrase,
@@ -442,5 +456,5 @@ export const phrases = [
     musicQueuePhrase, musicLyricsPhrase, musicLyricsErrorPhrase,
     musicLyricsNotFoundPhrase, musicLyricsRateLimitedPhrase, musicEmptyPlaylistPhrase,
     musicClearPhrase, musicSeekPhrase, musicErrorPhrase,
-    musicPopPhrase, musicEmptyQueuePhrase
+    musicPopPhrase, musicEmptyQueuePhrase, musicShufflePhrase
 ];
