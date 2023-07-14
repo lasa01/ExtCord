@@ -1,6 +1,3 @@
-// extcord module
-// requires ffmpeg-static @distube/ytdl-core ytsr ytpl
-
 import {
     AudioPlayerStatus, createAudioPlayer,
     getVoiceConnection, PlayerSubscription, VoiceConnection, VoiceConnectionStatus,
@@ -31,6 +28,7 @@ import {
 } from "./phrases";
 import { PlayerQueue } from "./queue/PlayerQueue";
 import { PlayerQueueItem } from "./queue/PlayerQueueItem";
+import { ShuffleCommand } from "./commands/ShuffleCommand";
 
 export default class PlayerModule extends Module {
     public musicCommand: CommandGroup;
@@ -64,6 +62,7 @@ export default class PlayerModule extends Module {
             new ClearCommand(this),
             new SeekCommand(this),
             new PopCommand(this),
+            new ShuffleCommand(this),
         );
         this.musicCommand.addPhrases(...phrases);
         this.registerCommand(this.musicCommand);
@@ -94,6 +93,9 @@ export default class PlayerModule extends Module {
 
     public clearQueue(guild: Guild) {
         this.guildQueues.get(guild.id)?.clear();
+    }
+    public shuffleQueue(guild: Guild) {
+        this.guildQueues.get(guild.id)?.shuffle();
     }
 
     public async play(
