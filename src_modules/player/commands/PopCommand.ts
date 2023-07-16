@@ -1,4 +1,4 @@
-import { Command, IExecutionContext } from "../../..";
+import { Command, IExecutionContext, IExtendedGuild, IExtendedMember } from "../../..";
 import PlayerModule from "..";
 import { musicNoVoicePhrase, musicNotPlayingPhrase, musicWrongVoicePhrase, musicPopPhrase, musicEmptyQueuePhrase } from "../phrases";
 
