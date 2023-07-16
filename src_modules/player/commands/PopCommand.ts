@@ -1,7 +1,6 @@
 import { Command, IExecutionContext } from "../../..";
 import PlayerModule from "..";
 import { musicNoVoicePhrase, musicNotPlayingPhrase, musicWrongVoicePhrase, musicPopPhrase, musicEmptyQueuePhrase } from "../phrases";
-// Check and possibly modify the import statements here
 
 export class PopCommand extends Command<[]> {
     private player: PlayerModule;
@@ -22,8 +21,8 @@ export class PopCommand extends Command<[]> {
 
     public async execute(context: IExecutionContext<[]>) {
         const guild = context.guild;
-        const voiceChannel = context.member.voice.channel;
-        const botVoiceChannel = guild.me.voice.channel;
+        const voiceChannel = context.member.getVoiceChannel();
+        const botVoiceChannel = guild.getBotVoiceChannel();
 
         if (!voiceChannel) {
             return context.respond(musicNoVoicePhrase, {});
@@ -37,7 +36,7 @@ export class PopCommand extends Command<[]> {
             return context.respond(musicNotPlayingPhrase, {});
         }
 
-        const result = this.player.popQueue(guild);
+        const result = this.player.popQueue(guild.getGuildInstance());
 
         if (result) {
             return context.respond(musicPopPhrase, {});
