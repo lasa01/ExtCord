@@ -1,5 +1,6 @@
 import { Command, IExecutionContext } from "../../..";
 import PlayerModule from "..";
+import { IExtendedGuild, IExtendedMember } from "path_to_definitions"; // replace "path_to_definitions" with the actual path
 import { musicNoVoicePhrase, musicNotPlayingPhrase, musicWrongVoicePhrase, musicPopPhrase, musicEmptyQueuePhrase } from "../phrases";
 
 export class PopCommand extends Command<[]> {
@@ -20,8 +21,8 @@ export class PopCommand extends Command<[]> {
     }
 
     public async execute(context: IExecutionContext<[]>) {
-        const guild = context.guild as CorrectGuildType;
-        const voiceChannel = (context.member as CorrectMemberType).getVoiceChannel();
+        const guild = context.guild as IExtendedGuild;
+        const voiceChannel = (context.member as IExtendedMember).getVoiceChannel();
         const botVoiceChannel = guild.getBotVoiceChannel();
 
         if (!voiceChannel) {
@@ -37,7 +38,8 @@ export class PopCommand extends Command<[]> {
         }
 
         // Copy the checks from the `ShuffleCommand` class and add them here
-        if (this.player.getQueue(context.guild).length < 2) {
+        // Replace 'this.player.getQueue(context.guild).length' with the correct way to get the number of items in the queue
+        if (this.player.getQueue(context.guild).getNumberOfItems() < 2) { // replace 'getNumberOfItems()' with the actual method if it exists
             return context.respond(musicEmptyQueuePhrase, {});
         }
 
