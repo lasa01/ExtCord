@@ -20,8 +20,8 @@ export class PopCommand extends Command<[]> {
     }
 
     public async execute(context: IExecutionContext<[]>) {
-        const guild = context.guild;
-        const voiceChannel = context.member.getVoiceChannel();
+        const guild = context.guild as IExtendedGuild;
+        const voiceChannel = (context.member as IExtendedMember).getVoiceChannel();
         const botVoiceChannel = guild.getBotVoiceChannel();
 
         if (!voiceChannel) {
