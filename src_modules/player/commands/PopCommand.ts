@@ -1,4 +1,4 @@
-import { Command, IExecutionContext, IExtendedGuild, IExtendedMember } from "../../..";
+import { Command, IExecutionContext } from "../../..";
 import PlayerModule from "..";
 import { musicNoVoicePhrase, musicNotPlayingPhrase, musicWrongVoicePhrase, musicPopPhrase, musicEmptyQueuePhrase } from "../phrases";
 
@@ -34,6 +34,11 @@ export class PopCommand extends Command<[]> {
 
         if (!this.player.getQueue(context.guild).playing) {
             return context.respond(musicNotPlayingPhrase, {});
+        }
+
+        // Copy the checks from the `ShuffleCommand` class and add them here
+        if (this.player.getQueue(context.guild).length < 2) {
+            return context.respond(musicEmptyQueuePhrase, {});
         }
 
         const result = this.player.popQueue(guild.getGuildInstance());
