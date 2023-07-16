@@ -21,8 +21,8 @@ export class PopCommand extends Command<[]> {
 
     public async execute(context: IExecutionContext<[]>) {
         const guild = context.guild.guild;
-        const voiceChannel = context.member.voiceState.channel;
-        const botVoiceChannel = guild.me.voiceState.channel;
+        const voiceChannel = context.member.getVoiceState().channel;
+        const botVoiceChannel = guild.getBotVoiceChannel();
 
         if (!voiceChannel) {
             return context.respond(musicNoVoicePhrase, {});
@@ -32,7 +32,7 @@ export class PopCommand extends Command<[]> {
             return context.respond(musicWrongVoicePhrase, {});
         }
 
-        if (!this.player.state.isPlaying) {
+        if (!this.player.isPlaying()) {
             return context.respond(musicNotPlayingPhrase, {});
         }
 
