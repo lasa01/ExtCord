@@ -2,7 +2,8 @@ import { EventEmitter } from "events";
 import { createInterface, ReadLine } from "readline";
 
 import { Client, Guild, GatewayIntentBits, VoiceChannel } from "discord.js";
-import { entersState, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
+export { VoiceConnectionStatus } from "@discordjs/voice";
+import { entersState, joinVoiceChannel, VoiceConnection } from "@discordjs/voice";
 import { transports } from "winston";
 
 import { Commands } from "./commands/Commands";
