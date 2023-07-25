@@ -72,6 +72,7 @@ export class MemberOrRoleArgument<T extends boolean>
             return {
                 entity: await this.memberRepo.getEntity(member),
                 member,
+                getVoiceState: () => member.voice,
             };
         }
     }
