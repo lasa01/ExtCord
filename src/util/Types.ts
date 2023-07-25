@@ -23,6 +23,8 @@ export interface IExtendedMember {
     member: GuildMember;
     /** The member database entity. */
     entity: MemberEntity;
+    /** The member's voice state. */
+    getVoiceState(): VoiceState;
 }
 /**
  * A discord role extended with a database entity.
