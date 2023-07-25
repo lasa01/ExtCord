@@ -50,6 +50,7 @@ export class MemberArgument<T extends boolean> extends Argument<Promise<IExtende
         return {
             entity: await this.repo.getEntity(member),
             member,
+            getVoiceState: () => member.voice,
         };
     }
 
