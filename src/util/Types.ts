@@ -1,4 +1,4 @@
-import { Guild, GuildMember, Message, Role, User } from "discord.js";
+import { Guild, GuildMember, Message, Role, User, VoiceState } from "discord.js";
 import { GuildEntity } from "../database/entity/GuildEntity";
 import { MemberEntity } from "../database/entity/MemberEntity";
 import { RoleEntity } from "../database/entity/RoleEntity";
@@ -14,6 +14,7 @@ export interface IExtendedGuild {
     /** The guild database entity. */
     entity: GuildEntity;
 }
+
 /**
  * A discord member extended with a database entity.
  * @category Util
@@ -26,6 +27,7 @@ export interface IExtendedMember {
     /** The member's voice state. */
     getVoiceState(): VoiceState;
 }
+
 /**
  * A discord role extended with a database entity.
  * @category Util
@@ -36,6 +38,7 @@ export interface IExtendedRole {
     /** The role database entity. */
     entity: RoleEntity;
 }
+
 /**
  * A discord user extended with a database entity.
  * @category Util
@@ -46,6 +49,7 @@ export interface IExtendedUser {
     /** The user database entity. */
     entity: UserEntity;
 }
+
 /**
  * A discord message extended with relevant database entities.
  * @category Util
