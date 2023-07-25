@@ -1,4 +1,5 @@
-import { Command, IExecutionContext, VoiceConnectionStatus } from "@discordjs/voice";
+import { VoiceConnectionStatus } from "@discordjs/voice";
+import { Command, IExecutionContext } from "../../..";
 import PlayerModule from "..";
 import { musicPopPhrase, musicEmptyQueuePhrase, musicNoVoicePhrase, musicNotPlayingPhrase, musicWrongVoicePhrase } from "../phrases";
 
