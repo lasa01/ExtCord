@@ -1,4 +1,4 @@
-import { Guild, GuildMember, Message, Role, User, VoiceState } from "discord.js";
+import { Guild, GuildMember, Message, Role, User } from "discord.js";
 import { GuildEntity } from "../database/entity/GuildEntity";
 import { MemberEntity } from "../database/entity/MemberEntity";
 import { RoleEntity } from "../database/entity/RoleEntity";
@@ -24,8 +24,6 @@ export interface IExtendedMember {
     member: GuildMember;
     /** The member database entity. */
     entity: MemberEntity;
-    /** The member's voice state. */
-    getVoiceState(): VoiceState;
 }
 
 /**
