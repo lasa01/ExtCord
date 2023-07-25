@@ -1,4 +1,4 @@
-import { Command, IExecutionContext, VoiceConnectionStatus } from "../../..";
+import { Command, IExecutionContext, VoiceConnectionStatus } from "<correct_module>";
 import PlayerModule from "..";
 import { musicPopPhrase, musicEmptyQueuePhrase, musicNoVoicePhrase, musicNotPlayingPhrase, musicWrongVoicePhrase } from "../phrases";
 
