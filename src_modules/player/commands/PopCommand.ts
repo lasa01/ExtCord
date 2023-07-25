@@ -22,13 +22,13 @@ export class PopCommand extends Command<[]> {
 
     public async execute(context: IExecutionContext<[]>) {
         const guild = context.guild.guild;
-        const voiceChannel = context.member.voice.channel;
+        const voiceChannel = context.member.voiceState.channel;
         if (!voiceChannel) {
             return context.respond(musicNoVoicePhrase, {});
         }
 
         const voiceConnection = this.player.getVoiceConnection(guild);
-        if (!voiceConnection || voiceConnection.status !== VoiceConnectionStatus.Ready || !voiceConnection.subscription) {
+        if (!voiceConnection || voiceConnection.state.status !== VoiceConnectionStatus.Ready || !voiceConnection.state.subscription) {
             return context.respond(musicNotPlayingPhrase, {});
         }
 
