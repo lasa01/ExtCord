@@ -22,7 +22,7 @@ export class PopCommand extends Command<[]> {
 
     public async execute(context: IExecutionContext<[]>) {
         const guild = context.guild.guild;
-        const voiceChannel = context.member.voiceState.channel;
+        const voiceChannel = context.member.getVoiceState().channel;
         if (!voiceChannel) {
             return context.respond(musicNoVoicePhrase, {});
         }
