@@ -1,6 +1,3 @@
-// extcord module
-// requires ffmpeg-static @distube/ytdl-core ytsr ytpl
-
 import {
     AudioPlayerStatus, createAudioPlayer,
     getVoiceConnection, PlayerSubscription, VoiceConnection, VoiceConnectionStatus,
@@ -86,6 +83,10 @@ export default class PlayerModule extends Module {
         }
 
         return queue;
+    }
+
+    public getVoiceConnection(guild: Guild): VoiceConnection | undefined {
+        return getVoiceConnection(guild.id);
     }
 
     public popQueue(guild: Guild): PlayerQueueItem | undefined {
