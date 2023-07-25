@@ -24,6 +24,8 @@ export interface IExtendedMember {
     member: GuildMember;
     /** The member database entity. */
     entity: MemberEntity;
+    /** A function that returns the member's voice state. */
+    getVoiceState: () => VoiceState;
 }
 
 /**
