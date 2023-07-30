@@ -11,8 +11,8 @@
     "typedoc": "cd src && typedoc",
     "test": "mocha",
     "lint": "tslint -p .",
-    "clear:languages": "rimraf ./languages",
-    "clear:privileges": "rimraf ./privileges",
+    "clear:languages": "rimraf ./languages/en.hjson",
+    "clear:privileges": "rimraf ./privileges/admin.hjson ./privileges/everyone.hjson ./privileges/host.hjson",
     "clear": "npm run clear:languages && npm run clear:privileges"
   },
   "repository": {
