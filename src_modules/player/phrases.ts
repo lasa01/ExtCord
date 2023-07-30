@@ -448,6 +448,54 @@ export const musicShufflePhrase = new MessagePhrase(
     {},
 );
 
+export const musicYoutubeErrorPhrase = new MessagePhrase(
+    {
+        description: "Shown when getting queue item from YouTube URL fails",
+        name: "musicYoutubeError",
+    },
+    "Failed to get queue item from YouTube URL: `{url}`",
+    {
+        description: "Failed to get queue item from YouTube URL: `{url}`",
+        timestamp: false,
+        title: "YouTube Error",
+    },
+    {
+        url: "The YouTube URL",
+    },
+);
+
+export const musicDirectUrlErrorPhrase = new MessagePhrase(
+    {
+        description: "Shown when getting queue item from direct URL fails",
+        name: "musicDirectUrlError",
+    },
+    "Failed to get queue item from direct URL: `{url}`",
+    {
+        description: "Failed to get queue item from direct URL: `{url}`",
+        timestamp: false,
+        title: "Direct URL Error",
+    },
+    {
+        url: "The direct URL",
+    },
+);
+
+export const musicUnsupportedUrlPhrase = new MessagePhrase(
+    {
+        description: "Shown when the URL is unsupported",
+        name: "musicUnsupportedUrl",
+    },
+    "The URL is unsupported: `{url}`",
+    {
+        description: "The URL is unsupported: `{url}`",
+        timestamp: false,
+        title: "Unsupported URL",
+    },
+    {
+        url: "The unsupported URL",
+    },
+);
+
 export const phrases = [
     musicNoVoicePhrase, musicNotFoundPhrase, musicNotPlayingPhrase,
     musicPausePhrase, musicPlayPhrase, musicSearchingPhrase,
@@ -456,5 +504,6 @@ export const phrases = [
     musicQueuePhrase, musicLyricsPhrase, musicLyricsErrorPhrase,
     musicLyricsNotFoundPhrase, musicLyricsRateLimitedPhrase, musicEmptyPlaylistPhrase,
     musicClearPhrase, musicSeekPhrase, musicErrorPhrase,
-    musicPopPhrase, musicEmptyQueuePhrase, musicShufflePhrase
+    musicPopPhrase, musicEmptyQueuePhrase, musicShufflePhrase,
+    musicYoutubeErrorPhrase, musicDirectUrlErrorPhrase, musicUnsupportedUrlPhrase
 ];
