@@ -1,7 +1,7 @@
-import { Bot, Command, ICommandContext, IExecutionContext, StringArgument, Util } from "../../..";
+import { Bot, Command, ICommandContext, IExecutionContext, StringArgument, Util, Logger } from "../../..";
 
 import PlayerModule from "..";
-import { musicNotFoundPhrase, musicNoVoicePhrase, musicSearchingPhrase } from "../phrases";
+import { musicNotFoundPhrase, musicNoVoicePhrase, musicSearchingPhrase, musicYoutubeErrorPhrase, musicDirectUrlErrorPhrase } from "../phrases";
 import { IQueueItemDetails, PlayerQueueItem } from "../queue/PlayerQueueItem";
 
 import { getVoiceConnection, VoiceConnection } from "@discordjs/voice";
@@ -132,7 +132,7 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
         return new PlayerQueueItem(itemDetails);
     }
 
-    private async processPlaylist(url: string): Promise<PlayerQueueItem[] | undefined> {
+    private async processPlaylist(url: string): Promise<PlayerQueueItem[]> {
         const playlist = await ytpl(url);
         const items = await Promise.all(playlist.items.map(async (item) => await this.getQueueItemFromYoutubeUrl(item.url)));
         return items.filter(item => item !== undefined);
@@ -172,6 +172,7 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
 
     private async getQueueItemFromDirectUrl(url: string): Promise<PlayerQueueItem | undefined> {
         let itemDetails: IQueueItemDetails;
+        const urlObj = new URL(url);
 
         // check if the url can be played directly
         const response = await fetch(url);
