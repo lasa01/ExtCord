@@ -83,7 +83,11 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
             }
             return playlistItems;
         } else {
-            return [await this.getQueueItemFromUrl(query)];
+            if (ytdl.validateURL(query)) {
+                return [await this.getQueueItemFromYoutubeUrl(query)];
+            } else {
+                return [await this.getQueueItemFromDirectUrl(query)];
+            }
         }
     }
 
@@ -122,10 +126,10 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
 
     private async processPlaylist(url: string): Promise<PlayerQueueItem[] | undefined> {
         const playlist = await ytpl(url);
-        return Promise.all(playlist.items.map(async (item) => await this.getQueueItemFromUrl(item.url)));
+        return Promise.all(playlist.items.map(async (item) => await this.getQueueItemFromYoutubeUrl(item.url)));
     }
 
-    private async getQueueItemFromUrl(url: string): Promise<PlayerQueueItem> {
+    private async getQueueItemFromYoutubeUrl(url: string): Promise<PlayerQueueItem> {
         let ytdlResult: Readable | undefined = ytdl(url, {
             filter: "audioonly",
             highWaterMark: 1 << 62,
@@ -151,39 +155,45 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
                 ytdlResult!.once("error", (err) => reject(err));
             });
         } catch {
-            ytdlResult = undefined;
-
-            // check if the url can be played directly
-            const response = await fetch(url);
-
-            if (!response.ok) {
-                throw new Error(`Request to '${url}' failed: ${response.status} ${response.statusText}`);
-            }
-
-            const contentType = response.headers.get("content-type");
-
-            if (!contentType) {
-                throw new Error(`Request to '${url}': content-type was not provided`);
-            }
-
-            if (!contentType.includes("audio") && !contentType.includes("video") && !contentType.includes("ogg")) {
-                throw new Error(`Request to '${url}': unsupported content-type ${contentType}`);
-            }
-
-            const urlObj = new URL(url);
-
-            itemDetails = {
-                author: urlObj.hostname,
-                authorIconUrl: "",
-                authorUrl: "",
-                duration: "?",
-                thumbnailUrl: "",
-                title: urlObj.pathname,
-                url,
-                urlIsYoutube: false,
-            };
+            throw new Error(`Failed to get queue item from YouTube URL: ${url}`);
         }
 
         return new PlayerQueueItem(itemDetails, ytdlResult);
+    }
+
+    private async getQueueItemFromDirectUrl(url: string): Promise<PlayerQueueItem> {
+        let itemDetails: IQueueItemDetails;
+
+        // check if the url can be played directly
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error(`Request to '${url}' failed: ${response.status} ${response.statusText}`);
+        }
+
+        const contentType = response.headers.get("content-type");
+
+        if (!contentType) {
+            throw new Error(`Request to '${url}': content-type was not provided`);
+        }
+
+        if (!contentType.includes("audio") && !contentType.includes("video") && !contentType.includes("ogg")) {
+            throw new Error(`Request to '${url}': unsupported content-type ${contentType}`);
+        }
+
+        const urlObj = new URL(url);
+
+        itemDetails = {
+            author: urlObj.hostname,
+            authorIconUrl: "",
+            authorUrl: "",
+            duration: "?",
+            thumbnailUrl: "",
+            title: urlObj.pathname,
+            url,
+            urlIsYoutube: false,
+        };
+
+        return new PlayerQueueItem(itemDetails);
     }
 }
