@@ -7,8 +7,8 @@ import { IQueueItemDetails, PlayerQueueItem } from "../queue/PlayerQueueItem";
 import { getVoiceConnection, VoiceConnection } from "@discordjs/voice";
 import { Guild, VoiceChannel } from "discord.js";
 import ytdl = require("@distube/ytdl-core");
-import ytpl = require("ytpl");
-import ytsr = require("ytsr");
+import ytpl = require("@distube/ytpl");
+import ytsr = require("@distube/ytsr");
 import fetch from "node-fetch";
 import { Readable } from "stream";
 
@@ -76,7 +76,7 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
         if (!Util.isValidUrl(query)) {
             respondPromise = context.respond(musicSearchingPhrase, { search: query });
             const searchResult = await ytsr(query, {
-                pages: 1,
+                limit: 1,
             });
             let resultUrl: string | undefined;
             let resultItem: ytsr.Video | undefined;
@@ -94,11 +94,11 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
             url = resultUrl;
             const itemDetails = {
                 author: resultItem.author?.name ?? "",
-                authorIconUrl: resultItem.author?.avatars[0].url ?? "",
+                authorIconUrl: resultItem.author?.bestAvatar?.url ?? "",
                 authorUrl: resultItem.author?.url ?? "",
                 duration: resultItem.duration ?? "?",
-                thumbnailUrl: resultItem.thumbnails[0].url ?? "",
-                title: resultItem.title,
+                thumbnailUrl: resultItem.thumbnails[0]?.url ?? "",
+                title: resultItem.name,
                 url: resultItem.url,
                 urlIsYoutube: true,
             };
@@ -115,7 +115,12 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
     }
 
     private async getQueueItemFromUrl(url: string): Promise<PlayerQueueItem> {
-        let ytdlResult: Readable | undefined = ytdl(url, { filter: "audioonly", highWaterMark: 32 * 1024 * 1024 });
+        let ytdlResult: Readable | undefined = ytdl(url, {
+            filter: "audioonly",
+            highWaterMark: 1 << 62,
+            liveBuffer: 1 << 62,
+            dlChunkSize: 0,
+        });
         let itemDetails: IQueueItemDetails;
 
         try {

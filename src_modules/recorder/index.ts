@@ -1,5 +1,5 @@
 // extcord module
-// requires ffmpeg-static
+// requires ffmpeg-static@^5.1.0
 
 import { getVoiceConnection } from "@discordjs/voice";
 import { GatewayIntentBits, Guild, VoiceState } from "discord.js";
