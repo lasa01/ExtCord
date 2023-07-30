@@ -135,7 +135,8 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
     private async processPlaylist(url: string): Promise<PlayerQueueItem[]> {
         const playlist = await ytpl(url);
         const items = await Promise.all(playlist.items.map(async (item) => await this.getQueueItemFromYoutubeUrl(item.url)));
-        return items.filter(item => item !== undefined);
+        items = items.filter(item => item !== undefined);
+        return items;
     }
 
     private async getQueueItemFromYoutubeUrl(url: string): Promise<PlayerQueueItem | undefined> {
