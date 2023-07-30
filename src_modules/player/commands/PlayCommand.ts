@@ -1,7 +1,7 @@
-import { Bot, Command, ICommandContext, IExecutionContext, StringArgument, Util } from "../../..";
+import { Bot, Command, ICommandContext, IExecutionContext, StringArgument, Util, Logger } from "../../..";
 
 import PlayerModule from "..";
-import { musicNotFoundPhrase, musicNoVoicePhrase, musicSearchingPhrase } from "../phrases";
+import { musicNotFoundPhrase, musicNoVoicePhrase, musicSearchingPhrase, musicYoutubeErrorPhrase, musicUnsupportedUrlPhrase, musicPlaylistErrorPhrase } from "../phrases";
 import { IQueueItemDetails, PlayerQueueItem } from "../queue/PlayerQueueItem";
 
 import { getVoiceConnection, VoiceConnection } from "@discordjs/voice";
@@ -79,21 +79,41 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
         } else if (ytpl.validateID(query)) {
             const playlistItems = await this.processPlaylist(query);
             if (!playlistItems) {
-                return [];
+                context.respond(musicPlaylistErrorPhrase, { url: query });
+                return;
             }
             return playlistItems;
         } else if (ytdl.validateURL(query)) {
-            return [await this.getQueueItemFromYoutubeUrl(query)];
+            const item = await this.getQueueItemFromYoutubeUrl(query);
+            if (!item) {
+                context.respond(musicYoutubeErrorPhrase, { url: query });
+                return;
+            }
+            return [item];
         } else {
-            return [await this.getQueueItemFromDirectUrl(query)];
+            const item = await this.getQueueItemFromDirectUrl(query);
+            if (!item) {
+                return context.respond(musicUnsupportedUrlPhrase, { url: query });
+            }
+            return [item];
         }
     }
 
     private async searchYoutube(query: string, context: ICommandContext): Promise<PlayerQueueItem | undefined> {
         const respondPromise = context.respond(musicSearchingPhrase, { search: query });
-        const searchResult = await ytsr(query, {
-            limit: 1,
-        });
+        let searchResult: ytsr.VideoResult;
+
+        try {
+            searchResult = await ytsr(query, {
+                limit: 1,
+            });
+        } catch (error) {
+            let errorObj = error as Error;
+            Logger.debug(`Failed to search from YouTube: ${query}. Error: ${errorObj.message}`);
+            await respondPromise;
+            return undefined;
+        }
+
         let resultUrl: string | undefined;
         let resultItem: ytsr.Video | undefined;
         for (const item of searchResult.items) {
@@ -123,64 +143,77 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
     }
 
     private async processPlaylist(url: string): Promise<PlayerQueueItem[] | undefined> {
-        const playlist = await ytpl(url);
-        return Promise.all(playlist.items.map(async (item) => await this.getQueueItemFromYoutubeUrl(item.url)));
-    }
-
-    private async getQueueItemFromYoutubeUrl(url: string): Promise<PlayerQueueItem> {
-        let ytdlResult: Readable | undefined = ytdl(url, {
-            filter: "audioonly",
-            highWaterMark: 1 << 62,
-            liveBuffer: 1 << 62,
-            dlChunkSize: 0,
-        });
-        let itemDetails: IQueueItemDetails;
+        let playlist: ytpl.result;
 
         try {
+            playlist = await ytpl(url);
+        } catch (error) {
+            let errorObj = error as Error;
+            Logger.debug(`Failed to get playlist from YouTube URL: ${url}. Error: ${errorObj.message}`);
+            return undefined;
+        }
+
+        let items = await Promise.all(playlist.items.map(async (item) => await this.getQueueItemFromYoutubeUrl(item.url)));
+        return items.filter((item): item is PlayerQueueItem => item !== undefined);
+    }
+
+    private async getQueueItemFromYoutubeUrl(url: string): Promise<PlayerQueueItem | undefined> {
+        let itemDetails: IQueueItemDetails;
+        let ytdlResult: Readable | undefined;
+
+        try {
+            ytdlResult = ytdl(url, {
+                filter: "audioonly",
+                highWaterMark: 1 << 62,
+                liveBuffer: 1 << 62,
+                dlChunkSize: 0,
+            });
+
             itemDetails = await new Promise((resolve, reject) => {
                 ytdlResult!.once("info", (video: ytdl.videoInfo, format: ytdl.videoFormat) => {
                     resolve({
                         author: video.videoDetails.author.name,
-                        authorIconUrl: video.videoDetails.author.avatar,
+                        authorIconUrl: video.videoDetails.author.thumbnails?.[0]?.url ?? "",
                         authorUrl: video.videoDetails.author.channel_url,
                         duration: video.videoDetails.lengthSeconds,
-                        thumbnailUrl: video.videoDetails.thumbnail.thumbnails[0]?.url ?? "",
+                        thumbnailUrl: video.videoDetails.thumbnails[0]?.url ?? "",
                         title: video.videoDetails.title,
                         url: video.videoDetails.video_url,
                         urlIsYoutube: true,
                     });
                 });
-                ytdlResult!.once("error", (err) => reject(err));
             });
-        } catch {
-            throw new Error(`Failed to get queue item from YouTube URL: ${url}`);
+        } catch (error) {
+            let errorObj = error as Error;
+            Logger.debug(`Failed to get queue item from YouTube URL: ${url}. Error: ${errorObj.message}`);
+            return undefined;
         }
 
         return new PlayerQueueItem(itemDetails, ytdlResult);
     }
 
-    private async getQueueItemFromDirectUrl(url: string): Promise<PlayerQueueItem> {
+    private async getQueueItemFromDirectUrl(url: string): Promise<PlayerQueueItem | undefined> {
         let itemDetails: IQueueItemDetails;
+        const urlObj = new URL(url);
 
         // check if the url can be played directly
         const response = await fetch(url);
 
         if (!response.ok) {
-            throw new Error(`Request to '${url}' failed: ${response.status} ${response.statusText}`);
+            Logger.debug(`Request to '${url}' failed: ${response.status} ${response.statusText}`);
+            return undefined;
         }
 
         const contentType = response.headers.get("content-type");
 
         if (!contentType) {
-            throw new Error(`Request to '${url}': content-type was not provided`);
+            Logger.debug(`Request to '${url}': content-type was not provided`);
+            return undefined;
         }
-
         if (!contentType.includes("audio") && !contentType.includes("video") && !contentType.includes("ogg")) {
-            throw new Error(`Request to '${url}': unsupported content-type ${contentType}`);
+            Logger.debug(`Request to '${url}': unsupported content-type ${contentType}`);
+            return undefined;
         }
-
-        const urlObj = new URL(url);
-
         itemDetails = {
             author: urlObj.hostname,
             authorIconUrl: "",
@@ -191,7 +224,6 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
             url,
             urlIsYoutube: false,
         };
-
         return new PlayerQueueItem(itemDetails);
     }
 }
