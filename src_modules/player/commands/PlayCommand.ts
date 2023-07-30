@@ -163,13 +163,13 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
                 });
             });
         } catch (error) {
-            Logger.debug(`Failed to get queue item from YouTube URL: ${url}. Error: ${error.message}`);
+            let errorObj = error as Error;
+            Logger.debug(`Failed to get queue item from YouTube URL: ${url}. Error: ${errorObj.message}`);
             return undefined;
         }
     
         return new PlayerQueueItem(itemDetails, ytdlResult);
     }
-
     private async getQueueItemFromDirectUrl(url: string): Promise<PlayerQueueItem | undefined> {
         let itemDetails: IQueueItemDetails;
         const urlObj = new URL(url);
