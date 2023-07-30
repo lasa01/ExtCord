@@ -93,7 +93,7 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
     }
     
     private async searchYoutube(query: string, context: ICommandContext): Promise<string | undefined> {
-        respondPromise = context.respond(musicSearchingPhrase, { search: query });
+        let respondPromise = context.respond(musicSearchingPhrase, { search: query });
         const searchResult = await ytsr(query, {
             limit: 1,
         });
