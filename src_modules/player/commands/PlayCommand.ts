@@ -52,7 +52,7 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
             this.getQueueItem(url, context),
         ]);
 
-        if (!queueItems) {
+        if (!queueItems || queueItems.length === 0) {
             return;
         }
 
@@ -70,63 +70,59 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
     }
 
     private async getQueueItem(query: string, context: ICommandContext): Promise<PlayerQueueItem[] | void> {
-        let url: string;
-        let respondPromise: Promise<void> | undefined;
-    
         if (!Util.isValidUrl(query)) {
             const searchResult = await this.searchYoutube(query, context);
             if (!searchResult) {
-                await respondPromise;
                 return context.respond(musicNotFoundPhrase, { search: query });
             }
-            url = searchResult;
+            return [searchResult];
         } else if (ytpl.validateID(query)) {
-            url = query;
-            const playlistItems = await this.processPlaylist(url);
+            const playlistItems = await this.processPlaylist(query);
             if (!playlistItems) {
-                return [await this.getQueueItemFromUrl(url)];
+                return [];
             }
             return playlistItems;
         } else {
             return [await this.getQueueItemFromUrl(query)];
         }
     }
-    
-    private async searchYoutube(query: string, context: ICommandContext): Promise<string | undefined> {
-        respondPromise = context.respond(musicSearchingPhrase, { search: query });
+
+    private async searchYoutube(query: string, context: ICommandContext): Promise<PlayerQueueItem | undefined> {
+        const respondPromise = context.respond(musicSearchingPhrase, { search: query });
         const searchResult = await ytsr(query, {
             limit: 1,
         });
-        ...
+        let resultUrl: string | undefined;
+        let resultItem: ytsr.Video | undefined;
+        for (const item of searchResult.items) {
+            if (item.type === "video") {
+                resultUrl = item.url;
+                resultItem = item;
+                break;
+            }
+        }
+        if (resultUrl === undefined || resultItem === undefined) {
+            await respondPromise;
+            return undefined;
+        }
+        const itemDetails = {
+            author: resultItem.author?.name ?? "",
+            authorIconUrl: resultItem.author?.bestAvatar?.url ?? "",
+            authorUrl: resultItem.author?.url ?? "",
+            duration: resultItem.duration ?? "?",
+            thumbnailUrl: resultItem.thumbnails[0]?.url ?? "",
+            title: resultItem.name,
+            url: resultItem.url,
+            urlIsYoutube: true,
+        };
+
+        await respondPromise;
+        return new PlayerQueueItem(itemDetails);
     }
-    
+
     private async processPlaylist(url: string): Promise<PlayerQueueItem[] | undefined> {
         const playlist = await ytpl(url);
         return Promise.all(playlist.items.map(async (item) => await this.getQueueItemFromUrl(item.url)));
-    }
-                return context.respond(musicNotFoundPhrase, { search: query });
-            }
-            url = resultUrl;
-            const itemDetails = {
-                author: resultItem.author?.name ?? "",
-                authorIconUrl: resultItem.author?.bestAvatar?.url ?? "",
-                authorUrl: resultItem.author?.url ?? "",
-                duration: resultItem.duration ?? "?",
-                thumbnailUrl: resultItem.thumbnails[0]?.url ?? "",
-                title: resultItem.name,
-                url: resultItem.url,
-                urlIsYoutube: true,
-            };
-            return [new PlayerQueueItem(itemDetails)];
-        } else {
-            url = query;
-            try {
-                const playlist = await ytpl(url);
-                return Promise.all(playlist.items.map(async (item) => await this.getQueueItemFromUrl(item.url)));
-            } catch {
-                return [await this.getQueueItemFromUrl(url)];
-            }
-        }
     }
 
     private async getQueueItemFromUrl(url: string): Promise<PlayerQueueItem> {
