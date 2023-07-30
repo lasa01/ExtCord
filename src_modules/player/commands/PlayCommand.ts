@@ -80,23 +80,21 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
             const playlistItems = await this.processPlaylist(query);
             if (!playlistItems) {
                 return [];
-            private async getQueueItem(query: string, context: ICommandContext): Promise<PlayerQueueItem[] | void> {
-                ...
-                } else if (ytdl.validateURL(query)) {
-                    const item = await this.getQueueItemFromYoutubeUrl(query);
-                    if (!item) {
-                        context.respond(musicYoutubeErrorPhrase, { url: query });
-                        return;
-                    }
-                    return [item];
-                } else {
-                    const item = await this.getQueueItemFromDirectUrl(query);
-                    if (!item) {
-                        context.respond(musicDirectUrlErrorPhrase, { url: query });
-                        return;
-                    }
-                    return [item];
+            }
+            if (ytdl.validateURL(query)) {
+                const item = await this.getQueueItemFromYoutubeUrl(query);
+                if (!item) {
+                    context.respond(musicYoutubeErrorPhrase, { url: query });
+                    return;
                 }
+                return [item];
+            } else {
+                const item = await this.getQueueItemFromDirectUrl(query);
+                if (!item) {
+                    context.respond(musicDirectUrlErrorPhrase, { url: query });
+                    return;
+                }
+                return [item];
             }
 
     private async searchYoutube(query: string, context: ICommandContext): Promise<PlayerQueueItem | undefined> {
@@ -185,14 +183,10 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
 
         if (!contentType) {
             throw new Error(`Request to '${url}': content-type was not provided`);
-        private async getQueueItemFromDirectUrl(url: string): Promise<PlayerQueueItem | undefined> {
-            ...
-            if (!contentType.includes("audio") && !contentType.includes("video") && !contentType.includes("ogg")) {
-                Logger.debug(`Request to '${url}': unsupported content-type ${contentType}`);
-                return undefined;
-            }
-            ...
-            return new PlayerQueueItem(itemDetails);
+        }
+        if (!contentType.includes("audio") && !contentType.includes("video") && !contentType.includes("ogg")) {
+            Logger.debug(`Request to '${url}': unsupported content-type ${contentType}`);
+            return undefined;
         }
         itemDetails = {
             author: urlObj.hostname,
@@ -204,6 +198,7 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
             url,
             urlIsYoutube: false,
         };
+        return new PlayerQueueItem(itemDetails);
 
         return new PlayerQueueItem(itemDetails);
     }
