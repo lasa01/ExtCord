@@ -1,9 +1,11 @@
 {
-    "extends": "../tsconfig.json",
-    "compilerOptions": {
-      "outDir": "../modules",
-    },
-    "references": [
-      {"path": "../src"}
-    ]
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../modules",
+  },
+  "references": [
+    {
+      "path": "../src"
+    }
+  ]
 }
