@@ -480,6 +480,22 @@ export const musicUnsupportedUrlPhrase = new MessagePhrase(
     },
 );
 
+export const musicPlaylistErrorPhrase = new MessagePhrase(
+    {
+        description: "Shown when getting playlist from YouTube URL fails",
+        name: "musicPlaylistError",
+    },
+    "Failed to get queue item from YouTube URL: `{url}`",
+    {
+        description: "Failed to get playlist from YouTube URL: `{url}`",
+        timestamp: false,
+        title: "YouTube Error",
+    },
+    {
+        url: "The YouTube URL",
+    },
+);
+
 export const phrases = [
     musicNoVoicePhrase, musicNotFoundPhrase, musicNotPlayingPhrase,
     musicPausePhrase, musicPlayPhrase, musicSearchingPhrase,

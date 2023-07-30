@@ -1,7 +1,7 @@
 import { Bot, Command, ICommandContext, IExecutionContext, StringArgument, Util, Logger } from "../../..";
 
 import PlayerModule from "..";
-import { musicNotFoundPhrase, musicNoVoicePhrase, musicSearchingPhrase, musicYoutubeErrorPhrase, musicUnsupportedUrlPhrase } from "../phrases";
+import { musicNotFoundPhrase, musicNoVoicePhrase, musicSearchingPhrase, musicYoutubeErrorPhrase, musicUnsupportedUrlPhrase, musicPlaylistErrorPhrase } from "../phrases";
 import { IQueueItemDetails, PlayerQueueItem } from "../queue/PlayerQueueItem";
 
 import { getVoiceConnection, VoiceConnection } from "@discordjs/voice";
@@ -79,6 +79,7 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
         } else if (ytpl.validateID(query)) {
             const playlistItems = await this.processPlaylist(query);
             if (!playlistItems) {
+                context.respond(musicPlaylistErrorPhrase, { url: query });
                 return;
             }
             return playlistItems;
@@ -100,9 +101,19 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
 
     private async searchYoutube(query: string, context: ICommandContext): Promise<PlayerQueueItem | undefined> {
         const respondPromise = context.respond(musicSearchingPhrase, { search: query });
-        const searchResult = await ytsr(query, {
-            limit: 1,
-        });
+        let searchResult: ytsr.VideoResult;
+
+        try {
+            searchResult = await ytsr(query, {
+                limit: 1,
+            });
+        } catch (error) {
+            let errorObj = error as Error;
+            Logger.debug(`Failed to search from YouTube: ${query}. Error: ${errorObj.message}`);
+            await respondPromise;
+            return undefined;
+        }
+
         let resultUrl: string | undefined;
         let resultItem: ytsr.Video | undefined;
         for (const item of searchResult.items) {
@@ -131,30 +142,41 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
         return new PlayerQueueItem(itemDetails);
     }
 
-    private async processPlaylist(url: string): Promise<PlayerQueueItem[]> {
-        const playlist = await ytpl(url);
+    private async processPlaylist(url: string): Promise<PlayerQueueItem[] | undefined> {
+        let playlist: ytpl.result;
+
+        try {
+            playlist = await ytpl(url);
+        } catch (error) {
+            let errorObj = error as Error;
+            Logger.debug(`Failed to get playlist from YouTube URL: ${url}. Error: ${errorObj.message}`);
+            return undefined;
+        }
+
         let items = await Promise.all(playlist.items.map(async (item) => await this.getQueueItemFromYoutubeUrl(item.url)));
         return items.filter((item): item is PlayerQueueItem => item !== undefined);
     }
 
     private async getQueueItemFromYoutubeUrl(url: string): Promise<PlayerQueueItem | undefined> {
-        let ytdlResult: Readable | undefined = ytdl(url, {
-            filter: "audioonly",
-            highWaterMark: 1 << 62,
-            liveBuffer: 1 << 62,
-            dlChunkSize: 0,
-        });
         let itemDetails: IQueueItemDetails;
+        let ytdlResult: Readable | undefined;
 
         try {
+            ytdlResult = ytdl(url, {
+                filter: "audioonly",
+                highWaterMark: 1 << 62,
+                liveBuffer: 1 << 62,
+                dlChunkSize: 0,
+            });
+
             itemDetails = await new Promise((resolve, reject) => {
                 ytdlResult!.once("info", (video: ytdl.videoInfo, format: ytdl.videoFormat) => {
                     resolve({
                         author: video.videoDetails.author.name,
-                        authorIconUrl: video.videoDetails.author.avatar,
+                        authorIconUrl: video.videoDetails.author.thumbnails?.[0]?.url ?? "",
                         authorUrl: video.videoDetails.author.channel_url,
                         duration: video.videoDetails.lengthSeconds,
-                        thumbnailUrl: video.videoDetails.thumbnail.thumbnails[0]?.url ?? "",
+                        thumbnailUrl: video.videoDetails.thumbnails[0]?.url ?? "",
                         title: video.videoDetails.title,
                         url: video.videoDetails.video_url,
                         urlIsYoutube: true,
