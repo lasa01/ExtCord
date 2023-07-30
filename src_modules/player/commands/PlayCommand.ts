@@ -96,6 +96,8 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
                 }
                 return [item];
             }
+        }
+    }
 
     private async searchYoutube(query: string, context: ICommandContext): Promise<PlayerQueueItem | undefined> {
         const respondPromise = context.respond(musicSearchingPhrase, { search: query });
@@ -136,7 +138,7 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
         return items.filter(item => item !== undefined);
     }
 
-    private async getQueueItemFromYoutubeUrl(url: string): Promise<PlayerQueueItem> {
+    private async getQueueItemFromYoutubeUrl(url: string): Promise<PlayerQueueItem | undefined> {
         let ytdlResult: Readable | undefined = ytdl(url, {
             filter: "audioonly",
             highWaterMark: 1 << 62,
@@ -159,30 +161,31 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
                         urlIsYoutube: true,
                     });
                 });
-                private async getQueueItemFromYoutubeUrl(url: string): Promise<PlayerQueueItem | undefined> {
-                    ...
-                    } catch (error) {
-                        Logger.debug(`Failed to get queue item from YouTube URL: ${url}. Error: ${error.message}`);
-                        return undefined;
-                    }
-                
-                    return new PlayerQueueItem(itemDetails, ytdlResult);
-                }
+            });
+        } catch (error) {
+            Logger.debug(`Failed to get queue item from YouTube URL: ${url}. Error: ${error.message}`);
+            return undefined;
+        }
+    
+        return new PlayerQueueItem(itemDetails, ytdlResult);
+    }
 
-    private async getQueueItemFromDirectUrl(url: string): Promise<PlayerQueueItem> {
+    private async getQueueItemFromDirectUrl(url: string): Promise<PlayerQueueItem | undefined> {
         let itemDetails: IQueueItemDetails;
 
         // check if the url can be played directly
         const response = await fetch(url);
 
         if (!response.ok) {
-            throw new Error(`Request to '${url}' failed: ${response.status} ${response.statusText}`);
+            Logger.debug(`Request to '${url}' failed: ${response.status} ${response.statusText}`);
+            return undefined;
         }
 
         const contentType = response.headers.get("content-type");
 
         if (!contentType) {
-            throw new Error(`Request to '${url}': content-type was not provided`);
+            Logger.debug(`Request to '${url}': content-type was not provided`);
+            return undefined;
         }
         if (!contentType.includes("audio") && !contentType.includes("video") && !contentType.includes("ogg")) {
             Logger.debug(`Request to '${url}': unsupported content-type ${contentType}`);
@@ -198,8 +201,6 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
             url,
             urlIsYoutube: false,
         };
-        return new PlayerQueueItem(itemDetails);
-
         return new PlayerQueueItem(itemDetails);
     }
 }
