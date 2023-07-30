@@ -80,14 +80,24 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
             const playlistItems = await this.processPlaylist(query);
             if (!playlistItems) {
                 return [];
+            private async getQueueItem(query: string, context: ICommandContext): Promise<PlayerQueueItem[] | void> {
+                ...
+                } else if (ytdl.validateURL(query)) {
+                    const item = await this.getQueueItemFromYoutubeUrl(query);
+                    if (!item) {
+                        context.respond(musicYoutubeErrorPhrase, { url: query });
+                        return;
+                    }
+                    return [item];
+                } else {
+                    const item = await this.getQueueItemFromDirectUrl(query);
+                    if (!item) {
+                        context.respond(musicDirectUrlErrorPhrase, { url: query });
+                        return;
+                    }
+                    return [item];
+                }
             }
-            return playlistItems;
-        } else if (ytdl.validateURL(query)) {
-            return [await this.getQueueItemFromYoutubeUrl(query)];
-        } else {
-            return [await this.getQueueItemFromDirectUrl(query)];
-        }
-    }
 
     private async searchYoutube(query: string, context: ICommandContext): Promise<PlayerQueueItem | undefined> {
         const respondPromise = context.respond(musicSearchingPhrase, { search: query });
@@ -124,7 +134,8 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
 
     private async processPlaylist(url: string): Promise<PlayerQueueItem[] | undefined> {
         const playlist = await ytpl(url);
-        return Promise.all(playlist.items.map(async (item) => await this.getQueueItemFromYoutubeUrl(item.url)));
+        const items = await Promise.all(playlist.items.map(async (item) => await this.getQueueItemFromYoutubeUrl(item.url)));
+        return items.filter(item => item !== undefined);
     }
 
     private async getQueueItemFromYoutubeUrl(url: string): Promise<PlayerQueueItem> {
@@ -150,14 +161,15 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
                         urlIsYoutube: true,
                     });
                 });
-                ytdlResult!.once("error", (err) => reject(err));
-            });
-        } catch {
-            throw new Error(`Failed to get queue item from YouTube URL: ${url}`);
-        }
-
-        return new PlayerQueueItem(itemDetails, ytdlResult);
-    }
+                private async getQueueItemFromYoutubeUrl(url: string): Promise<PlayerQueueItem | undefined> {
+                    ...
+                    } catch (error) {
+                        Logger.debug(`Failed to get queue item from YouTube URL: ${url}. Error: ${error.message}`);
+                        return undefined;
+                    }
+                
+                    return new PlayerQueueItem(itemDetails, ytdlResult);
+                }
 
     private async getQueueItemFromDirectUrl(url: string): Promise<PlayerQueueItem> {
         let itemDetails: IQueueItemDetails;
@@ -173,14 +185,15 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
 
         if (!contentType) {
             throw new Error(`Request to '${url}': content-type was not provided`);
+        private async getQueueItemFromDirectUrl(url: string): Promise<PlayerQueueItem | undefined> {
+            ...
+            if (!contentType.includes("audio") && !contentType.includes("video") && !contentType.includes("ogg")) {
+                Logger.debug(`Request to '${url}': unsupported content-type ${contentType}`);
+                return undefined;
+            }
+            ...
+            return new PlayerQueueItem(itemDetails);
         }
-
-        if (!contentType.includes("audio") && !contentType.includes("video") && !contentType.includes("ogg")) {
-            throw new Error(`Request to '${url}': unsupported content-type ${contentType}`);
-        }
-
-        const urlObj = new URL(url);
-
         itemDetails = {
             author: urlObj.hostname,
             authorIconUrl: "",
