@@ -464,22 +464,6 @@ export const musicYoutubeErrorPhrase = new MessagePhrase(
     },
 );
 
-export const musicDirectUrlErrorPhrase = new MessagePhrase(
-    {
-        description: "Shown when getting queue item from direct URL fails",
-        name: "musicDirectUrlError",
-    },
-    "Failed to get queue item from direct URL: `{url}`",
-    {
-        description: "Failed to get queue item from direct URL: `{url}`",
-        timestamp: false,
-        title: "Direct URL Error",
-    },
-    {
-        url: "The direct URL",
-    },
-);
-
 export const musicUnsupportedUrlPhrase = new MessagePhrase(
     {
         description: "Shown when the URL is unsupported",
@@ -505,5 +489,5 @@ export const phrases = [
     musicLyricsNotFoundPhrase, musicLyricsRateLimitedPhrase, musicEmptyPlaylistPhrase,
     musicClearPhrase, musicSeekPhrase, musicErrorPhrase,
     musicPopPhrase, musicEmptyQueuePhrase, musicShufflePhrase,
-    musicYoutubeErrorPhrase, musicDirectUrlErrorPhrase, musicUnsupportedUrlPhrase
+    musicYoutubeErrorPhrase, musicUnsupportedUrlPhrase
 ];

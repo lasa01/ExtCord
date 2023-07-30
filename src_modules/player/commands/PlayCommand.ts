@@ -1,7 +1,7 @@
 import { Bot, Command, ICommandContext, IExecutionContext, StringArgument, Util, Logger } from "../../..";
 
 import PlayerModule from "..";
-import { musicNotFoundPhrase, musicNoVoicePhrase, musicSearchingPhrase, musicYoutubeErrorPhrase, musicDirectUrlErrorPhrase } from "../phrases";
+import { musicNotFoundPhrase, musicNoVoicePhrase, musicSearchingPhrase, musicYoutubeErrorPhrase, musicUnsupportedUrlPhrase } from "../phrases";
 import { IQueueItemDetails, PlayerQueueItem } from "../queue/PlayerQueueItem";
 
 import { getVoiceConnection, VoiceConnection } from "@discordjs/voice";
@@ -79,23 +79,22 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
         } else if (ytpl.validateID(query)) {
             const playlistItems = await this.processPlaylist(query);
             if (!playlistItems) {
-                return [];
+                return;
             }
-            if (ytdl.validateURL(query)) {
-                const item = await this.getQueueItemFromYoutubeUrl(query);
-                if (!item) {
-                    context.respond(musicYoutubeErrorPhrase, { url: query });
-                    return;
-                }
-                return [item];
-            } else {
-                const item = await this.getQueueItemFromDirectUrl(query);
-                if (!item) {
-                    context.respond(musicDirectUrlErrorPhrase, { url: query });
-                    return;
-                }
-                return [item];
+            return playlistItems;
+        } else if (ytdl.validateURL(query)) {
+            const item = await this.getQueueItemFromYoutubeUrl(query);
+            if (!item) {
+                context.respond(musicYoutubeErrorPhrase, { url: query });
+                return;
             }
+            return [item];
+        } else {
+            const item = await this.getQueueItemFromDirectUrl(query);
+            if (!item) {
+                return context.respond(musicUnsupportedUrlPhrase, { url: query });
+            }
+            return [item];
         }
     }
 
@@ -134,9 +133,8 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
 
     private async processPlaylist(url: string): Promise<PlayerQueueItem[]> {
         const playlist = await ytpl(url);
-        let items = (await Promise.all(playlist.items.map(async (item) => await this.getQueueItemFromYoutubeUrl(item.url))));
-        items = items.filter((item): item is PlayerQueueItem => item !== undefined);
-        return items;
+        let items = await Promise.all(playlist.items.map(async (item) => await this.getQueueItemFromYoutubeUrl(item.url)));
+        return items.filter((item): item is PlayerQueueItem => item !== undefined);
     }
 
     private async getQueueItemFromYoutubeUrl(url: string): Promise<PlayerQueueItem | undefined> {
@@ -168,9 +166,10 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
             Logger.debug(`Failed to get queue item from YouTube URL: ${url}. Error: ${errorObj.message}`);
             return undefined;
         }
-    
+
         return new PlayerQueueItem(itemDetails, ytdlResult);
     }
+
     private async getQueueItemFromDirectUrl(url: string): Promise<PlayerQueueItem | undefined> {
         let itemDetails: IQueueItemDetails;
         const urlObj = new URL(url);
