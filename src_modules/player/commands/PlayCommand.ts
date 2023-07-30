@@ -82,12 +82,10 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
                 return [];
             }
             return playlistItems;
+        } else if (ytdl.validateURL(query)) {
+            return [await this.getQueueItemFromYoutubeUrl(query)];
         } else {
-            if (ytdl.validateURL(query)) {
-                return [await this.getQueueItemFromYoutubeUrl(query)];
-            } else {
-                return [await this.getQueueItemFromDirectUrl(query)];
-            }
+            return [await this.getQueueItemFromDirectUrl(query)];
         }
     }
 
