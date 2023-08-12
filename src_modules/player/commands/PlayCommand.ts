@@ -1,4 +1,6 @@
 import { Bot, Command, ICommandContext, IExecutionContext, StringArgument, Util, Logger } from "../../..";
+import * as spotifyUri from 'spotify-uri';
+import * as spotifyUrlInfo from 'spotify-url-info';
 
 import PlayerModule from "..";
 import { musicNotFoundPhrase, musicNoVoicePhrase, musicSearchingPhrase, musicYoutubeErrorPhrase, musicUnsupportedUrlPhrase, musicPlaylistErrorPhrase } from "../phrases";
@@ -88,6 +90,12 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
             if (!item) {
                 context.respond(musicYoutubeErrorPhrase, { url: query });
                 return;
+            }
+            return [item];
+        } else if (spotifyUri.parse(query)) {
+            const item = await this.getQueueItemFromSpotifyUrl(query);
+            if (!item) {
+                return context.respond(musicUnsupportedUrlPhrase, { url: query });
             }
             return [item];
         } else {
@@ -192,6 +200,16 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
         return new PlayerQueueItem(itemDetails, ytdlResult);
     }
 
+    private async getQueueItemFromSpotifyUrl(url: string): Promise<PlayerQueueItem | undefined> {
+        const parsed = spotifyUri.parse(url);
+        const data = await spotifyUrlInfo.getPreview(url);
+        const searchResult = await this.searchYoutube(`${data.artist} - ${data.title}`, context);
+        if (!searchResult) {
+            return undefined;
+        }
+        return [searchResult];
+    }
+    
     private async getQueueItemFromDirectUrl(url: string): Promise<PlayerQueueItem | undefined> {
         let itemDetails: IQueueItemDetails;
         const urlObj = new URL(url);
