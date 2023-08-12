@@ -11,6 +11,8 @@ import ytpl = require("@distube/ytpl");
 import ytsr = require("@distube/ytsr");
 import fetch from "node-fetch";
 import { Readable } from "stream";
+import * as spotifyUri from 'spotify-uri';
+const { getPreview } = require('spotify-url-info')(fetch);
 
 export class PlayCommand extends Command<[StringArgument<false>]> {
     private player: PlayerModule;
@@ -90,12 +92,28 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
                 return;
             }
             return [item];
+        } else if (this.isSpotifyUrl(query)) {
+            const item = await this.getQueueItemFromSpotifyUrl(query, context);
+            if (!item) {
+                return context.respond(musicNotFoundPhrase, { search: query });
+            }
+            return [item];
         } else {
             const item = await this.getQueueItemFromDirectUrl(query);
             if (!item) {
                 return context.respond(musicUnsupportedUrlPhrase, { url: query });
             }
             return [item];
+        }
+    }
+
+    private isSpotifyUrl(url: string): boolean {
+        try {
+            spotifyUri.parse(url);
+
+            return true;
+        } catch {
+            return false;
         }
     }
 
@@ -190,6 +208,19 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
         }
 
         return new PlayerQueueItem(itemDetails, ytdlResult);
+    }
+
+    private async getQueueItemFromSpotifyUrl(url: string, context: ICommandContext): Promise<PlayerQueueItem | undefined> {
+        try {
+            const parsed = spotifyUri.parse(url);
+            const openUrl = spotifyUri.formatOpenURL(parsed);
+
+            const data = await getPreview(openUrl);
+
+            return this.searchYoutube(`${data.artist} - ${data.title}`, context);
+        } catch {
+            return undefined;
+        }
     }
 
     private async getQueueItemFromDirectUrl(url: string): Promise<PlayerQueueItem | undefined> {

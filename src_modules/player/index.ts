@@ -1,5 +1,5 @@
 // extcord module
-// requires ffmpeg-static@^5.1.0 @distube/ytdl-core@^4.11.17 @distube/ytsr@^1.1.9 @distube/ytpl@^1.1.1
+// requires ffmpeg-static@^5.1.0 @distube/ytdl-core@^4.11.17 @distube/ytsr@^1.1.9 @distube/ytpl@^1.1.1 spotify-uri@^4.0.0 spotify-url-info@^3.2.6
 
 import {
     AudioPlayerStatus, createAudioPlayer,
