@@ -1,7 +1,6 @@
 // extcord module
 // requires ffmpeg-static@^5.1.0
 
-import { getVoiceConnection } from "@discordjs/voice";
 import { GatewayIntentBits, Guild, VoiceState } from "discord.js";
 
 import { Bot, CommandGroup, Module } from "../..";
@@ -71,7 +70,7 @@ export default class RecorderModule extends Module {
         if (oldState.channel === null && newState.channel !== null) {
             // joined a channel
             const recorder = this.getRecorder(newState.guild);
-            const connection = getVoiceConnection(newState.guild.id);
+            const connection = this.bot.voice.getConnection(newState.guild);
 
             if (connection !== undefined) {
                 newState.selfDeaf = false;

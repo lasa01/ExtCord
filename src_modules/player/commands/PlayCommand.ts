@@ -4,8 +4,8 @@ import PlayerModule from "..";
 import { musicNotFoundPhrase, musicNoVoicePhrase, musicSearchingPhrase, musicYoutubeErrorPhrase, musicUnsupportedUrlPhrase, musicPlaylistErrorPhrase } from "../phrases";
 import { IQueueItemDetails, PlayerQueueItem } from "../queue/PlayerQueueItem";
 
-import { getVoiceConnection, VoiceConnection } from "@discordjs/voice";
-import { Guild, VoiceChannel } from "discord.js";
+import { VoiceConnection } from "@discordjs/voice";
+import { VoiceChannel } from "discord.js";
 import ytdl = require("@distube/ytdl-core");
 import ytpl = require("@distube/ytpl");
 import ytsr = require("@distube/ytsr");
@@ -26,6 +26,7 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
                 description: "Play some music",
                 globalAliases: ["play", "p"],
                 name: "play",
+                voiceCommand: true,
             },
             [
                 new StringArgument(
@@ -47,10 +48,9 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
             return context.respond(musicNoVoicePhrase, {});
         }
         const url = context.arguments[0];
-        const guild = context.guild.guild;
 
         const [connection, queueItems] = await Promise.all([
-            this.getConnection(context.bot, guild, voiceChannel),
+            this.getConnection(context.bot, voiceChannel),
             this.getQueueItem(url, context),
         ]);
 
@@ -61,14 +61,8 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
         return this.player.playOrEnqueue(context, connection, queueItems, voiceChannel.bitrate);
     }
 
-    private async getConnection(bot: Bot, guild: Guild, voiceChannel: VoiceChannel): Promise<VoiceConnection> {
-        const connection = getVoiceConnection(guild.id);
-
-        if (connection && voiceChannel.members.get(bot.client!.user!.id)) {
-            return connection;
-        } else {
-            return bot.joinVoice(voiceChannel);
-        }
+    private async getConnection(bot: Bot, voiceChannel: VoiceChannel): Promise<VoiceConnection> {
+        return bot.voice.getOrCreateConnection(voiceChannel);
     }
 
     private async getQueueItem(query: string, context: ICommandContext): Promise<PlayerQueueItem[] | void> {

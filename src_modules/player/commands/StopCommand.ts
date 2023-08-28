@@ -1,4 +1,4 @@
-import { getVoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
+import { VoiceConnectionStatus } from "@discordjs/voice";
 import PlayerModule from "..";
 import { Command, IExecutionContext } from "../../..";
 
@@ -15,6 +15,7 @@ export class StopCommand extends Command<[]> {
                 description: "Stop the player",
                 globalAliases: ["stop"],
                 name: "stop",
+                voiceCommand: true,
             },
             [],
         );
@@ -28,9 +29,9 @@ export class StopCommand extends Command<[]> {
         }
 
         const guild = context.guild.guild;
-        const connection = getVoiceConnection(guild.id);
+        const connection = context.bot.voice.getConnection(guild);
 
-        if (connection?.state.status !== VoiceConnectionStatus.Ready || !connection.state.subscription) {
+        if (connection?.state.status !== VoiceConnectionStatus.Ready) {
             return context.respond(musicNotPlayingPhrase, {});
         }
 

@@ -3,7 +3,7 @@ import { Bot, Command, IExecutionContext } from "../../../dist";
 import RecorderModule from "..";
 import { voiceJoinPhrase, voiceNoVoicePhrase } from "../phrases";
 import { Guild, VoiceChannel } from "discord.js";
-import { getVoiceConnection, VoiceConnection } from "@discordjs/voice";
+import { VoiceConnection } from "@discordjs/voice";
 
 export class JoinCommand extends Command<[]> {
 
@@ -28,18 +28,12 @@ export class JoinCommand extends Command<[]> {
             return context.respond(voiceNoVoicePhrase, {});
         }
 
-        await this.getConnection(context.bot, context.guild.guild, voiceChannel);
+        await this.getConnection(context.bot, voiceChannel);
 
         return context.respond(voiceJoinPhrase, {});
     }
 
-    private async getConnection(bot: Bot, guild: Guild, voiceChannel: VoiceChannel): Promise<VoiceConnection> {
-        const connection = getVoiceConnection(guild.id);
-
-        if (connection && voiceChannel.members.get(bot.client!.user!.id)) {
-            return connection;
-        } else {
-            return bot.joinVoice(voiceChannel);
-        }
+    private async getConnection(bot: Bot, voiceChannel: VoiceChannel): Promise<VoiceConnection> {
+        return bot.voice.getOrCreateConnection(voiceChannel);
     }
 }

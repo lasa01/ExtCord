@@ -57,6 +57,8 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
     public phraseGroup: PhraseGroup;
     /** A computed index of [[arguments]] where combining extra arguments should happen. */
     public combineIndex?: number;
+    /** Whether the command can be used as a voice command. */
+    public voiceCommand: boolean;
     protected defaultPermission: Permission;
     protected argPhraseGroup: PhraseGroup;
     protected customPhraseGroup: PhraseGroup;
@@ -95,6 +97,8 @@ export abstract class Command<T extends ReadonlyArray<Argument<any, boolean, any
             this.author = info.author;
         }
         this.discordPermissions = info.discordPermissions ?? BigInt(0);
+        this.voiceCommand = info.voiceCommand ?? false;
+
         this.argPhraseGroup = new PhraseGroup({
             name: "arguments",
         });
@@ -548,6 +552,8 @@ export interface ICommandInfo {
     allowedPrivileges?: Array<string | PermissionPrivilege>;
     /** Bitflag for the Discord permissions the command requires. */
     discordPermissions?: bigint;
+    /** Whether the command can be used as a voice command. */
+    voiceCommand?: boolean;
 }
 
 /**

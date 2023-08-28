@@ -2,10 +2,10 @@
 // requires ffmpeg-static@^5.1.0 @distube/ytdl-core@^4.11.17 @distube/ytsr@^1.1.9 @distube/ytpl@^1.1.1 spotify-uri@^4.0.0 spotify-url-info@^3.2.6
 
 import {
-    AudioPlayerStatus, createAudioPlayer,
-    getVoiceConnection, PlayerSubscription, VoiceConnection, VoiceConnectionStatus,
+    AudioPlayer,
+    AudioPlayerStatus, VoiceConnection, VoiceConnectionStatus,
 } from "@discordjs/voice";
-import { Guild, GatewayIntentBits, VoiceState } from "discord.js";
+import { Guild, GatewayIntentBits } from "discord.js";
 
 import { Bot, CommandGroup, ICommandContext, IExtendedGuild, Logger, Module } from "../..";
 
@@ -16,7 +16,6 @@ import { PauseCommand } from "./commands/PauseCommand";
 import { PlayCommand } from "./commands/PlayCommand";
 import { QueueCommand } from "./commands/QueueCommand";
 import { ResumeCommand } from "./commands/ResumeCommand";
-import { SeekCommand } from "./commands/SeekCommand";
 import { SkipCommand } from "./commands/SkipCommand";
 import { StopCommand } from "./commands/StopCommand";
 import { VolumeCommand } from "./commands/VolumeCommand";
@@ -35,14 +34,11 @@ import { ShuffleCommand } from "./commands/ShuffleCommand";
 export default class PlayerModule extends Module {
     public musicCommand: CommandGroup;
     private guildQueues: Map<string, PlayerQueue>;
-    private subscriptions: Set<PlayerSubscription>;
     private connections: Set<VoiceConnection>;
-    private voiceStateUpdateHandler: ((oldState: VoiceState, newState: VoiceState) => void) | undefined;
 
     constructor(bot: Bot) {
         super(bot, "extcord", "player");
         this.guildQueues = new Map();
-        this.subscriptions = new Set();
         this.connections = new Set();
         this.musicCommand = new CommandGroup(
             {
@@ -53,26 +49,25 @@ export default class PlayerModule extends Module {
             },
         );
         this.musicCommand.addSubcommands(
-            new PauseCommand(),
+            new PauseCommand(this),
             new PlayCommand(this),
-            new ResumeCommand(),
+            new ResumeCommand(this),
             new SkipCommand(this),
             new StopCommand(this),
-            new VolumeCommand(),
+            new VolumeCommand(this),
             new QueueCommand(this),
             new LyricsCommand(this),
             new ClearCommand(this),
-            new SeekCommand(this),
             new PopCommand(this),
             new ShuffleCommand(this),
         );
         this.musicCommand.addPhrases(...phrases);
         this.registerCommand(this.musicCommand);
         bot.once("stop", () => this.onStop());
-        bot.on("ready", () => this.onReady());
         bot.on("joinVoice", (guild, options) => {
             options.selfMute = false;
         });
+        bot.on("disconnectVoice", (guild) => this.onVoiceDisconnect(guild));
 
         bot.intents.push(GatewayIntentBits.GuildVoiceStates);
     }
@@ -106,10 +101,9 @@ export default class PlayerModule extends Module {
         connection: VoiceConnection,
         item: PlayerQueueItem,
         bitrate: number,
-        subscription?: PlayerSubscription,
         seek: number = 0,
     ) {
-        await this.playInner(context, connection, item, bitrate, subscription, seek);
+        await this.playInner(context, connection, item, bitrate, seek);
         return context.respond(musicPlayPhrase, item.details);
     }
 
@@ -120,7 +114,7 @@ export default class PlayerModule extends Module {
         }
 
         if (connection.state.status === VoiceConnectionStatus.Ready) {
-            await this.playInner(context, connection, queue.playing, bitrate, connection.state.subscription, seek);
+            await this.playInner(context, connection, queue.playing, bitrate, seek);
         }
     }
 
@@ -134,10 +128,12 @@ export default class PlayerModule extends Module {
             return context.respond(musicEmptyPlaylistPhrase, {});
         }
         const queue = this.getQueue(context.guild);
+        const player = this.getPlayer(context.guild.guild);
+
         if (
             connection.state.status === VoiceConnectionStatus.Ready
-            && connection.state.subscription
-            && connection.state.subscription.player.state.status !== AudioPlayerStatus.Idle
+            && player !== undefined
+            && player.state.status !== AudioPlayerStatus.Idle
         ) {
             for (const item of items) {
                 queue.enqueue(item);
@@ -166,13 +162,21 @@ export default class PlayerModule extends Module {
     }
 
     public disconnect(guild: Guild) {
-        const connection = getVoiceConnection(guild.id);
-        if (connection) {
-            if (connection.state.status === VoiceConnectionStatus.Ready && connection.state.subscription) {
-                this.clearQueue(guild);
-            }
-            connection.disconnect();
+        this.bot.voice.disconnect(guild);
+    }
+
+    public isPlaying(guild: Guild): boolean {
+        const connection = this.bot.voice.getConnection(guild);
+
+        if (connection?.state.status !== VoiceConnectionStatus.Ready) {
+            return false;
         }
+
+        return this.bot.voice.isPlayerQueued(guild, this.name);
+    }
+
+    public getPlayer(guild: Guild): AudioPlayer | undefined {
+        return this.bot.voice.getGuildPlayer(guild, this.name);
     }
 
     private async playInner(
@@ -180,40 +184,33 @@ export default class PlayerModule extends Module {
         connection: VoiceConnection,
         item: PlayerQueueItem,
         bitrate: number,
-        subscription?: PlayerSubscription,
         seek: number = 0,
     ) {
         const queue = this.getQueue(context.guild);
 
-        if (subscription === undefined) {
-            const player = createAudioPlayer();
-            subscription = connection.subscribe(player);
+        let player = this.bot.voice.getGuildPlayer(context.guild.guild, this.name);
+
+        if (player === undefined) {
+            player = this.bot.voice.getOrCreateGuildPlayer(context.guild.guild, this.name);
+            this.bot.voice.queuePlayer(context.guild.guild, this.name);
 
             player.on(AudioPlayerStatus.Idle, () => {
-                this.nextItem(queue, context, connection, bitrate, subscription);
+                this.nextItem(queue, context, connection, bitrate);
             });
 
             player.on("error", (error) => {
                 context.respond(musicErrorPhrase, {
                     error: `${error.name}: ${error.message}`,
                 });
-                this.nextItem(queue, context, connection, bitrate, subscription);
+                this.nextItem(queue, context, connection, bitrate);
             });
 
-            if (typeof subscription === "undefined") {
-                queue.playing = undefined;
-                return;
-            }
-
-            this.subscriptions.add(subscription);
             this.connections.add(connection);
         }
 
         const resource = await item.getResource();
-        resource.playbackDuration = seek * 1000;
         resource.encoder?.setBitrate(bitrate);
-        subscription.player.play(resource);
-        queue.subscription = subscription;
+        player.play(resource);
         queue.playing = item;
     }
 
@@ -222,50 +219,30 @@ export default class PlayerModule extends Module {
         context: ICommandContext,
         connection: VoiceConnection,
         bitrate: number,
-        subscription?: PlayerSubscription,
     ) {
         const newItem = queue.dequeue();
         queue.playing = newItem;
         if (newItem) {
-            this.play(context, connection, newItem, bitrate, subscription).catch((err) => {
+            this.play(context, connection, newItem, bitrate).catch((err) => {
                 queue.playing = undefined;
-                queue.subscription = undefined;
                 Logger.error(`Error advancing player queue: ${err}`);
+                this.cleanUp(context.guild.guild);
             });
+        } else {
+            this.cleanUp(context.guild.guild);
         }
     }
 
-    private onVoiceStateUpdate(oldState: VoiceState, newState: VoiceState) {
-        const botMember = oldState.channel?.members.get(this.bot.client!.user!.id);
-        if (botMember === undefined) {
-            return;
-        }
-        if (newState.channel !== null) {
-            return;
-        }
-        const channel = oldState.channel!;
-        if (channel.members.size === 1) {
-            setTimeout(() => {
-                if (channel.members.size === 1) {
-                    this.disconnect(botMember.guild);
-                }
-            }, 5000);
-        }
+    private cleanUp(guild: Guild) {
+        this.bot.voice.removeGuildPlayer(guild, this.name);
     }
 
-    private onReady() {
-        if (this.voiceStateUpdateHandler !== undefined) {
-            this.bot.client!.removeListener("voiceStateUpdate", this.voiceStateUpdateHandler);
-        }
-        this.voiceStateUpdateHandler =
-            (oldState: VoiceState, newState: VoiceState) => this.onVoiceStateUpdate(oldState, newState);
-        this.bot.client!.on("voiceStateUpdate", this.voiceStateUpdateHandler);
+    private onVoiceDisconnect(guild: Guild) {
+        this.clearQueue(guild);
+        this.cleanUp(guild);
     }
 
     private onStop() {
-        for (const subscription of this.subscriptions) {
-            subscription.player.stop();
-        }
         for (const connection of this.connections) {
             connection.disconnect();
         }

@@ -1,6 +1,6 @@
 import { Command, IExecutionContext } from "../../..";
 
-import { getVoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
+import { VoiceConnectionStatus } from "@discordjs/voice";
 import PlayerModule from "..";
 import { musicNotPlayingPhrase, musicNoVoicePhrase, musicSkipPhrase, musicWrongVoicePhrase } from "../phrases";
 
@@ -16,6 +16,7 @@ export class SkipCommand extends Command<[]> {
                 description: "Skip the current song",
                 globalAliases: ["skip", "s"],
                 name: "skip",
+                voiceCommand: true,
             },
             [],
         );
@@ -29,10 +30,9 @@ export class SkipCommand extends Command<[]> {
         }
 
         const guild = context.guild.guild;
-        const connection = getVoiceConnection(guild.id);
         const playing = this.player.getQueue(context.guild).playing;
 
-        if (connection?.state.status !== VoiceConnectionStatus.Ready || !connection.state.subscription || !playing) {
+        if (!this.player.isPlaying(guild) || playing === undefined) {
             return context.respond(musicNotPlayingPhrase, {});
         }
 
@@ -41,7 +41,7 @@ export class SkipCommand extends Command<[]> {
         }
 
         const respondPromise = context.respond(musicSkipPhrase, playing.details);
-        connection.state.subscription.player.stop();
+        this.player.getPlayer(guild)?.stop();
         await respondPromise;
     }
 }

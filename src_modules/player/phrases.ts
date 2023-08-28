@@ -498,7 +498,7 @@ export const musicPlaylistErrorPhrase = new MessagePhrase(
 
 export const phrases = [
     musicNoVoicePhrase, musicNotFoundPhrase, musicNotPlayingPhrase,
-    musicPausePhrase, musicPlayPhrase, musicSearchingPhrase,
+    musicPausePhrase, musicResumePhrase, musicPlayPhrase, musicSearchingPhrase,
     musicWrongVoicePhrase, musicStopPhrase, musicVolumePhrase,
     musicEnqueuePhrase, musicEnqueueListPhrase, musicSkipPhrase,
     musicQueuePhrase, musicLyricsPhrase, musicLyricsErrorPhrase,

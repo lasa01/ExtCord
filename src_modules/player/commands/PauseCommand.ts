@@ -1,10 +1,12 @@
-import { getVoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import { Command, IExecutionContext } from "../../..";
 
+import PlayerModule from "..";
 import { musicNotPlayingPhrase, musicNoVoicePhrase, musicPausePhrase, musicWrongVoicePhrase } from "../phrases";
 
 export class PauseCommand extends Command<[]> {
-    public constructor() {
+    private player: PlayerModule;
+
+    public constructor(player: PlayerModule) {
         super(
             {
                 allowedPrivileges: ["everyone"],
@@ -12,9 +14,12 @@ export class PauseCommand extends Command<[]> {
                 description: "Pause the player",
                 globalAliases: ["pause"],
                 name: "pause",
+                voiceCommand: true,
             },
             [],
         );
+
+        this.player = player;
     }
 
     public async execute(context: IExecutionContext<[]>) {
@@ -24,9 +29,8 @@ export class PauseCommand extends Command<[]> {
         }
 
         const guild = context.guild.guild;
-        const connection = getVoiceConnection(guild.id);
 
-        if (connection?.state.status !== VoiceConnectionStatus.Ready || !connection.state.subscription) {
+        if (!this.player.isPlaying(guild)) {
             return context.respond(musicNotPlayingPhrase, {});
         }
 
@@ -34,7 +38,7 @@ export class PauseCommand extends Command<[]> {
             return context.respond(musicWrongVoicePhrase, {});
         }
 
-        connection.state.subscription.player.pause();
+        this.player.getPlayer(guild)?.pause();
         return context.respond(musicPausePhrase, {});
     }
 }

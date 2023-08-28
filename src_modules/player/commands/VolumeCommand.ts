@@ -1,10 +1,13 @@
-import { AudioPlayerStatus, getVoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioPlayerStatus, VoiceConnectionStatus } from "@discordjs/voice";
+import PlayerModule from "..";
 import { Command, IExecutionContext, IntArgument } from "../../..";
 
 import { musicNotPlayingPhrase, musicNoVoicePhrase, musicVolumePhrase, musicWrongVoicePhrase } from "../phrases";
 
 export class VolumeCommand extends Command<[IntArgument<false>]> {
-    public constructor() {
+    private player: PlayerModule;
+
+    public constructor(player: PlayerModule) {
         super(
             {
                 aliases: ["v"],
@@ -26,6 +29,8 @@ export class VolumeCommand extends Command<[IntArgument<false>]> {
                 ),
             ],
         );
+
+        this.player = player;
     }
 
     public async execute(context: IExecutionContext<[IntArgument<false>]>) {
@@ -35,13 +40,9 @@ export class VolumeCommand extends Command<[IntArgument<false>]> {
         }
 
         const guild = context.guild.guild;
-        const connection = getVoiceConnection(guild.id);
+        const player = this.player.getPlayer(guild);
 
-        if (
-            connection?.state.status !== VoiceConnectionStatus.Ready
-            || !connection.state.subscription
-            || connection.state.subscription.player.state.status !== AudioPlayerStatus.Playing
-        ) {
+        if (!this.player.isPlaying(guild) || player?.state.status !== AudioPlayerStatus.Playing) {
             return context.respond(musicNotPlayingPhrase, {});
         }
 
@@ -49,7 +50,7 @@ export class VolumeCommand extends Command<[IntArgument<false>]> {
             return context.respond(musicWrongVoicePhrase, {});
         }
 
-        connection.state.subscription.player.state.resource.volume?.setVolume(context.arguments[0] / 100);
+        player.state.resource.volume?.setVolume(context.arguments[0] / 100);
         return context.respond(musicVolumePhrase, {
             volume: context.arguments[0].toString(),
         });

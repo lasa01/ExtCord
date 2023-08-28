@@ -11,7 +11,6 @@ import {
     musicWrongVoicePhrase,
 } from "../phrases";
 
-import { getVoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import fetch from "node-fetch";
 
 export class LyricsCommand extends Command<[]> {
@@ -40,14 +39,9 @@ export class LyricsCommand extends Command<[]> {
         }
 
         const guild = context.guild.guild;
-        const connection = getVoiceConnection(guild.id);
         const queue = this.player.getQueue(context.guild);
 
-        if (
-            connection?.state.status !== VoiceConnectionStatus.Ready
-            || !connection.state.subscription
-            || !queue.playing
-        ) {
+        if (!this.player.isPlaying(guild) || queue.playing === undefined) {
             return context.respond(musicNotPlayingPhrase, {});
         }
 

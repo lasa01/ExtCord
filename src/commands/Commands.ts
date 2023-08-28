@@ -212,6 +212,7 @@ export class Commands extends EventEmitter {
             prefix,
             respond,
             user: author,
+            voiceCommand: false,
         };
         const timeDiff = process.hrtime(startTime);
         Logger.debug(`Command preprocessing took ${((timeDiff[0] * 1e9 + timeDiff[1]) / 1000000).toFixed(3)} ms`);
@@ -323,6 +324,7 @@ export class Commands extends EventEmitter {
             prefix: "/",
             respond,
             user,
+            voiceCommand: false,
         };
         const timeDiff = process.hrtime(startTime);
         Logger.debug(`Command preprocessing took ${((timeDiff[0] * 1e9 + timeDiff[1]) / 1000000).toFixed(3)} ms`);
@@ -690,6 +692,10 @@ export class Commands extends EventEmitter {
         return `${this.commands.size} commands loaded: ${Array.from(this.commands.keys()).join(", ")}`;
     }
 
+    public getCommands(): ReadonlyMap<string, AnyCommand> {
+        return this.commands;
+    }
+
     private ensureRepo(): asserts this is this & { repos: NonNullable<Commands["repos"]> } {
         if (!this.repos) {
             this.bot.database.ensureConnection();
@@ -726,6 +732,8 @@ export interface ICommandContext {
     respond: LinkedResponse;
     /** Bot's permissions. */
     botPermissions: Readonly<PermissionsBitField>;
+    /** Whether this is a voice command */
+    voiceCommand: boolean;
 }
 
 /**
@@ -737,12 +745,12 @@ export type LinkedResponse =
         T extends Record<string, string>,
         U extends Record<string, string>,
         V extends Record<string, string>
-        >
+    >
         (
-        phrase: MessagePhrase<T> | DynamicFieldMessagePhrase<T, U>,
-        stuff: TemplateStuff<T, V>, fieldStuff?: TemplateStuffs<U, V>,
-        options?: IResponseOptions,
-    ) => Promise<void>;
+            phrase: MessagePhrase<T> | DynamicFieldMessagePhrase<T, U>,
+            stuff: TemplateStuff<T, V>, fieldStuff?: TemplateStuffs<U, V>,
+            options?: IResponseOptions,
+        ) => Promise<void>;
 
 /**
  * Additional options for a response.

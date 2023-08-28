@@ -1,6 +1,6 @@
 import { Command, IExecutionContext } from "../../..";
 import PlayerModule from "..";
-import { getVoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
+import { VoiceConnectionStatus } from "@discordjs/voice";
 import {
     musicNoVoicePhrase,
     musicNotPlayingPhrase,
@@ -19,6 +19,7 @@ export class ShuffleCommand extends Command<[]> {
                 description: "Shuffle the player queue",
                 globalAliases: ["shuffle"],
                 name: "shuffle",
+                voiceCommand: true,
             },
             [],
         );
@@ -33,9 +34,8 @@ export class ShuffleCommand extends Command<[]> {
         }
 
         const guild = context.guild.guild;
-        const connection = getVoiceConnection(guild.id);
 
-        if (connection?.state.status !== VoiceConnectionStatus.Ready || !connection.state.subscription) {
+        if (!this.player.isPlaying(guild)) {
             return context.respond(musicNotPlayingPhrase, {});
         }
 

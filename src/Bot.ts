@@ -15,6 +15,7 @@ import { Languages } from "./language/Languages";
 import { Modules } from "./modules/Modules";
 import { Permissions } from "./permissions/Permissions";
 import { Logger } from "./util/Logger";
+import { Voice } from "./voice/Voice";
 
 // Event definitions
 // tslint:disable-next-line:interface-name
@@ -26,10 +27,16 @@ export interface Bot {
     addListener(event: "joinVoice", listener: (guild: Guild, options: IVoiceJoinOptions) => void): this;
 
     /** @event */
+    addListener(event: "disconnectVoice", listener: (guild: Guild) => void): this;
+
+    /** @event */
     emit(event: "ready" | "stop"): boolean;
 
     /** @event */
     emit(event: "joinVoice", guild: Guild, options: IVoiceJoinOptions): boolean;
+
+    /** @event */
+    emit(event: "disconnectVoice", guild: Guild): boolean;
 
     /** @event */
     on(event: "ready" | "stop", listener: () => void): this;
@@ -38,10 +45,16 @@ export interface Bot {
     on(event: "joinVoice", listener: (guild: Guild, options: IVoiceJoinOptions) => void): this;
 
     /** @event */
+    on(event: "disconnectVoice", listener: (guild: Guild) => void): this;
+
+    /** @event */
     once(event: "ready" | "stop", listener: () => void): this;
 
     /** @event */
     once(event: "joinVoice", listener: (guild: Guild, options: IVoiceJoinOptions) => void): this;
+
+    /** @event */
+    once(event: "disconnectVoice", listener: (guild: Guild) => void): this;
 
     /** @event */
     prependListener(event: "ready" | "stop", listener: () => void): this;
@@ -50,10 +63,16 @@ export interface Bot {
     prependListener(event: "joinVoice", listener: (guild: Guild, options: IVoiceJoinOptions) => void): this;
 
     /** @event */
+    prependListener(event: "disconnectVoice", listener: (guild: Guild) => void): this;
+
+    /** @event */
     prependOnceListener(event: "ready" | "stop", listener: () => void): this;
 
     /** @event */
     prependOnceListener(event: "joinVoice", listener: (guild: Guild, options: IVoiceJoinOptions) => void): this;
+
+    /** @event */
+    prependOnceListener(event: "disconnectVoice", listener: (guild: Guild) => void): this;
 }
 
 /**
@@ -76,6 +95,8 @@ export class Bot extends EventEmitter {
     public languages: Languages;
     /** The module handler of the bot. */
     public modules: Modules;
+    /** The voice connection handler of the bot. */
+    public voice: Voice;
     /** The Discord gateway intents the bot needs to function */
     public intents: GatewayIntentBits[];
     private configEntries: {
@@ -146,6 +167,7 @@ export class Bot extends EventEmitter {
         this.commands.registerDatabase();
         this.modules = new Modules(this);
         this.modules.registerConfig();
+        this.voice = new Voice(this);
 
         this.intents = [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages];
     }
@@ -198,6 +220,10 @@ export class Bot extends EventEmitter {
 
                 this.client.on("interactionCreate", async (interaction) => {
                     await this.commands.interaction(interaction);
+                });
+
+                this.client.on("voiceStateUpdate", (oldState, newState) => {
+                    this.voice.onVoiceStateUpdate(oldState, newState);
                 });
             }
         }
@@ -255,41 +281,6 @@ export class Bot extends EventEmitter {
             this.readline.close();
         }
         await Promise.all(promises);
-    }
-
-    /** Join a voice channel  */
-    public async joinVoice(voiceChannel: VoiceChannel, options?: Partial<IVoiceJoinOptions>): Promise<VoiceConnection> {
-        const baseOptions = {
-            adapterCreator: voiceChannel.guild.voiceAdapterCreator,
-            channelId: voiceChannel.id,
-            guildId: voiceChannel.guild.id,
-        };
-
-        const additionalOptions = Object.assign({
-            selfDeaf: true,
-            selfMute: true,
-        }, options);
-
-        this.emit("joinVoice", voiceChannel.guild, additionalOptions);
-
-        const newConnection = joinVoiceChannel(Object.assign(baseOptions, additionalOptions));
-
-        newConnection.on(VoiceConnectionStatus.Disconnected, async (oldState, newState) => {
-            try {
-                await Promise.race([
-                    entersState(newConnection, VoiceConnectionStatus.Signalling, 5_000),
-                    entersState(newConnection, VoiceConnectionStatus.Connecting, 5_000),
-                ]);
-                // Seems to be reconnecting to a new channel - ignore disconnect
-            } catch (error) {
-                // Seems to be a real disconnect which SHOULDN'T be recovered from
-                newConnection.destroy();
-            }
-        });
-
-        await entersState(newConnection, VoiceConnectionStatus.Ready, 10e3);
-
-        return newConnection;
     }
 }
 

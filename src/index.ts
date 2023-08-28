@@ -1,7 +1,7 @@
 export { Bot } from "./Bot";
 
-export { Commands, ICommandContext } from "./commands/Commands";
-export { Command, IExecutionContext } from "./commands/Command";
+export { Commands, ICommandContext, LinkedResponse } from "./commands/Commands";
+export { Command, IExecutionContext, AnyCommand } from "./commands/Command";
 export { CommandGroup } from "./commands/CommandGroup";
 export { SimpleCommand } from "./commands/SimpleCommand";
 export { Argument } from "./commands/arguments/Argument";
@@ -66,6 +66,8 @@ export { RolePrivilegeEntity } from "./permissions/database/RolePrivilegeEntity"
 export { CustomPrivilegeEntity } from "./permissions/database/CustomPrivilegeEntity";
 export { CustomPrivilegeIncludeEntity } from "./permissions/database/CustomPrivilegeIncludeEntity";
 export { CustomPrivilegePermissionEntity } from "./permissions/database/CustomPrivilegePermissionEntity";
+
+export { Voice, IVoiceJoinOptions } from "./voice/Voice";
 
 export { Serializer } from "./util/Serializer";
 export { Logger } from "./util/Logger";

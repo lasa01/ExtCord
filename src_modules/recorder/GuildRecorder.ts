@@ -1,4 +1,4 @@
-import { AudioReceiveStream, EndBehaviorType, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioReceiveStream, EndBehaviorType, VoiceConnection, VoiceConnectionState, VoiceConnectionStatus } from "@discordjs/voice";
 import { Guild } from "discord.js";
 import { Readable } from "stream";
 import prism = require("prism-media");
@@ -14,6 +14,10 @@ export class GuildRecorder {
     private replayBufferMillis: number;
     private recording: boolean;
     private recorder: RecorderModule;
+
+    private voiceConnection?: VoiceConnection;
+    private speakingStartListener?: (userId: string) => void;
+    private disconnectedListener?: (oldState: VoiceConnectionState, newState: VoiceConnectionState) => void;
 
     constructor(guild: Guild, recorder: RecorderModule) {
         this.guild = guild;
@@ -33,7 +37,7 @@ export class GuildRecorder {
         this.cleanup();
         const receiver = connection.receiver;
 
-        receiver.speaking.on("start", (userId) => {
+        this.speakingStartListener = (userId) => {
             Logger.debug(`User ${userId} speaking`)
             const stream = receiver.subscribe(userId, {
                 end: {
@@ -67,11 +71,15 @@ export class GuildRecorder {
                 startMillis = endMillis;
                 packets = [];
             });
-        });
+        };
+        receiver.speaking.on("start", this.speakingStartListener);
 
-        connection.on(VoiceConnectionStatus.Disconnected, (oldState, newState) => {
+        this.disconnectedListener = (oldState, newState) => {
             this.stopRecording();
-        });
+        };
+        connection.on(VoiceConnectionStatus.Disconnected, this.disconnectedListener);
+
+        this.voiceConnection = connection;
     }
 
     public isRecording() {
@@ -147,6 +155,20 @@ export class GuildRecorder {
     }
 
     private cleanup() {
+        if (this.voiceConnection !== undefined) {
+            if (this.speakingStartListener !== undefined) {
+                this.voiceConnection.receiver.speaking.off("start", this.speakingStartListener);
+            }
+
+            if (this.disconnectedListener !== undefined) {
+                this.voiceConnection.off(VoiceConnectionStatus.Disconnected, this.disconnectedListener);
+            }
+
+            this.speakingStartListener = undefined;
+            this.disconnectedListener = undefined;
+            this.voiceConnection = undefined;
+        }
+
         for (const stream of this.streams) {
             stream.destroy();
         }

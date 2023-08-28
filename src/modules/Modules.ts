@@ -171,7 +171,7 @@ export class Modules extends EventEmitter {
             "--quiet",
             "install",
             "--no-save",
-            "--no-package-lock",
+            // "--no-package-lock",
             "--no-audit",
             "--no-fund",
             ...this.dependencies,

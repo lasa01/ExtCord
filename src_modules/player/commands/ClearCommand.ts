@@ -1,4 +1,3 @@
-import { getVoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import PlayerModule from "..";
 import { Command, IExecutionContext } from "../../..";
 
@@ -15,6 +14,7 @@ export class ClearCommand extends Command<[]> {
                 description: "Clear the player queue",
                 globalAliases: ["clear"],
                 name: "clear",
+                voiceCommand: true,
             },
             [],
         );
@@ -29,9 +29,8 @@ export class ClearCommand extends Command<[]> {
         }
 
         const guild = context.guild.guild;
-        const connection = getVoiceConnection(guild.id);
 
-        if (connection?.state.status !== VoiceConnectionStatus.Ready || !connection.state.subscription) {
+        if (!this.player.isPlaying(guild)) {
             return context.respond(musicNotPlayingPhrase, {});
         }
 

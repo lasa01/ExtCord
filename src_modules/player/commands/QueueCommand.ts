@@ -1,6 +1,6 @@
 import { Command, IExecutionContext } from "../../..";
 
-import { getVoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
+import { VoiceConnectionStatus } from "@discordjs/voice";
 import PlayerModule from "..";
 import { musicNotPlayingPhrase, musicNoVoicePhrase, musicQueuePhrase, musicWrongVoicePhrase } from "../phrases";
 
@@ -29,14 +29,9 @@ export class QueueCommand extends Command<[]> {
         }
 
         const guild = context.guild.guild;
-        const connection = getVoiceConnection(guild.id);
         const queue = this.player.getQueue(context.guild);
 
-        if (
-            connection?.state.status !== VoiceConnectionStatus.Ready
-            || !connection.state.subscription
-            || !queue.playing
-        ) {
+        if (!this.player.isPlaying(guild) || queue.playing === undefined) {
             return context.respond(musicNotPlayingPhrase, {});
         }
 

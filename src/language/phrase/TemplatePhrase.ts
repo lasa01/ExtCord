@@ -43,6 +43,69 @@ export class TemplatePhrase<T extends Record<string, string>> extends SimplePhra
         }
         return format(this.templates[language], processedStuff);
     }
+
+    /**
+     * Gets the phrase as a formatted list splitting the placeholders into their own strings.
+     * @param language The language to use.
+     * @param stuff The placeholder replacements to use.
+     */
+    public getParts<F extends Record<string, string>>(language: string, stuff?: TemplateStuff<T, F>): IResponsePart[] {
+        const processedStuff: { [key: string]: string } = {};
+        if (stuff) {
+            for (const [key, thing] of Object.entries(stuff)) {
+                if (thing instanceof SimplePhrase) {
+                    processedStuff[key] = thing.get(language);
+                } else if (Array.isArray(thing)) {
+                    processedStuff[key] = thing[0].format(language, thing[1]);
+                } else {
+                    processedStuff[key] = thing;
+                }
+            }
+        }
+
+        const template = this.templates[language];
+        const regex = /[{](.*?)[}]/g;
+        const parts = [];
+
+        var lastIndex = 0;
+        var match = regex.exec(template);
+
+        while (match !== null) {
+            const partBefore = template.substring(lastIndex, match.index).trim();
+
+            if (partBefore.length > 0) {
+                parts.push({
+                    text: partBefore,
+                    template: false,
+                });
+            }
+
+            const placeholderName = match[1];
+
+            const part = processedStuff[placeholderName];
+
+            if (part !== undefined && part.length > 0) {
+                parts.push({
+                    text: part,
+                    template: true,
+                });
+            }
+
+            lastIndex = regex.lastIndex;
+            match = regex.exec(template);
+        }
+
+        const lastPart = template.substring(lastIndex).trim();
+
+        if (lastPart.length > 0) {
+            parts.push({
+                text: lastPart,
+                template: false,
+            });
+        }
+
+        return parts;
+    }
 }
 
 /**
@@ -54,5 +117,10 @@ export class TemplatePhrase<T extends Record<string, string>> extends SimplePhra
  * @category Language
  */
 export type TemplateStuff<T extends Record<string, string>, U extends Record<string, string>> = {
-    [P in keyof T]: T[P]|SimplePhrase|[TemplatePhrase<U>, U]
+    [P in keyof T]: T[P] | SimplePhrase | [TemplatePhrase<U>, U]
+};
+
+export interface IResponsePart {
+    text: string;
+    template: boolean;
 };
