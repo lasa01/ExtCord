@@ -96,7 +96,7 @@ export class VoiceBackendClient {
 
         const urlObject = new URL(url);
 
-        if (urlObject.protocol === "https") {
+        if (urlObject.protocol === "https:") {
             this.agent = new HttpsAgent({
                 keepAlive: true
             });
