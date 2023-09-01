@@ -147,13 +147,18 @@ export default class VoiceCommandsModule extends Module {
             // joined a channel
             const nonBotUsers = newState.channel.members.filter(member => !member.user.bot);
             if (nonBotUsers.size > 0) {
-                const listener = await this.getListener(newState.guild);
-                const connection = this.bot.voice.getConnection(newState.guild);
-    
-                if (connection !== undefined && listener !== undefined) {
-                    newState.selfDeaf = false;
-                    connection.join();
-                }
+                setTimeout(async () => {
+                    const nonBotUsers = newState.channel.members.filter(member => !member.user.bot);
+                    if (nonBotUsers.size > 0) {
+                        const listener = await this.getListener(newState.guild);
+                        const connection = await this.getConnection(this.bot, newState.channel);
+        
+                        if (connection !== undefined && listener !== undefined) {
+                            newState.selfDeaf = false;
+                            connection.join();
+                        }
+                    }
+                }, 5000);
             }
         }
     }
