@@ -1,9 +1,10 @@
 // extcord module 
 // requires fastest-levenshtein@^1.0.16 lru-cache@^10.0.1
 
-import { GatewayIntentBits, Guild, VoiceState } from "discord.js";
+import { GatewayIntentBits, Guild, VoiceState, VoiceConnection } from "discord.js";
+import { getVoiceConnection } from "@discordjs/voice";
 
-import { BooleanGuildConfigEntry, Bot, Logger, Module, NumberConfigEntry, SimplePhrase, StringConfigEntry } from "../..";
+import { BooleanGuildConfigEntry, Bot, Logger, Module, SimplePhrase, StringConfigEntry, NumberConfigEntry } from "../..";
 
 import { GuildListener } from "./GuildListener";
 import { VoiceBackendClient } from "./VoiceBackendClient";
@@ -161,6 +162,10 @@ export default class VoiceCommandsModule extends Module {
                 }, 5000);
             }
         }
+    }
+    
+    public getConnection(guild: Guild): VoiceConnection | undefined {
+        return getVoiceConnection(guild.id);
     }
 
     private onReady() {
