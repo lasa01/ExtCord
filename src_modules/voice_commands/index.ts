@@ -139,26 +139,24 @@ export default class VoiceCommandsModule extends Module {
     }
 
     private async onVoiceStateUpdate(oldState: VoiceState, newState: VoiceState) {
-            if (oldState.id !== this.bot.client!.user!.id || newState.id !== this.bot.client!.user!.id) {
-                return;
-            }
+        if (oldState.id !== this.bot.client!.user!.id || newState.id !== this.bot.client!.user!.id) {
+            return;
+        }
     
-            if (oldState.channel === null && newState.channel !== null && !newState.member.user.bot) {
-                // joined a channel
-                setTimeout(async () => {
-                    const nonBotUsers = newState.channel.members.filter(member => !member.user.bot);
-                    if (nonBotUsers.size > 0) {
-                        const listener = await this.getListener(newState.guild);
-                        const connection = this.bot.voice.getConnection(newState.guild);
+        if (oldState.channel === null && newState.channel !== null && !newState.member.user.bot) {
+            // joined a channel
+            const nonBotUsers = newState.channel.members.filter(member => !member.user.bot);
+            if (nonBotUsers.size > 0) {
+                const listener = await this.getListener(newState.guild);
+                const connection = this.bot.voice.getConnection(newState.guild);
     
-                        if (connection !== undefined && listener !== undefined) {
-                            newState.selfDeaf = false;
-                            listener.startListening(connection);
-                        }
-                    }
-                }, 5000);
+                if (connection !== undefined && listener !== undefined) {
+                    newState.selfDeaf = false;
+                    connection.join();
+                }
             }
         }
+    }
 
     private onReady() {
         if (this.voiceStateUpdateHandler !== undefined) {
