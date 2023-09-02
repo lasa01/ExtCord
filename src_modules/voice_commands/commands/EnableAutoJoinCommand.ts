@@ -21,12 +21,12 @@ export class EnableAutoJoinCommand extends Command<[]> {
     }
 
     public async execute(context: IExecutionContext<[]>) {
-        const guild = context.guild.guild;
-
+        const guild = context.guild;
+    
         if (await this.voiceCommandsModule.autoJoinConfigEntry.guildGet(guild)) {
             return context.respond(autoJoinAlreadyEnabledPhrase, {});
         }
-
+    
         await this.voiceCommandsModule.autoJoinConfigEntry.guildSet(guild, true);
         return context.respond(autoJoinEnabledPhrase, {});
     }
