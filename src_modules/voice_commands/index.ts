@@ -1,9 +1,10 @@
 // extcord module 
 // requires fastest-levenshtein@^1.0.16 lru-cache@^10.0.1
 
-import { GatewayIntentBits, Guild, VoiceState } from "discord.js";
+import { GatewayIntentBits, Guild, VoiceState, VoiceChannel } from "discord.js";
+import { VoiceConnection } from "@discordjs/voice";
 
-import { BooleanGuildConfigEntry, Bot, Logger, Module, NumberConfigEntry, SimplePhrase, StringConfigEntry } from "../..";
+import { BooleanGuildConfigEntry, Bot, Logger, Module, SimplePhrase, StringConfigEntry, NumberConfigEntry } from "../..";
 
 import { GuildListener } from "./GuildListener";
 import { VoiceBackendClient } from "./VoiceBackendClient";
@@ -139,12 +140,27 @@ export default class VoiceCommandsModule extends Module {
     }
 
     private async onVoiceStateUpdate(oldState: VoiceState, newState: VoiceState) {
+        if (oldState.channel === null && newState.channel !== null && newState.channel instanceof VoiceChannel && !newState.member?.user.bot) {
+            const channel = newState.channel;
+
+            // Someone joined a voice channel
+            const nonBotUsers = channel.members.filter(member => !member.user.bot);
+            if (nonBotUsers.size > 0 && this.bot.voice.getConnection(channel.guild) === undefined) {
+                setTimeout(async () => {
+                    const nonBotUsers = channel.members.filter(member => !member.user.bot);
+                    if (nonBotUsers.size > 0 && this.bot.voice.getConnection(channel.guild) === undefined) {
+                        await this.getConnection(this.bot, channel);
+                    }
+                }, 5000);
+            }
+        }
+
         if (oldState.id !== this.bot.client!.user!.id || newState.id !== this.bot.client!.user!.id) {
             return;
         }
 
         if (oldState.channel === null && newState.channel !== null) {
-            // joined a channel
+            // Bot joined a channel
             const listener = await this.getListener(newState.guild);
             const connection = this.bot.voice.getConnection(newState.guild);
 
@@ -153,6 +169,10 @@ export default class VoiceCommandsModule extends Module {
                 listener.startListening(connection);
             }
         }
+    }
+
+    private async getConnection(bot: Bot, voiceChannel: VoiceChannel): Promise<VoiceConnection> {
+        return bot.voice.getOrCreateConnection(voiceChannel);
     }
 
     private onReady() {
