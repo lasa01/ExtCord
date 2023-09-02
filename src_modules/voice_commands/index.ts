@@ -26,6 +26,7 @@ export default class VoiceCommandsModule extends Module {
     public maxQueuedAsrCountConfigEntry: NumberConfigEntry;
     public tokenConfigEntry: StringConfigEntry;
     public voiceCommandsEnabledConfigEntry: BooleanGuildConfigEntry;
+    public autoJoinEnabledConfigEntry: BooleanGuildConfigEntry;
     public client: VoiceBackendClient;
     public voiceCommands: VoiceCommands;
     public voiceCommandsGroup: CommandGroup;
@@ -92,19 +93,14 @@ export default class VoiceCommandsModule extends Module {
         this.registerConfigEntry(this.tokenConfigEntry);
 
         this.voiceCommandsEnabledConfigEntry = new BooleanGuildConfigEntry({
-                            name: "voiceCommandsEnabled",
-                        }, bot.database, true);
-                        this.registerConfigEntry(this.voiceCommandsEnabledConfigEntry);
+                                    name: "voiceCommandsEnabled",
+                                }, bot.database, true);
+                                this.registerConfigEntry(this.voiceCommandsEnabledConfigEntry);
                 
-                this.autoJoinConfigEntry = new BooleanGuildConfigEntry({
-                            name: "autoJoin",
-                        }, bot.database, false);
-                        this.registerConfigEntry(this.autoJoinConfigEntry);
-        
-                this.autoJoinEnabledConfigEntry = new BooleanGuildConfigEntry({
-                            name: "autoJoinEnabled",
-                        }, bot.database, false);
-                        this.registerConfigEntry(this.autoJoinEnabledConfigEntry);
+                        this.autoJoinEnabledConfigEntry = new BooleanGuildConfigEntry({
+                                    name: "autoJoinEnabled",
+                                }, bot.database, false);
+                                this.registerConfigEntry(this.autoJoinEnabledConfigEntry);
 
 
         bot.intents.push(GatewayIntentBits.GuildVoiceStates);
