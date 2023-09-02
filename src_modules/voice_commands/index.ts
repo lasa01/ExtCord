@@ -43,9 +43,29 @@ export default class VoiceCommandsModule extends Module {
         });
 
         this.keywordPhrase = new SimplePhrase({
-            name: "keyword",
-        }, "bot");
-        this.registerPhrase(this.keywordPhrase);
+                    name: "keyword",
+                }, "bot");
+                this.registerPhrase(this.keywordPhrase);
+        
+        this.voiceCommandsEnabledPhrase = new SimplePhrase({
+                    name: "voiceCommandsEnabled",
+                }, "Voice commands enabled.");
+                this.registerPhrase(this.voiceCommandsEnabledPhrase);
+        
+        this.voiceCommandsDisabledPhrase = new SimplePhrase({
+                    name: "voiceCommandsDisabled",
+                }, "Voice commands disabled.");
+                this.registerPhrase(this.voiceCommandsDisabledPhrase);
+        
+        this.autoJoinEnabledPhrase = new SimplePhrase({
+                    name: "autoJoinEnabled",
+                }, "Automatic joining enabled.");
+                this.registerPhrase(this.autoJoinEnabledPhrase);
+        
+        this.autoJoinDisabledPhrase = new SimplePhrase({
+                    name: "autoJoinDisabled",
+                }, "Automatic joining disabled.");
+                this.registerPhrase(this.autoJoinDisabledPhrase);
 
         this.backendLanguageIdPhrase = new SimplePhrase({
             name: "backendLanguageId",
@@ -93,17 +113,32 @@ export default class VoiceCommandsModule extends Module {
         this.registerConfigEntry(this.tokenConfigEntry);
 
         this.voiceCommandsEnabledConfigEntry = new BooleanGuildConfigEntry({
-            name: "voiceCommandsEnabled",
-        }, bot.database, true);
-        this.registerConfigEntry(this.voiceCommandsEnabledConfigEntry);
+                    name: "voiceCommandsEnabled",
+                }, bot.database, true);
+                this.registerConfigEntry(this.voiceCommandsEnabledConfigEntry);
+        
+        this.autoJoinEnabledConfigEntry = new BooleanGuildConfigEntry({
+                    name: "autoJoinEnabled",
+                }, bot.database, false);
+                this.registerConfigEntry(this.autoJoinEnabledConfigEntry);
 
 
         bot.intents.push(GatewayIntentBits.GuildVoiceStates);
 
         this.client = new VoiceBackendClient(this);
         this.voiceCommands = new VoiceCommands(this, bot);
-        this.phoneticCache = new PhoneticCache(this, bot);
-        this.speechCache = new SpeechCache(this, bot);
+                this.phoneticCache = new PhoneticCache(this, bot);
+                this.speechCache = new SpeechCache(this, bot);
+        
+        this.registerCommandGroup({
+                    name: "voice-commands",
+                    description: "Commands for managing voice commands and automatic joining",
+                });
+        
+        this.registerCommand("voice-commands", new EnableCommand(this));
+        this.registerCommand("voice-commands", new DisableCommand(this));
+        this.registerCommand("voice-commands", new EnableAutoJoinCommand(this));
+        this.registerCommand("voice-commands", new DisableAutoJoinCommand(this));
     }
 
     public async getListener(guild: Guild): Promise<GuildListener | undefined> {
@@ -141,7 +176,18 @@ export default class VoiceCommandsModule extends Module {
 
     private async onVoiceStateUpdate(oldState: VoiceState, newState: VoiceState) {
         if (oldState.channel === null && newState.channel !== null && newState.channel instanceof VoiceChannel && !newState.member?.user.bot) {
-            const channel = newState.channel;
+                    const channel = newState.channel;
+        
+                    const extendedGuild = {
+                        entity: guildEntity,
+                        guild: guild,
+                    };
+        
+                    const autoJoinEnabled = await this.autoJoinEnabledConfigEntry.guildGet(extendedGuild);
+        
+                    if (!autoJoinEnabled) {
+                        return;
+                    }
 
             // Someone joined a voice channel
             const nonBotUsers = channel.members.filter(member => !member.user.bot);
