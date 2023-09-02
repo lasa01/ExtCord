@@ -4,13 +4,18 @@
 import { GatewayIntentBits, Guild, VoiceState, VoiceChannel } from "discord.js";
 import { VoiceConnection } from "@discordjs/voice";
 
-import { BooleanGuildConfigEntry, Bot, Logger, Module, SimplePhrase, StringConfigEntry, NumberConfigEntry } from "../..";
+import { BooleanGuildConfigEntry, Bot, CommandGroup, Logger, Module, SimplePhrase, StringConfigEntry, NumberConfigEntry } from "../..";
+import { voiceCommandsEnabledPhrase, voiceCommandsDisabledPhrase, autoJoinEnabledPhrase, autoJoinDisabledPhrase, voiceCommandsAlreadyDisabledPhrase, voiceCommandsAlreadyEnabledPhrase, autoJoinAlreadyDisabledPhrase, autoJoinAlreadyEnabledPhrase, voiceCommandsNotSupportedPhrase } from "./phrases";
 
 import { GuildListener } from "./GuildListener";
 import { VoiceBackendClient } from "./VoiceBackendClient";
 import { PhoneticCache } from "./PhoneticCache";
 import { SpeechCache } from "./SpeechCache";
 import { VoiceCommands } from "./VoiceCommands";
+import { DisableCommand } from "./commands/DisableCommand";
+import { EnableCommand } from "./commands/EnableCommand";
+import { EnableAutoJoinCommand } from "./commands/EnableAutoJoinCommand";
+import { DisableAutoJoinCommand } from "./commands/DisableAutoJoinCommand";
 
 export default class VoiceCommandsModule extends Module {
     private listeners: Map<string, GuildListener>;
@@ -25,8 +30,10 @@ export default class VoiceCommandsModule extends Module {
     public maxQueuedAsrCountConfigEntry: NumberConfigEntry;
     public tokenConfigEntry: StringConfigEntry;
     public voiceCommandsEnabledConfigEntry: BooleanGuildConfigEntry;
+    public autoJoinEnabledConfigEntry: BooleanGuildConfigEntry;
     public client: VoiceBackendClient;
     public voiceCommands: VoiceCommands;
+    public voiceCommandsGroup: CommandGroup;
     public phoneticCache: PhoneticCache;
     public speechCache: SpeechCache;
 
@@ -97,6 +104,10 @@ export default class VoiceCommandsModule extends Module {
         }, bot.database, true);
         this.registerConfigEntry(this.voiceCommandsEnabledConfigEntry);
 
+        this.autoJoinEnabledConfigEntry = new BooleanGuildConfigEntry({
+            name: "autoJoinEnabled",
+        }, bot.database, false);
+        this.registerConfigEntry(this.autoJoinEnabledConfigEntry);
 
         bot.intents.push(GatewayIntentBits.GuildVoiceStates);
 
@@ -104,6 +115,33 @@ export default class VoiceCommandsModule extends Module {
         this.voiceCommands = new VoiceCommands(this, bot);
         this.phoneticCache = new PhoneticCache(this, bot);
         this.speechCache = new SpeechCache(this, bot);
+
+        this.voiceCommandsGroup = new CommandGroup(
+            {
+                allowedPrivileges: ["everyone"],
+                author: "extcord",
+                description: "Commands for managing voice commands and automatic joining",
+                name: "voice-commands",
+            },
+        );
+        this.voiceCommandsGroup.addSubcommands(
+            new EnableCommand(this),
+            new DisableCommand(this),
+            new EnableAutoJoinCommand(this),
+            new DisableAutoJoinCommand(this),
+        );
+        this.voiceCommandsGroup.addPhrases(
+            voiceCommandsEnabledPhrase,
+            voiceCommandsDisabledPhrase,
+            autoJoinEnabledPhrase,
+            autoJoinDisabledPhrase,
+            voiceCommandsAlreadyDisabledPhrase,
+            voiceCommandsAlreadyEnabledPhrase,
+            autoJoinAlreadyDisabledPhrase,
+            autoJoinAlreadyEnabledPhrase,
+            voiceCommandsNotSupportedPhrase,
+        );
+        this.registerCommand(this.voiceCommandsGroup);
     }
 
     public async getListener(guild: Guild): Promise<GuildListener | undefined> {
@@ -143,15 +181,27 @@ export default class VoiceCommandsModule extends Module {
         if (oldState.channel === null && newState.channel !== null && newState.channel instanceof VoiceChannel && !newState.member?.user.bot) {
             const channel = newState.channel;
 
-            // Someone joined a voice channel
-            const nonBotUsers = channel.members.filter(member => !member.user.bot);
-            if (nonBotUsers.size > 0 && this.bot.voice.getConnection(channel.guild) === undefined) {
-                setTimeout(async () => {
-                    const nonBotUsers = channel.members.filter(member => !member.user.bot);
-                    if (nonBotUsers.size > 0 && this.bot.voice.getConnection(channel.guild) === undefined) {
-                        await this.getConnection(this.bot, channel);
-                    }
-                }, 5000);
+            this.bot.database.ensureConnection();
+
+            const guildEntity = await this.bot.database.repos.guild.getEntity(newState.guild);
+
+            const extendedGuild = {
+                entity: guildEntity,
+                guild: newState.guild,
+            };
+
+            const autoJoinEnabled = await this.autoJoinEnabledConfigEntry.guildGet(extendedGuild);
+
+            if (autoJoinEnabled) {
+                const nonBotUsers = channel.members.filter(member => !member.user.bot);
+                if (nonBotUsers.size > 0 && this.bot.voice.getConnection(channel.guild) === undefined) {
+                    setTimeout(async () => {
+                        const nonBotUsers = channel.members.filter(member => !member.user.bot);
+                        if (nonBotUsers.size > 0 && this.bot.voice.getConnection(channel.guild) === undefined) {
+                            await this.getConnection(this.bot, channel);
+                        }
+                    }, 5000);
+                }
             }
         }
 
