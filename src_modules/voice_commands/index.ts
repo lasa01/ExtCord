@@ -4,7 +4,7 @@
 import { GatewayIntentBits, Guild, VoiceState, VoiceChannel } from "discord.js";
 import { VoiceConnection } from "@discordjs/voice";
 
-import { BooleanGuildConfigEntry, Bot, Logger, Module, SimplePhrase, StringConfigEntry, NumberConfigEntry } from "../..";
+import { BooleanGuildConfigEntry, Bot, CommandGroup, Logger, Module, SimplePhrase, StringConfigEntry, NumberConfigEntry } from "../..";
 import { keywordPhrase, voiceCommandsEnabledPhrase, voiceCommandsDisabledPhrase, autoJoinEnabledPhrase, autoJoinDisabledPhrase } from "./phrases";
 
 import { GuildListener } from "./GuildListener";
@@ -28,6 +28,7 @@ export default class VoiceCommandsModule extends Module {
     public voiceCommandsEnabledConfigEntry: BooleanGuildConfigEntry;
     public client: VoiceBackendClient;
     public voiceCommands: VoiceCommands;
+    public voiceCommandsGroup: CommandGroup;
     public phoneticCache: PhoneticCache;
     public speechCache: SpeechCache;
 
@@ -121,6 +122,12 @@ export default class VoiceCommandsModule extends Module {
             new DisableCommand(this),
             new EnableAutoJoinCommand(this),
             new DisableAutoJoinCommand(this),
+        );
+        this.voiceCommandsGroup.addPhrases(
+            voiceCommandsEnabledPhrase,
+            voiceCommandsDisabledPhrase,
+            autoJoinEnabledPhrase,
+            autoJoinDisabledPhrase
         );
         this.registerCommand(this.voiceCommandsGroup);
     }
