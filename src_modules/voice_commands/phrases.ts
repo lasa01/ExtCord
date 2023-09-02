@@ -1,4 +1,4 @@
-import { MessagePhrase } from "extcord";
+import { MessagePhrase } from "../..";
 
 export const voiceCommandsEnabledPhrase = new MessagePhrase({
     name: "voiceCommandsEnabled",
