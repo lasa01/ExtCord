@@ -1,4 +1,4 @@
-import { Command, IExecutionContext } from "../../../..";
+import { Command, IExecutionContext } from "../../..";
 import VoiceCommandsModule from "..";
 import { voiceCommandsDisabledPhrase, voiceCommandsAlreadyDisabledPhrase } from "../phrases";
 
