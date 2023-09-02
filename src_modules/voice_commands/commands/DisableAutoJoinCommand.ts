@@ -8,7 +8,7 @@ export class DisableAutoJoinCommand extends Command<[]> {
     public constructor(voiceCommandsModule: VoiceCommandsModule) {
         super(
             {
-                allowedPrivileges: ["everyone"],
+                allowedPrivileges: ["admin"],
                 author: "extcord",
                 description: "Disable automatic joining",
                 globalAliases: ["disableautojoin"],
@@ -22,9 +22,9 @@ export class DisableAutoJoinCommand extends Command<[]> {
 
     public async execute(context: IExecutionContext<[]>) {
         const guild = context.guild;
-    
-        if (await this.voiceCommandsModule.autoJoinConfigEntry.guildGet(guild)) {
-            await this.voiceCommandsModule.autoJoinConfigEntry.guildSet(guild, false);
+
+        if (await this.voiceCommandsModule.autoJoinEnabledConfigEntry.guildGet(guild)) {
+            await this.voiceCommandsModule.autoJoinEnabledConfigEntry.guildSet(guild, false);
             return context.respond(autoJoinDisabledPhrase, {});
         } else {
             return context.respond(autoJoinAlreadyDisabledPhrase, {});

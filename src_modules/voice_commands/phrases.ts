@@ -103,3 +103,16 @@ export const voiceCommandsAlreadyEnabledPhrase = new MessagePhrase(
     },
     {},
 );
+
+export const voiceCommandsNotSupportedPhrase = new MessagePhrase(
+    {
+        description: "Shown when voice commands are not supported with the language",
+        name: "voiceCommandsNotSupported",
+    },
+    "Voice commands are not supported with this language.",
+    {
+        timestamp: false,
+        title: "Voice commands are not supported with this language."
+    },
+    {},
+);

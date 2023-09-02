@@ -8,10 +8,10 @@ export class DisableCommand extends Command<[]> {
     public constructor(voiceCommandsModule: VoiceCommandsModule) {
         super(
             {
-                allowedPrivileges: ["everyone"],
+                allowedPrivileges: ["admin"],
                 author: "extcord",
                 description: "Disable voice commands",
-                globalAliases: ["disable"],
+                globalAliases: [],
                 name: "disable",
             },
             [],
@@ -22,7 +22,7 @@ export class DisableCommand extends Command<[]> {
 
     public async execute(context: IExecutionContext<[]>) {
         const guild = context.guild;
-    
+
         if (await this.voiceCommandsModule.voiceCommandsEnabledConfigEntry.guildGet(guild)) {
             await this.voiceCommandsModule.voiceCommandsEnabledConfigEntry.guildSet(guild, false);
             return context.respond(voiceCommandsDisabledPhrase, {});

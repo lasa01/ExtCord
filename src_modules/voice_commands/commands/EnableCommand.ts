@@ -1,6 +1,6 @@
 import { Command, IExecutionContext } from "../../..";
 import VoiceCommandsModule from "..";
-import { voiceCommandsEnabledErrorPhrase, voiceCommandsEnabledPhrase } from "../phrases";
+import { voiceCommandsAlreadyEnabledPhrase, voiceCommandsEnabledPhrase, voiceCommandsNotSupportedPhrase } from "../phrases";
 
 export class EnableCommand extends Command<[]> {
     private voiceCommandsModule: VoiceCommandsModule;
@@ -8,10 +8,10 @@ export class EnableCommand extends Command<[]> {
     public constructor(voiceCommandsModule: VoiceCommandsModule) {
         super(
             {
-                allowedPrivileges: ["everyone"],
+                allowedPrivileges: ["admin"],
                 author: "extcord",
                 description: "Enable voice commands",
-                globalAliases: ["enable"],
+                globalAliases: [],
                 name: "enable",
             },
             [],
@@ -22,11 +22,17 @@ export class EnableCommand extends Command<[]> {
 
     public async execute(context: IExecutionContext<[]>) {
         const guild = context.guild;
-    
+
         if (await this.voiceCommandsModule.voiceCommandsEnabledConfigEntry.guildGet(guild)) {
             return context.respond(voiceCommandsAlreadyEnabledPhrase, {});
         }
-    
+
+        const backendLanguage = this.voiceCommandsModule.backendLanguageIdPhrase.get(context.language);
+
+        if (backendLanguage === undefined || backendLanguage === "") {
+            return context.respond(voiceCommandsNotSupportedPhrase, {});;
+        }
+
         await this.voiceCommandsModule.voiceCommandsEnabledConfigEntry.guildSet(guild, true);
         return context.respond(voiceCommandsEnabledPhrase, {});
     }
