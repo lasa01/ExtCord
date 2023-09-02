@@ -1,4 +1,4 @@
-import { Command, IExecutionContext } from "extcord";
+import { Command, IExecutionContext } from "../../..";
 import VoiceCommandsModule from "..";
 import { voiceCommandsEnabledErrorPhrase, voiceCommandsEnabledPhrase } from "../phrases";
 
