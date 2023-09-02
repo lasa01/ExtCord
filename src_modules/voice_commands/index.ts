@@ -5,6 +5,7 @@ import { GatewayIntentBits, Guild, VoiceState, VoiceChannel } from "discord.js";
 import { VoiceConnection } from "@discordjs/voice";
 
 import { BooleanGuildConfigEntry, Bot, Logger, Module, SimplePhrase, StringConfigEntry, NumberConfigEntry } from "../..";
+import { keywordPhrase, voiceCommandsEnabledPhrase, voiceCommandsDisabledPhrase, autoJoinEnabledPhrase, autoJoinDisabledPhrase } from "./phrases";
 
 import { GuildListener } from "./GuildListener";
 import { VoiceBackendClient } from "./VoiceBackendClient";
@@ -42,30 +43,7 @@ export default class VoiceCommandsModule extends Module {
             options.selfDeaf = false;
         });
 
-        this.keywordPhrase = new SimplePhrase({
-                    name: "keyword",
-                }, "bot");
-                this.registerPhrase(this.keywordPhrase);
-        
-        this.voiceCommandsEnabledPhrase = new SimplePhrase({
-                    name: "voiceCommandsEnabled",
-                }, "Voice commands enabled.");
-                this.registerPhrase(this.voiceCommandsEnabledPhrase);
-        
-        this.voiceCommandsDisabledPhrase = new SimplePhrase({
-                    name: "voiceCommandsDisabled",
-                }, "Voice commands disabled.");
-                this.registerPhrase(this.voiceCommandsDisabledPhrase);
-        
-        this.autoJoinEnabledPhrase = new SimplePhrase({
-                    name: "autoJoinEnabled",
-                }, "Automatic joining enabled.");
-                this.registerPhrase(this.autoJoinEnabledPhrase);
-        
-        this.autoJoinDisabledPhrase = new SimplePhrase({
-                    name: "autoJoinDisabled",
-                }, "Automatic joining disabled.");
-                this.registerPhrase(this.autoJoinDisabledPhrase);
+        // Removed phrases
 
         this.backendLanguageIdPhrase = new SimplePhrase({
             name: "backendLanguageId",
