@@ -108,15 +108,21 @@ export default class VoiceCommandsModule extends Module {
                 this.phoneticCache = new PhoneticCache(this, bot);
                 this.speechCache = new SpeechCache(this, bot);
         
-        this.registerCommandGroup({
-                    name: "voice-commands",
-                    description: "Commands for managing voice commands and automatic joining",
-                });
-        
-        this.registerCommand("voice-commands", new EnableCommand(this));
-        this.registerCommand("voice-commands", new DisableCommand(this));
-        this.registerCommand("voice-commands", new EnableAutoJoinCommand(this));
-        this.registerCommand("voice-commands", new DisableAutoJoinCommand(this));
+        this.voiceCommandsGroup = new CommandGroup(
+            {
+                allowedPrivileges: ["everyone"],
+                author: "extcord",
+                description: "Commands for managing voice commands and automatic joining",
+                name: "voice-commands",
+            },
+        );
+        this.voiceCommandsGroup.addSubcommands(
+            new EnableCommand(this),
+            new DisableCommand(this),
+            new EnableAutoJoinCommand(this),
+            new DisableAutoJoinCommand(this),
+        );
+        this.registerCommand(this.voiceCommandsGroup);
     }
 
     public async getListener(guild: Guild): Promise<GuildListener | undefined> {
