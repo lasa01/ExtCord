@@ -21,8 +21,8 @@ export class DisableCommand extends Command<[]> {
     }
 
     public async execute(context: IExecutionContext<[]>) {
-        const guild = context.guild.guild;
-
+        const guild = context.guild;
+    
         if (await this.voiceCommandsModule.voiceCommandsEnabledConfigEntry.guildGet(guild)) {
             await this.voiceCommandsModule.voiceCommandsEnabledConfigEntry.guildSet(guild, false);
             return context.respond(voiceCommandsDisabledPhrase, {});
