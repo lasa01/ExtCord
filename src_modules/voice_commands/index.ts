@@ -164,8 +164,8 @@ export default class VoiceCommandsModule extends Module {
         }
     }
     
-    public getConnection(guild: Guild): VoiceConnection | undefined {
-        return getVoiceConnection(guild.id);
+    private async getConnection(bot: Bot, voiceChannel: VoiceChannel): Promise<VoiceConnection> {
+        return bot.voice.getOrCreateConnection(voiceChannel);
     }
 
     private onReady() {
