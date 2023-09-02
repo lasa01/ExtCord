@@ -162,6 +162,17 @@ export default class VoiceCommandsModule extends Module {
                 }, 5000);
             }
         }
+    
+        if (oldState.channel === null && newState.channel !== null) {
+            // Bot joined a channel
+            const listener = await this.getListener(newState.guild);
+            const connection = this.bot.voice.getConnection(newState.guild);
+    
+            if (connection !== undefined && listener !== undefined) {
+                newState.selfDeaf = false;
+                listener.startListening(connection);
+            }
+        }
     }
     
     private async getConnection(bot: Bot, voiceChannel: VoiceChannel): Promise<VoiceConnection> {
