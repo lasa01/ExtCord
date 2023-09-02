@@ -1,7 +1,7 @@
 // extcord module 
 // requires fastest-levenshtein@^1.0.16 lru-cache@^10.0.1
 
-import { GatewayIntentBits, Guild, VoiceState, VoiceChannel } from "discord.js";
+import { GatewayIntentBits, Guild, VoiceState } from "discord.js";
 import { getVoiceConnection, VoiceConnection } from "@discordjs/voice";
 
 import { BooleanGuildConfigEntry, Bot, Logger, Module, SimplePhrase, StringConfigEntry, NumberConfigEntry } from "../..";
@@ -140,10 +140,6 @@ export default class VoiceCommandsModule extends Module {
     }
 
     private async onVoiceStateUpdate(oldState: VoiceState, newState: VoiceState) {
-        if (oldState.id !== this.bot.client!.user!.id || newState.id !== this.bot.client!.user!.id) {
-            return;
-        }
-    
         if (oldState.channel === null && newState.channel !== null && !newState.member.user.bot) {
             // joined a channel
             const nonBotUsers = newState.channel.members.filter(member => !member.user.bot);
@@ -161,6 +157,10 @@ export default class VoiceCommandsModule extends Module {
                     }
                 }, 5000);
             }
+        }
+    
+        if (oldState.id !== this.bot.client!.user!.id || newState.id !== this.bot.client!.user!.id) {
+            return;
         }
     
         if (oldState.channel === null && newState.channel !== null) {
