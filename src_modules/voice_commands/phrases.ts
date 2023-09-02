@@ -51,3 +51,55 @@ export const autoJoinDisabledPhrase = new MessagePhrase(
     },
     {},
 );
+
+export const autoJoinAlreadyDisabledPhrase = new MessagePhrase(
+    {
+        description: "Shown when automatic joining is already disabled",
+        name: "autoJoinAlreadyDisabled",
+    },
+    "Automatic joining is already disabled.",
+    {
+        timestamp: false,
+        title: "Automatic joining already disabled."
+    },
+    {},
+);
+
+export const voiceCommandsAlreadyDisabledPhrase = new MessagePhrase(
+    {
+        description: "Shown when voice commands are already disabled",
+        name: "voiceCommandsAlreadyDisabled",
+    },
+    "Voice commands are already disabled.",
+    {
+        timestamp: false,
+        title: "Voice commands already disabled."
+    },
+    {},
+);
+
+export const autoJoinAlreadyEnabledPhrase = new MessagePhrase(
+    {
+        description: "Shown when automatic joining is already enabled",
+        name: "autoJoinAlreadyEnabled",
+    },
+    "Automatic joining is already enabled.",
+    {
+        timestamp: false,
+        title: "Automatic joining already enabled."
+    },
+    {},
+);
+
+export const voiceCommandsAlreadyEnabledPhrase = new MessagePhrase(
+    {
+        description: "Shown when voice commands are already enabled",
+        name: "voiceCommandsAlreadyEnabled",
+    },
+    "Voice commands are already enabled.",
+    {
+        timestamp: false,
+        title: "Voice commands already enabled."
+    },
+    {},
+);
