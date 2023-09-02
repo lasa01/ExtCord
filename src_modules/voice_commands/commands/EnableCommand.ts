@@ -21,12 +21,12 @@ export class EnableCommand extends Command<[]> {
     }
 
     public async execute(context: IExecutionContext<[]>) {
-        const guild = context.guild.guild;
-
+        const guild = context.guild;
+    
         if (await this.voiceCommandsModule.voiceCommandsEnabledConfigEntry.guildGet(guild)) {
             return context.respond(voiceCommandsAlreadyEnabledPhrase, {});
         }
-
+    
         await this.voiceCommandsModule.voiceCommandsEnabledConfigEntry.guildSet(guild, true);
         return context.respond(voiceCommandsEnabledPhrase, {});
     }
