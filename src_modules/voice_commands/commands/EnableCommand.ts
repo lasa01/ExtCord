@@ -24,7 +24,7 @@ export class EnableCommand extends Command<[]> {
         const guild = context.guild.guild;
 
         if (await this.voiceCommandsModule.voiceCommandsEnabledConfigEntry.guildGet(guild)) {
-            return context.respond(voiceCommandsEnabledErrorPhrase, {});
+            return context.respond(voiceCommandsAlreadyEnabledPhrase, {});
         }
 
         await this.voiceCommandsModule.voiceCommandsEnabledConfigEntry.guildSet(guild, true);
