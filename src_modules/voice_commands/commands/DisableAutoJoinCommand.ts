@@ -21,8 +21,8 @@ export class DisableAutoJoinCommand extends Command<[]> {
     }
 
     public async execute(context: IExecutionContext<[]>) {
-        const guild = context.guild.guild;
-
+        const guild = context.guild;
+    
         if (await this.voiceCommandsModule.autoJoinConfigEntry.guildGet(guild)) {
             await this.voiceCommandsModule.autoJoinConfigEntry.guildSet(guild, false);
             return context.respond(autoJoinDisabledPhrase, {});
