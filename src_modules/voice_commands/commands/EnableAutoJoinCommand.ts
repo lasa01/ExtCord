@@ -1,4 +1,4 @@
-import { Command, IExecutionContext } from "../../../framework";
+import { Command, IExecutionContext } from "../../..";
 import VoiceCommandsModule from "..";
 import { autoJoinEnabledPhrase, autoJoinAlreadyEnabledPhrase } from "../phrases";
 
