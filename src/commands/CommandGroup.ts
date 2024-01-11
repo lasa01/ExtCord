@@ -179,10 +179,12 @@ export class CommandGroup extends Command<[typeof BuiltInArguments.subcommand]> 
      * @param command The name of the command/alias to resolve.
      */
     public getCommandInstance(guild: IExtendedGuild, language: string, command: string) {
-        if (!this.guildCommandsMap.has(guild.guild.id)) {
+        const cacheKey = `${guild.guild.id}/${language}`;
+
+        if (!this.guildCommandsMap.has(cacheKey)) {
             this.createGuildCommandsMap(guild, language);
         }
-        return this.guildCommandsMap.get(guild.guild.id)!.get(command);
+        return this.guildCommandsMap.get(cacheKey)!.get(command);
     }
 
     /**
@@ -191,10 +193,12 @@ export class CommandGroup extends Command<[typeof BuiltInArguments.subcommand]> 
      * @param language The language to use.
      */
     public createGuildCommandsMap(guild: IExtendedGuild, language: string) {
+        const cacheKey = `${guild.guild.id}/${language}`;
+
         if (!this.languageCommandsMap.has(language)) {
             this.createLanguageCommmandsMap(language);
         }
-        this.guildCommandsMap.set(guild.guild.id, new Map(this.languageCommandsMap.get(language)!));
+        this.guildCommandsMap.set(cacheKey, new Map(this.languageCommandsMap.get(language)!));
     }
 
     /**
