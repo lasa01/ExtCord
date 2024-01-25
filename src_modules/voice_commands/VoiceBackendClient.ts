@@ -53,12 +53,12 @@ export class VoiceBackendClient {
         return response.arrayBuffer();
     }
 
-    public async fetchAsr(encodedOpusPackets: Buffer, language: string): Promise<IAsrResult> {
+    public async fetchAsr(encodedOpusPackets: Buffer, language: string, accurate: boolean = false): Promise<IAsrResult> {
         language = encodeURIComponent(this.getLanguageBackendId(language));
 
         const url = this.module.urlConfigEntry.get();
 
-        const requestUrl = `${url}/asr/${language}`;
+        const requestUrl = `${url}/asr/${language}?accurate=${accurate}`;
 
         const bodyStream = new Readable({
             read() {

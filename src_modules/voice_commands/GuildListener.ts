@@ -118,7 +118,17 @@ export class GuildListener extends EventEmitter {
             return;
         }
 
-        await this.module.voiceCommands.processTranscription(member, asrResult, this.voiceConnection);
+        const shouldRunAccurateAsr = await this.module.voiceCommands.processTranscription(member, asrResult, this.voiceConnection);
+        if (shouldRunAccurateAsr) {
+            try {
+                asrResult = await this.module.client.fetchAsr(buffer, this.language, true);
+            } catch (err) {
+                Logger.error(`Voice commands accurate ASR request failed: ${err}`);
+            }
+
+            await this.module.voiceCommands.processTranscription(member, asrResult, this.voiceConnection, true);
+        }
+
         this.dequeueNextAsrRequest(userId);
     }
 

@@ -24,7 +24,7 @@ export class VoiceCommands {
         this.guildResponders = new Map();
     }
 
-    public async processTranscription(member: GuildMember, transcription: IAsrResult, connection: VoiceConnection | undefined) {
+    public async processTranscription(member: GuildMember, transcription: IAsrResult, connection: VoiceConnection | undefined, accurate: boolean = false): Promise<boolean> {
         const startTime = process.hrtime();
 
         Logger.debug(`Voice commands processing transcription: ${transcription.text}`);
@@ -53,15 +53,20 @@ export class VoiceCommands {
         const startsWithKeywordData = await this.startsWithKeyword(extendedGuild, language, transcription.text, transcription.text_phonetic);
 
         if (!startsWithKeywordData.startsWithKeyword) {
-            return;
+            return false;
         }
 
         if (startsWithKeywordData.plainCommand.trim().length <= this.module.minCommandCharactersConfigEntry.get()) {
             Logger.debug(`Voice command "${startsWithKeywordData.plainCommand}" is too short, ignoring`);
-            return;
+            return false;
         }
 
         const resolvedCommand = await this.resolveCommand(extendedGuild, language, startsWithKeywordData.plainCommand, startsWithKeywordData.phoneticCommand);
+
+        // If the command has arguments, rerun a more accurate transcription to capture the arguments accurately
+        if (!accurate && (resolvedCommand?.command.arguments.length ?? 0) > 0) {
+            return true;
+        }
 
         const responder = this.getOrCreateResponder(member.guild, language);
         const usageNumber = responder.beginUse();
@@ -116,7 +121,7 @@ export class VoiceCommands {
         if (resolvedCommand === undefined) {
             await respond(CommandPhrases.invalidCommand, { command: startsWithKeywordData.plainCommand });
             responder.endUse(usageNumber);
-            return;
+            return false;
         }
 
         const context: ICommandContext = {
@@ -138,6 +143,7 @@ export class VoiceCommands {
         await resolvedCommand.command.command(context, resolvedCommand.plainArguments);
 
         responder.endUse(usageNumber);
+        return false;
     }
 
     public async startsWithKeyword(guild: IExtendedGuild, language: string, plainCommand: string, phoneticCommand: string): Promise<IStartsWithKeyword> {
