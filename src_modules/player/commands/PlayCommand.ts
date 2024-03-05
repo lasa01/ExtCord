@@ -103,9 +103,9 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
 
     private isSpotifyUrl(url: string): boolean {
         try {
-            spotifyUri.parse(url);
+            const urlObj = new URL(url);
 
-            return true;
+            return urlObj.protocol === "spotify:" || urlObj.hostname.includes("spotify.com");
         } catch {
             return false;
         }
