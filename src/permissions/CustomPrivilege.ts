@@ -88,7 +88,7 @@ export class CustomPrivilege extends PermissionPrivilege {
         super.updateFromRaw(permissions, raw);
         this.entity.description = this.description;
         await this.repo.save(this.entity);
-        const includes = new Map((await this.includeRepo.find({
+        const includes = new Map((await this.includeRepo.findBy({
             name: In(new Array(this.included.values).map((include) => include.name)),
             privilege: this.entity,
         })).map((include) => [include.name, include]));
@@ -105,7 +105,7 @@ export class CustomPrivilege extends PermissionPrivilege {
                 await this.includeRepo.remove(include);
             }
         }
-        const perms = new Map((await this.permissionRepo.find({
+        const perms = new Map((await this.permissionRepo.findBy({
             name: In(new Array(this.permissionsMap.values).map((perm) => perm.name)),
             privilege: this.entity,
         })).map((perm) => [perm.name, perm]));

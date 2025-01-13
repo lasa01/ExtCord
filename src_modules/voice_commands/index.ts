@@ -1,5 +1,5 @@
 // extcord module 
-// requires fastest-levenshtein@^1.0.16 lru-cache@^10.0.1
+// requires fastest-levenshtein@^1.0.16 lru-cache@^11.0.2
 
 import { GatewayIntentBits, Guild, VoiceState, VoiceChannel } from "discord.js";
 import { VoiceConnection } from "@discordjs/voice";

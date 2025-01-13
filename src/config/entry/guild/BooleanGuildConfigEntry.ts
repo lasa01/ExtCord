@@ -61,7 +61,7 @@ export class BooleanGuildConfigEntry extends BooleanConfigEntry {
             return this.cache.get(guild.guild.id)!;
         }
         this.ensureRepo();
-        let entity = await this.repo.findOne({
+        let entity = await this.repo.findOneBy({
             guild: guild.entity,
             name: this.fullName,
         });

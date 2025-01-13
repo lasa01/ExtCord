@@ -189,7 +189,7 @@ export class Commands extends EventEmitter {
 
             if (useMentions) {
                 await discordMessage.reply(options);
-            } else {
+            } else if (discordMessage.channel.isSendable()) {
                 await discordMessage.channel.send(options);
             }
         };
@@ -442,7 +442,7 @@ export class Commands extends EventEmitter {
             throw new Error("Trying to set an alias that contains spaces");
         }
         this.ensureRepo();
-        let entity = await this.repos.alias.findOne({
+        let entity = await this.repos.alias.findOneBy({
             alias,
             guild: guild.entity,
         });
@@ -467,7 +467,7 @@ export class Commands extends EventEmitter {
      */
     public async removeAlias(guild: IExtendedGuild, language: string, alias: string) {
         this.ensureRepo();
-        const entity = await this.repos.alias.findOne({
+        const entity = await this.repos.alias.findOneBy({
             alias,
             guild: guild.entity,
         });
@@ -483,7 +483,7 @@ export class Commands extends EventEmitter {
      */
     public getCustomAliases(guild: IExtendedGuild): Promise<GuildAliasEntity[]> {
         this.ensureRepo();
-        return this.repos.alias.find({
+        return this.repos.alias.findBy({
             guild: guild.entity,
         });
     }

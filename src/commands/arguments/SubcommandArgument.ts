@@ -37,5 +37,5 @@ export class SubcommandArgument extends Argument<ISubcommandData, true, true> {
 
 export interface ISubcommandData {
     subcommand: string;
-    args: string | CommandInteractionOption[];
+    args: string | readonly CommandInteractionOption[];
 }

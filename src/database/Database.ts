@@ -2,7 +2,7 @@ import "reflect-metadata";
 
 import { EventEmitter } from "events";
 
-import { Connection, ConnectionOptions, createConnection } from "typeorm";
+import { DataSource, DataSourceOptions, Repository } from "typeorm";
 
 import { Config } from "../config/Config";
 import { ObjectConfigEntry } from "../config/entry/ObjectConfigEntry";
@@ -12,10 +12,10 @@ import { MemberEntity } from "./entity/MemberEntity";
 import { RoleEntity } from "./entity/RoleEntity";
 import { UserEntity } from "./entity/UserEntity";
 import { LoggerBridge } from "./LoggerBridge";
-import { GuildRepository } from "./repo/GuildRepository";
-import { MemberRepository } from "./repo/MemberRepository";
-import { RoleRepository } from "./repo/RoleRepository";
-import { UserRepository } from "./repo/UserRepository";
+import { extendGuildRepository, GuildRepository } from "./repo/GuildRepository";
+import { extendMemberRepository, MemberRepository } from "./repo/MemberRepository";
+import { extendRoleRepository, RoleRepository } from "./repo/RoleRepository";
+import { extendUserRepository, UserRepository } from "./repo/UserRepository";
 
 // Event definitions
 // tslint:disable-next-line:interface-name
@@ -43,13 +43,13 @@ export class Database extends EventEmitter {
     public configEntry: ObjectConfigEntry;
     /** General database repositories. */
     public repos?: {
-        guild: GuildRepository,
-        member: MemberRepository,
-        user: UserRepository,
-        role: RoleRepository,
+        guild: GuildRepository & Repository<GuildEntity>,
+        member: MemberRepository & Repository<MemberEntity>,
+        user: UserRepository & Repository<UserEntity>,
+        role: RoleRepository & Repository<RoleEntity>,
     };
     /** Database connection, if any. */
-    public connection?: Connection;
+    public connection?: DataSource;
     private entities: Array<new () => any>;
 
     /**
@@ -71,8 +71,8 @@ export class Database extends EventEmitter {
      * Connects the client to the database.
      * @param options Defines custom connection options instead of the database's config entry.
      */
-    public async connect(options?: ConnectionOptions) {
-        options = options ?? this.configEntry.get() as ConnectionOptions;
+    public async connect(options?: DataSourceOptions) {
+        options = options ?? this.configEntry.get() as DataSourceOptions;
         options = Object.assign(options, {
             charset: "utf8mb4_unicode_ci",
             entities: this.entities,
@@ -81,12 +81,12 @@ export class Database extends EventEmitter {
             synchronize: true,
         });
         Logger.verbose("Connecting to database");
-        this.connection = await createConnection(options);
+        this.connection = await new DataSource(options).initialize();
         this.repos = {
-            guild: this.connection.getCustomRepository(GuildRepository),
-            member: this.connection.getCustomRepository(MemberRepository),
-            role: this.connection.getCustomRepository(RoleRepository),
-            user: this.connection.getCustomRepository(UserRepository),
+            guild: extendGuildRepository(this.connection.getRepository(GuildEntity)),
+            member: extendMemberRepository(this.connection.getRepository(MemberEntity)),
+            role: extendRoleRepository(this.connection.getRepository(RoleEntity)),
+            user: extendUserRepository(this.connection.getRepository(UserEntity)),
         };
         this.emit("ready");
     }
@@ -139,7 +139,7 @@ export class Database extends EventEmitter {
      * Asserts that the database is connected. Throws if it isn't.
      */
     public ensureConnection(): asserts this is this & {
-        connection: Connection, repos: NonNullable<Database["repos"]>,
+        connection: DataSource, repos: NonNullable<Database["repos"]>,
     } {
         if (!this.connection) {
             throw new Error("Database is not connected");

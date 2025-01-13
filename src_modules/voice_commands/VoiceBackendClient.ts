@@ -82,7 +82,7 @@ export class VoiceBackendClient {
             throw new Error(`Voice backend request to ${requestUrl} failed: ${response.status} ${response.statusText}`);
         }
 
-        return response.json();
+        return response.json() as any;
     }
 
     private getLanguageBackendId(extcordLanguage: string): string {

@@ -64,7 +64,7 @@ export class LyricsCommand extends Command<[]> {
             }
         }
 
-        const data = await response.json();
+        const data: { [key: string]: any } = await response.json() as any;
 
         const thumbnailUrl = Object.values(data.thumbnail)[0];
         const url = Object.values(data.links)[0];

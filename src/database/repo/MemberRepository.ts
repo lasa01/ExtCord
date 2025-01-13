@@ -2,45 +2,54 @@ import { GuildMember } from "discord.js";
 import { EntityRepository, Repository } from "typeorm";
 
 import { MemberEntity } from "../entity/MemberEntity";
-import { GuildRepository } from "./GuildRepository";
-import { UserRepository } from "./UserRepository";
+import { extendGuildRepository, GuildRepository } from "./GuildRepository";
+import { extendUserRepository, UserRepository } from "./UserRepository";
+import { GuildEntity } from "../entity/GuildEntity";
+import { UserEntity } from "../entity/UserEntity";
 
 /**
  * Database repository for members.
  * @category Database
  */
-@EntityRepository(MemberEntity)
-export class MemberRepository extends Repository<MemberEntity> {
-    private cache: Map<GuildMember, MemberEntity>;
-
-    constructor() {
-        super();
-        this.cache = new Map();
-    }
+export interface MemberRepository {
+    cache: Map<GuildMember, MemberEntity>;
 
     /**
      * Gets the associated member database entity for the specified member.
      * @param member The member to use.
      */
-    public async getEntity(member: GuildMember): Promise<MemberEntity> {
-        if (this.cache.has(member)) {
-            return this.cache.get(member)!;
-        }
-        let entity = await this.findOne(
-            { guildId: member.guild.id, userId: member.user.id },
-            { relations: ["guild", "user"] },
-        );
-        if (!entity) {
-            const guild = await this.manager.getCustomRepository(GuildRepository).getEntity(member.guild);
-            const user = await this.manager.getCustomRepository(UserRepository).getEntity(member.user);
-            entity = this.create({
-                guild,
-                nickname: member.displayName,
-                user,
-            });
-            await this.save(entity);
-        }
-        this.cache.set(member, entity);
-        return entity;
-    }
+    getEntity(member: GuildMember): Promise<MemberEntity>;
+}
+
+export function extendMemberRepository(repository: Repository<MemberEntity>): MemberRepository & Repository<MemberEntity> {
+    return repository.extend({
+        cache: new Map(),
+
+        async getEntity(member) {
+            if (this.cache.has(member)) {
+                return this.cache.get(member)!;
+            }
+            let entity = await this.findOne(
+                {
+                    where: { guildId: member.guild.id, userId: member.user.id },
+                    relations: {
+                        guild: true,
+                        user: true,
+                    },
+                }
+            );
+            if (!entity) {
+                const guild = await extendGuildRepository(this.manager.getRepository(GuildEntity)).getEntity(member.guild);
+                const user = await extendUserRepository(this.manager.getRepository(UserEntity)).getEntity(member.user);
+                entity = this.create({
+                    guild,
+                    nickname: member.displayName,
+                    user,
+                });
+                await this.save(entity);
+            }
+            this.cache.set(member, entity);
+            return entity;
+        },
+    });
 }

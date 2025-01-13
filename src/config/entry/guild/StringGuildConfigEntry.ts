@@ -61,7 +61,7 @@ export class StringGuildConfigEntry extends StringConfigEntry {
             return this.cache.get(guild.guild.id)!;
         }
         this.ensureRepo();
-        let entity = await this.repo.findOne({
+        let entity = await this.repo.findOneBy({
             guild: guild.entity,
             name: this.fullName,
         });

@@ -60,7 +60,9 @@ export class Voice {
                 // Seems to be reconnecting to a new channel - ignore disconnect
             } catch (error) {
                 // Seems to be a real disconnect which SHOULDN'T be recovered from
-                newConnection.destroy();
+                if (newConnection.state.status !== VoiceConnectionStatus.Destroyed) {
+                    newConnection.destroy();
+                }
 
                 this.guildSubscriptions.get(voiceChannel.guildId)?.unsubscribe();
                 this.guildSubscriptions.delete(voiceChannel.guildId);

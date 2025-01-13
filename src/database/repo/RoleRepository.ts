@@ -2,40 +2,47 @@ import { Role } from "discord.js";
 import { EntityRepository, Repository } from "typeorm";
 
 import { RoleEntity } from "../entity/RoleEntity";
-import { GuildRepository } from "./GuildRepository";
+import { extendGuildRepository, GuildRepository } from "./GuildRepository";
+import { GuildEntity } from "../entity/GuildEntity";
 
 /**
  * Database repository for roles.
  * @category Database
  */
-@EntityRepository(RoleEntity)
-export class RoleRepository extends Repository<RoleEntity> {
-    private cache: Map<Role, RoleEntity>;
-
-    constructor() {
-        super();
-        this.cache = new Map();
-    }
+export interface RoleRepository {
+    cache: Map<Role, RoleEntity>;
 
     /**
      * Gets the associated role database entity for the specified role.
      * @param role The role to use.
      */
-    public async getEntity(role: Role): Promise<RoleEntity> {
-        if (this.cache.has(role)) {
-            return this.cache.get(role)!;
-        }
-        let entity = await this.findOne({ guildId: role.guild.id, roleId: role.id }, { relations: ["guild"] });
-        if (!entity) {
-            const guild = await this.manager.getCustomRepository(GuildRepository).getEntity(role.guild);
-            entity = this.create({
-                guild,
-                name: role.name,
-                roleId: role.id,
+    getEntity(role: Role): Promise<RoleEntity>;
+}
+
+export function extendRoleRepository(repository: Repository<RoleEntity>): RoleRepository & Repository<RoleEntity> {
+    return repository.extend({
+        cache: new Map(),
+
+        async getEntity(role) {
+            if (this.cache.has(role)) {
+                return this.cache.get(role)!;
+            }
+            let entity = await this.findOne({
+                where: { guildId: role.guild.id, roleId: role.id }, relations: {
+                    guild: true,
+                }
             });
-            await this.save(entity);
-        }
-        this.cache.set(role, entity);
-        return entity;
-    }
+            if (!entity) {
+                const guild = await extendGuildRepository(this.manager.getRepository(GuildEntity)).getEntity(role.guild);
+                entity = this.create({
+                    guild,
+                    name: role.name,
+                    roleId: role.id,
+                });
+                await this.save(entity);
+            }
+            this.cache.set(role, entity);
+            return entity;
+        },
+    });
 }

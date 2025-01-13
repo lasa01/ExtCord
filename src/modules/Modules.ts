@@ -177,7 +177,7 @@ export class Modules extends EventEmitter {
             ...this.dependencies,
         ];
         const isWindows = process.platform.startsWith("win");
-        const child = spawn(isWindows ? "npm.cmd" : "npm", installArgs);
+        const child = spawn(isWindows ? "npm.cmd" : "npm", installArgs, { shell: isWindows });
         child.stdout.on("data", (msg) => Logger.verbose(msg.toString()));
         child.stderr.on("data", (msg) => Logger.error(msg.toString()));
         const exitCode = await new Promise<number>((res, rej) => {

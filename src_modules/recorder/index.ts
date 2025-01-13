@@ -1,5 +1,5 @@
 // extcord module
-// requires ffmpeg-static@^5.1.0
+// requires ffmpeg-static@^5.2.0
 
 import { GatewayIntentBits, Guild, VoiceState } from "discord.js";
 

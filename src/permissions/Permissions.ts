@@ -27,6 +27,8 @@ import { RolePrivilegeEntity } from "./database/RolePrivilegeEntity";
 import { Permission } from "./Permission";
 import { PermissionGroup } from "./PermissionGroup";
 import { PermissionPrivilege } from "./PermissionPrivilege";
+import { RoleEntity } from "../database/entity/RoleEntity";
+import { MemberEntity } from "../database/entity/MemberEntity";
 
 /**
  * The bot's handler for permission and privilege registering and loading.
@@ -51,8 +53,8 @@ export class Permissions {
         rolePermission: Repository<RolePermissionEntity>;
         memberPrivilege: Repository<MemberPrivilegeEntity>;
         rolePrivilege: Repository<RolePrivilegeEntity>;
-        role: RoleRepository;
-        member: MemberRepository;
+        role: RoleRepository & Repository<RoleEntity>;
+        member: MemberRepository & Repository<MemberEntity>;
         customPrivilege: Repository<CustomPrivilegeEntity>;
         customPrivilegePermission: Repository<CustomPrivilegePermissionEntity>;
         customPrivilegeInclude: Repository<CustomPrivilegeIncludeEntity>;
@@ -339,7 +341,10 @@ export class Permissions {
         }
         this.ensureRepo();
         const entity = await this.repos.customPrivilege.findOne({
-            relations: ["includes", "permissions"],
+            relations: {
+                includes: true,
+                permissions: true,
+            },
             where: {
                 guild,
                 name,
@@ -454,7 +459,7 @@ export class Permissions {
         }
         this.ensureRepo();
         const map: Map<string, boolean> = new Map();
-        let rolePrivileges = await this.repos.rolePrivilege.find({
+        let rolePrivileges = await this.repos.rolePrivilege.findBy({
             role: role.entity,
         });
         const missingPrivilegeEntities: RolePrivilegeEntity[] = [];
@@ -491,7 +496,7 @@ export class Permissions {
                 map.set(permission.fullName, allow);
             }
         }
-        const rolePermissions = await this.repos.rolePermission.find({
+        const rolePermissions = await this.repos.rolePermission.findBy({
             role: role.entity,
         });
         for (const rolePermission of rolePermissions) {
@@ -511,7 +516,7 @@ export class Permissions {
         }
         this.ensureRepo();
         const map: Map<string, boolean> = new Map();
-        let memberPrivileges = await this.repos.memberPrivilege.find({
+        let memberPrivileges = await this.repos.memberPrivilege.findBy({
             member: member.entity,
         });
         const missingPrivilegeEntities: MemberPrivilegeEntity[] = [];
@@ -547,7 +552,7 @@ export class Permissions {
             }
         }
 
-        const memberPermissions = await this.repos.memberPermission.find({
+        const memberPermissions = await this.repos.memberPermission.findBy({
             member: member.entity,
         });
         for (const memberPermission of memberPermissions) {
@@ -568,7 +573,9 @@ export class Permissions {
         this.ensureRepo();
         const map: Map<string, boolean> = new Map();
         const roles = (await this.repos.role.find({
-            relations: ["guild"], where: {
+            relations: {
+                guild: true,
+            }, where: {
                 guild: member.entity.guild,
                 roleId: In(member.member.roles.cache.map((role) => role.id)),
             },
@@ -610,7 +617,7 @@ export class Permissions {
      */
     public async roleAddPermission(role: IExtendedRole, permission: string, allow: boolean = true) {
         this.ensureRepo();
-        let entity = await this.repos.rolePermission.findOne({
+        let entity = await this.repos.rolePermission.findOneBy({
             name: permission,
             role: role.entity,
         });
@@ -652,7 +659,7 @@ export class Permissions {
      */
     public async memberAddPermission(member: IExtendedMember, permission: string, allow: boolean = true) {
         this.ensureRepo();
-        let entity = await this.repos.memberPermission.findOne({
+        let entity = await this.repos.memberPermission.findOneBy({
             member: member.entity,
             name: permission,
         });
