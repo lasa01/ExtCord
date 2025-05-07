@@ -42,8 +42,10 @@ export class SimplePhrase extends Phrase {
         if (typeof data === "string") {
             this.templates[language] = data;
             return [data, this.description];
-        } else  {
-            return [this.defaults[language] ?? this.defaults[DEFAULT_LANGUAGE], this.description];
+        } else {
+            const defaultValue = this.defaults[language] ?? this.defaults[DEFAULT_LANGUAGE];
+            this.templates[language] = defaultValue;
+            return [defaultValue, this.description];
         }
     }
 }

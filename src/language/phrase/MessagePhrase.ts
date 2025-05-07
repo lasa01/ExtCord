@@ -38,9 +38,13 @@ export class MessagePhrase<T extends Record<string, string>> extends TemplatePhr
 
     public parse(language: string, data: any): [any, string?] {
         if (typeof data !== "object") {
+            const defaultEmbed = this.defaultsEmbed[language] ?? this.defaultsEmbed[DEFAULT_LANGUAGE];
+            const defaultText = this.defaults[language] ?? this.defaults[DEFAULT_LANGUAGE];
+            this.templates[language] = defaultText;
+            this.templatesEmbed[language] = defaultEmbed;
             return [{
-                embed: this.defaultsEmbed[language] ?? this.defaultsEmbed[DEFAULT_LANGUAGE],
-                text: this.defaults[language] ?? this.defaults[DEFAULT_LANGUAGE],
+                embed: defaultEmbed,
+                text: defaultText,
             }, this.description];
         }
         if (typeof data.text !== "string") {
@@ -211,7 +215,7 @@ export class MessagePhrase<T extends Record<string, string>> extends TemplatePhr
                 }
             }
         }
-        const embed = this.defaultsEmbed[language];
+        const embed = this.templatesEmbed[language] ?? this.defaultsEmbed[language] ?? this.defaultsEmbed[DEFAULT_LANGUAGE];
         let fields: APIEmbedField[] | undefined;
 
         if (embed.fields) {

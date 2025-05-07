@@ -58,7 +58,9 @@ export class DynamicFieldMessagePhrase<T extends Record<string, string>, U exten
     public parse(language: string, data: any): [any, string?] {
         const [parsed, comment] = super.parse(language, data);
         if (typeof parsed.textDynamicFields !== "string") {
-            parsed.textDynamicFields = this.defaultsFieldText[language] ?? this.defaultsFieldText[DEFAULT_LANGUAGE];
+            const defaultValue = this.defaultsFieldText[language] ?? this.defaultsFieldText[DEFAULT_LANGUAGE];
+            this.templatesFieldText[language] = defaultValue;
+            parsed.textDynamicFields = defaultValue;
         } else {
             this.templatesFieldText[language] = parsed.textDynamicFields;
         }
