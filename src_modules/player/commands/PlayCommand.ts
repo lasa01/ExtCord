@@ -1,7 +1,7 @@
 import { Bot, Command, ICommandContext, IExecutionContext, StringArgument, Util, Logger } from "../../..";
 
 import PlayerModule from "..";
-import { musicNotFoundPhrase, musicNoVoicePhrase, musicSearchingPhrase, musicYoutubeErrorPhrase, musicUnsupportedUrlPhrase, musicPlaylistErrorPhrase } from "../phrases";
+import { musicNotFoundPhrase, musicNoVoicePhrase, musicSearchingPhrase, musicYoutubeErrorPhrase, musicUnsupportedUrlPhrase, musicPlaylistErrorPhrase, musicNoInputPhrase, musicNoValidInputPhrase } from "../phrases";
 import { IQueueItemDetails, PlayerQueueItem } from "../queue/PlayerQueueItem";
 
 import { VoiceConnection } from "@discordjs/voice";
@@ -14,7 +14,7 @@ import { Readable } from "stream";
 import * as spotifyUri from 'spotify-uri';
 const { getPreview } = require('spotify-url-info')(fetch);
 
-export class PlayCommand extends Command<[StringArgument<false>]> {
+export class PlayCommand extends Command<[StringArgument<true>]> {
     private player: PlayerModule;
 
     public constructor(player: PlayerModule) {
@@ -34,7 +34,7 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
                         description: "The url/search query",
                         name: "music",
                     },
-                    false,
+                    true,
                     true,
                 ),
             ],
@@ -42,12 +42,17 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
         this.player = player;
     }
 
-    public async execute(context: IExecutionContext<[StringArgument<false>]>) {
+    public async execute(context: IExecutionContext<[StringArgument<true>]>) {
         const voiceChannel = context.member.member.voice.channel;
         if (!(voiceChannel instanceof VoiceChannel)) {
             return context.respond(musicNoVoicePhrase, {});
         }
         const url = context.arguments[0];
+
+        // Check if we have either a query or attachments
+        if (!url && (!context.message?.message.attachments.size)) {
+            return context.respond(musicNoInputPhrase, {});
+        }
 
         const [connection, queueItems] = await Promise.all([
             this.getConnection(context.bot, voiceChannel),
@@ -65,7 +70,28 @@ export class PlayCommand extends Command<[StringArgument<false>]> {
         return bot.voice.getOrCreateConnection(voiceChannel);
     }
 
-    private async getQueueItem(query: string, context: ICommandContext): Promise<PlayerQueueItem[] | void> {
+    private async getQueueItem(query: string | undefined, context: ICommandContext): Promise<PlayerQueueItem[] | void> {
+        // Check for message attachments first
+        if (context.message?.message.attachments.size) {
+            const items: PlayerQueueItem[] = [];
+            for (const attachment of context.message.message.attachments.values()) {
+                const item = await this.getQueueItemFromDirectUrl(attachment.url);
+                if (item) {
+                    // Update the title to use the attachment filename
+                    item.details.title = attachment.name;
+                    items.push(item);
+                }
+            }
+            if (items.length > 0) {
+                return items;
+            }
+        }
+
+        // If no attachments or no valid attachments, and no query, return
+        if (!query) {
+            return context.respond(musicNoValidInputPhrase, {});
+        }
+
         if (!Util.isValidUrl(query)) {
             const searchResult = await this.searchYoutube(query, context);
             if (!searchResult) {

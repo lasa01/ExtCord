@@ -496,6 +496,34 @@ export const musicPlaylistErrorPhrase = new MessagePhrase(
     },
 );
 
+export const musicNoInputPhrase = new MessagePhrase(
+    {
+        description: "Shown when no input is provided to the play command",
+        name: "musicNoInput",
+    },
+    "Please provide a URL, search query, or attach an audio file.",
+    {
+        description: "Please provide a URL, search query, or attach an audio file.",
+        timestamp: false,
+        title: "No input provided",
+    },
+    {},
+);
+
+export const musicNoValidInputPhrase = new MessagePhrase(
+    {
+        description: "Shown when no valid input is provided to the play command",
+        name: "musicNoValidInput",
+    },
+    "No valid input provided. Please provide either:\n• A YouTube/Spotify URL\n• A search query\n• An audio file attachment",
+    {
+        description: "No valid input provided. Please provide either:\n• A YouTube/Spotify URL\n• A search query\n• An audio file attachment",
+        timestamp: false,
+        title: "No valid input",
+    },
+    {},
+);
+
 export const phrases = [
     musicNoVoicePhrase, musicNotFoundPhrase, musicNotPlayingPhrase,
     musicPausePhrase, musicResumePhrase, musicPlayPhrase, musicSearchingPhrase,
@@ -505,5 +533,6 @@ export const phrases = [
     musicLyricsNotFoundPhrase, musicLyricsRateLimitedPhrase, musicEmptyPlaylistPhrase,
     musicClearPhrase, musicSeekPhrase, musicErrorPhrase,
     musicPopPhrase, musicEmptyQueuePhrase, musicShufflePhrase,
-    musicYoutubeErrorPhrase, musicUnsupportedUrlPhrase
+    musicYoutubeErrorPhrase, musicUnsupportedUrlPhrase, musicNoInputPhrase,
+    musicNoValidInputPhrase,
 ];
