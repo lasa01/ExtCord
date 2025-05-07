@@ -524,6 +524,34 @@ export const musicNoValidInputPhrase = new MessagePhrase(
     {},
 );
 
+export const musicRepeatEnabledPhrase = new MessagePhrase(
+    {
+        description: "Shown when repeat mode is enabled",
+        name: "musicRepeatEnabled",
+    },
+    "Repeat mode enabled.",
+    {
+        description: "Repeat mode enabled.",
+        timestamp: false,
+        title: "Repeat mode",
+    },
+    {},
+);
+
+export const musicRepeatDisabledPhrase = new MessagePhrase(
+    {
+        description: "Shown when repeat mode is disabled",
+        name: "musicRepeatDisabled",
+    },
+    "Repeat mode disabled.",
+    {
+        description: "Repeat mode disabled.",
+        timestamp: false,
+        title: "Repeat mode",
+    },
+    {},
+);
+
 export const phrases = [
     musicNoVoicePhrase, musicNotFoundPhrase, musicNotPlayingPhrase,
     musicPausePhrase, musicResumePhrase, musicPlayPhrase, musicSearchingPhrase,
@@ -534,5 +562,5 @@ export const phrases = [
     musicClearPhrase, musicSeekPhrase, musicErrorPhrase,
     musicPopPhrase, musicEmptyQueuePhrase, musicShufflePhrase,
     musicYoutubeErrorPhrase, musicUnsupportedUrlPhrase, musicNoInputPhrase,
-    musicNoValidInputPhrase,
+    musicNoValidInputPhrase, musicRepeatEnabledPhrase, musicRepeatDisabledPhrase
 ];

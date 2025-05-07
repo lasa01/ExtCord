@@ -19,6 +19,7 @@ import { ResumeCommand } from "./commands/ResumeCommand";
 import { SkipCommand } from "./commands/SkipCommand";
 import { StopCommand } from "./commands/StopCommand";
 import { VolumeCommand } from "./commands/VolumeCommand";
+import { RepeatCommand } from "./commands/RepeatCommand";
 import {
     musicEmptyPlaylistPhrase,
     musicEnqueueListPhrase,
@@ -60,6 +61,7 @@ export default class PlayerModule extends Module {
             new ClearCommand(this),
             new PopCommand(this),
             new ShuffleCommand(this),
+            new RepeatCommand(this),
         );
         this.musicCommand.addPhrases(...phrases);
         this.registerCommand(this.musicCommand);
@@ -220,8 +222,16 @@ export default class PlayerModule extends Module {
         connection: VoiceConnection,
         bitrate: number,
     ) {
+        const currentItem = queue.playing;
+
+        // If repeat is enabled and we have a current item, add it back to the queue
+        if (queue.repeat && currentItem) {
+            queue.enqueue(currentItem);
+        }
+
         const newItem = queue.dequeue();
         queue.playing = newItem;
+
         if (newItem) {
             this.play(context, connection, newItem, bitrate).catch((err) => {
                 queue.playing = undefined;

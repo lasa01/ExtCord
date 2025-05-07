@@ -27,10 +27,6 @@ export class PlayerQueueItem {
     }
 
     public async getResource(): Promise<AudioResource> {
-        if (this.resource) {
-            return this.resource;
-        }
-
         const stream = await this.getStream();
         this.resource = createAudioResource(stream, { inlineVolume: true });
         return this.resource;

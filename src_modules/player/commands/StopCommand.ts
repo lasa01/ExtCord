@@ -39,6 +39,8 @@ export class StopCommand extends Command<[]> {
             return context.respond(musicWrongVoicePhrase, {});
         }
 
+        const queue = this.player.getQueue(context.guild);
+        queue.repeat = false;
         this.player.disconnect(context.guild.guild);
         return context.respond(musicStopPhrase, {});
     }
