@@ -1,5 +1,5 @@
 // extcord module
-// requires ffmpeg-static@^5.2.0 @distube/ytdl-core@git+https://github.com/ToddyTheNoobDud/ytdl-core-stuff.git#37acb1c7ca203bb33c1219bffe5fb2b820b52f69 @distube/ytsr@^2.0.4 @distube/ytpl@^1.2.1 spotify-uri@^4.0.0 spotify-url-info@^3.2.18
+// requires ffmpeg-static@^5.2.0 @nuclearplayer/ytdl-core@^4.16.11 @distube/ytsr@^2.0.4 @distube/ytpl@^1.2.1 spotify-uri@^4.0.0 spotify-url-info@^3.2.18
 
 import {
     AudioPlayer,
