@@ -66,7 +66,7 @@
     "zlib-sync": "^0.1.7"
   },
   "devDependencies": {
-    "@nuclearplayer/ytdl-core": "^4.16.11",
+    "@distube/ytdl-core": "https://codeload.github.com/ToddyTheNoobDud/ytdl-core-stuff/tar.gz/refs/heads/master",
     "@distube/ytpl": "^1.2.1",
     "@distube/ytsr": "^2.0.4",
     "@types/chai": "^4.2.14",

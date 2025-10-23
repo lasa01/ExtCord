@@ -1,6 +1,6 @@
 import { AudioResource, createAudioResource } from "@discordjs/voice";
 import { Readable } from "stream";
-import ytdl = require("@nuclearplayer/ytdl-core");
+import ytdl = require("@distube/ytdl-core");
 import fetch from "node-fetch";
 
 export interface IQueueItemDetails {
